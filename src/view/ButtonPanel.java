@@ -34,7 +34,7 @@ public class ButtonPanel extends JPanel {
 
         leaderboardBtn = createStyledButton(leaderboardIcon);
         playPauseBtn = createStyledButton(pauseIcon);
-        resetBtn = createResetButton(); // ✅ Use new reset button
+        resetBtn = createResetButton(); 
         logoutBtn = createLogoutButton();
 
         String loggedInUsername = SessionManager.getUsername();
@@ -121,6 +121,31 @@ public class ButtonPanel extends JPanel {
         button.setContentAreaFilled(false);
         button.setBorderPainted(false);
         button.setFocusPainted(false);
+        return button;
+    }
+    
+    
+    
+    private JButton createResettButton() {
+        JButton button = new JButton(logoutIcon);
+        button.setPreferredSize(new Dimension(30, 30)); 
+        button.setContentAreaFilled(false);
+        button.setBorderPainted(false);
+        button.setFocusPainted(false);
+        
+        button.addActionListener(e -> {
+            int confirm = JOptionPane.showConfirmDialog(
+                gameMainInterface,
+                "Are you sure you want to Reset?",
+                "Confirm Logout",
+                JOptionPane.YES_NO_OPTION
+            );
+
+            if (confirm == JOptionPane.YES_OPTION) {
+               
+            }
+        });
+
         return button;
     }
 
