@@ -71,7 +71,6 @@ public class SnakeGameLogic {
             snake.remove(snake.size() - 1);
         }
 
-        // Check self-collision
         if (snake.contains(newHead)) {
             running = false;
         } else {

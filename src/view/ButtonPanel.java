@@ -95,7 +95,7 @@ public class ButtonPanel extends JPanel {
                 System.out.println("Reset button clicked!");  
                 gameLogic.reset();  
 
-                // ✅ Ensure the UI fully repaints
+               
                 SwingUtilities.invokeLater(() -> {
                     gameMainInterface.repaint();
                     gameMainInterface.revalidate();
