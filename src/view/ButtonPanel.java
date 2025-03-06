@@ -11,11 +11,11 @@ public class ButtonPanel extends JPanel {
     private JButton leaderboardBtn, playPauseBtn, resetBtn, logoutBtn;
     private ImageIcon leaderboardIcon, pauseIcon, resetIcon, logoutIcon;
     private GameMainInterface gameMainInterface;
-    private SnakeGameLogic gameLogic; // ✅ Store reference to SnakeGameLogic
+    private SnakeGameLogic gameLogic; 
 
-    public ButtonPanel(GameMainInterface gameMainInterface, SnakeGameLogic gameLogic) { // ✅ Fix: Accept SnakeGameLogic
+    public ButtonPanel(GameMainInterface gameMainInterface, SnakeGameLogic gameLogic) { 
         this.gameMainInterface = gameMainInterface;
-        this.gameLogic = gameLogic; // ✅ Store game logic instance
+        this.gameLogic = gameLogic; 
 
         setLayout(new GridBagLayout());
         setPreferredSize(new Dimension(500, 65));
