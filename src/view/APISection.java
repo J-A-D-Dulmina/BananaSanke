@@ -3,8 +3,8 @@ package view;
 import javax.swing.*;
 import java.awt.*;
 import java.net.URL;
-import java.util.Scanner;
 import controller.GameController;
+import model.Game;
 
 /**
  * Displays the game question fetched from the API with a background image.
@@ -17,26 +17,28 @@ public class APISection extends JPanel {
     private JLabel messageLabel;
     private final GameController gameController;
     private final ScorePanel scorePanel; // Reference to ScorePanel
-    private int correctAnswer; // Store correct answer from API
+    private Game currentGame; // Store current game
+    private static APISection instance; // Singleton instance
 
     private static final Color MESSAGE_BACKGROUND_COLOR = new Color(0, 128, 0, 200);
     private static final Font QUESTION_FONT = new Font("Courier New", Font.BOLD, 35);
     private static final Font MESSAGE_FONT = new Font("Arial", Font.BOLD, 20);
-    private static final String DEFAULT_MESSAGE = "Speed Up";
+    private static final String DEFAULT_MESSAGE = "Eat the correct number!";
 
     /**
      * Initializes the API section panel and its components.
      */
     public APISection(ScorePanel scorePanel) {
-        this.scorePanel = scorePanel; // Pass the ScorePanel instance
+        this.scorePanel = scorePanel;
         setLayout(new BorderLayout());
         gameController = new GameController();
+        instance = this;
 
         // Load background image
         backgroundLabel = createBackgroundLabel("resources/background_image.png");
 
         // Create question label
-        questLabel = createQuestionLabel("Eat the missing value");
+        questLabel = createQuestionLabel("Find the missing value");
         questLabel.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
 
         // Create question image area
@@ -57,9 +59,13 @@ public class APISection extends JPanel {
 
         // Fetch and display the first question image
         loadQuestionImage();
+    }
 
-        // Start listening for answers in a separate thread
-        new Thread(this::listenForAnswers).start();
+    /**
+     * Gets the singleton instance of APISection
+     */
+    public static APISection getInstance() {
+        return instance;
     }
 
     /**
@@ -69,41 +75,18 @@ public class APISection extends JPanel {
         URL questionImageUrl = gameController.getNextGame();
 
         if (questionImageUrl != null) {
-            correctAnswer = gameController.getCorrectAnswer(); // Get the correct answer
-            System.out.println("API Response: " + questionImageUrl + ", Correct Answer: " + correctAnswer);
+            currentGame = gameController.getCurrentGame();
+            int answer = currentGame.getSolution();
+            // Print the new puzzle answer to console
+            System.out.println("New Puzzle - Answer: " + answer);
 
             ImageIcon imageIcon = new ImageIcon(questionImageUrl);
             Image resizedImage = imageIcon.getImage().getScaledInstance(480, 250, Image.SCALE_SMOOTH);
             questArea.setIcon(new ImageIcon(resizedImage));
         } else {
             questArea.setText("API Error: Unable to load image.");
+            System.err.println("Failed to load new puzzle image");
         }
-    }
-
-    /**
-     * Listens for user input through the console and validates the answer.
-     */
-    private void listenForAnswers() {
-        try (Scanner scanner = new Scanner(System.in)) {
-			while (true) {
-			    System.out.print("Enter your answer: ");
-			    if (scanner.hasNextInt()) {
-			        int userAnswer = scanner.nextInt();
-			        if (userAnswer == correctAnswer) {
-			            System.out.println("Correct Answer! +1 Score!");
-			            updateMessage("Correct! Well done!");
-			            scorePanel.incrementScore(); // Increase score when correct answer is given
-			            loadQuestionImage(); // Load the next question image
-			        } else {
-			            System.out.println("Incorrect. Try again.");
-			            updateMessage("Incorrect! Try again.");
-			        }
-			    } else {
-			        System.out.println("Invalid input. Enter a number.");
-			        scanner.next(); // Clear invalid input
-			    }
-			}
-		}
     }
 
     /**
@@ -145,5 +128,26 @@ public class APISection extends JPanel {
      */
     public void updateMessage(String message) {
         messageLabel.setText(message);
+    }
+
+    /**
+     * Gets the current game.
+     */
+    public Game getCurrentGame() {
+        return currentGame;
+    }
+
+    /**
+     * Gets the current correct answer.
+     */
+    public int getCorrectAnswer() {
+        return currentGame != null ? currentGame.getSolution() : -1;
+    }
+
+    /**
+     * Loads the next question.
+     */
+    public void loadNextQuestion() {
+        loadQuestionImage();
     }
 }

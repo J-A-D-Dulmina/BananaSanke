@@ -15,6 +15,7 @@ public class Food {
     private final int panelWidth;
     private final int panelHeight;
     private final Random random;
+    private Game currentGame;
 
     /**
      * Initializes the food object with the game panel dimensions and tile size.
@@ -27,12 +28,25 @@ public class Food {
         this.panelWidth = panelWidth;
         this.panelHeight = panelHeight;
         this.random = new Random();
+        this.currentGame = null;
         spawnFood(null); // Spawn food initially
     }
 
     /**
+     * Updates the current game reference to get the Banana API answer
+     * @param game The current Game object from Banana API
+     */
+    public void setCurrentGame(Game game) {
+        this.currentGame = game;
+        // Update the first food number when new game is set
+        if (currentGame != null) {
+            number1 = currentGame.getSolution();
+        }
+    }
+
+    /**
      * Spawns two food items at random locations, ensuring they don't overlap with the snake or each other.
-     * Each food is assigned a random number (0-9).
+     * First food uses the Banana API answer if available, second food is random (0-9).
      * @param snake List of snake body segments to avoid overlap.
      */
     public void spawnFood(List<Point> snake) {
@@ -45,8 +59,10 @@ public class Food {
             foodOnSnake = (snake != null && snake.contains(new Point(x1, y1)));
         } while (foodOnSnake);
 
-        // Assign a random number (0-9) to first food
-        number1 = random.nextInt(10);
+        // Keep the current API answer if available
+        if (currentGame == null) {
+            number1 = random.nextInt(10);
+        }
 
         // Spawn second food, ensuring it doesn't overlap with the first food or the snake
         do {
@@ -55,8 +71,10 @@ public class Food {
             foodOnSnake = (snake != null && snake.contains(new Point(x2, y2))) || (x1 == x2 && y1 == y2);
         } while (foodOnSnake);
 
-        // Assign a random number (0-9) to second food
-        number2 = random.nextInt(10);
+        // Generate a random number for second food that's different from the first
+        do {
+            number2 = random.nextInt(10);
+        } while (number2 == number1);
     }
 
     public Point getFirstFoodPosition() {

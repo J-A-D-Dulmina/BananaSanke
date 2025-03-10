@@ -65,12 +65,12 @@ public class LoginUI extends JFrame {
             e -> openRegisterUI());
         addComponent(panel, registerButton, gbc, 0, 4, 2);
 
-        backToRegisterLabel = createLabel("Back to Register", Color.YELLOW, new Font("Arial", Font.BOLD, 14));
+        backToRegisterLabel = createLabel("Forget Password", Color.YELLOW, new Font("Arial", Font.BOLD, 14));
         backToRegisterLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
         backToRegisterLabel.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 dispose();
-                SwingUtilities.invokeLater(() -> new RegisterUI(LoginUI.this).setVisible(true));
+                SwingUtilities.invokeLater(() -> new ForgotPasswordUI(LoginUI.this).setVisible(true));
             }
         });
         addComponent(panel, backToRegisterLabel, gbc, 0, 5, 2);

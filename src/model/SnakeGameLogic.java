@@ -3,6 +3,8 @@ package model;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
+import api.BananaAPI;
+import view.APISection;
 
 public class SnakeGameLogic {
     private final int tileSize;
@@ -13,6 +15,7 @@ public class SnakeGameLogic {
     private String direction;
     private boolean running;
     private int score;
+    private boolean waitingForAnswer;
 
     public SnakeGameLogic(int panelWidth, int panelHeight, int tileSize) {
         this.tileSize = tileSize;
@@ -22,6 +25,7 @@ public class SnakeGameLogic {
         this.direction = "RIGHT";
         this.running = true;
         this.score = 0;
+        this.waitingForAnswer = false;
 
         // Initialize snake with 3 segments
         snake.add(new Point(100, 100));
@@ -29,6 +33,18 @@ public class SnakeGameLogic {
         snake.add(new Point(60, 100));
 
         food = new Food(panelWidth, panelHeight, tileSize);
+        
+        // Wait briefly for APISection to initialize
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        
+        // Set initial game from APISection
+        if (APISection.getInstance() != null) {
+            food.setCurrentGame(APISection.getInstance().getCurrentGame());
+        }
         food.spawnFood(snake);
     }
 
@@ -65,6 +81,11 @@ public class SnakeGameLogic {
         boolean ateSecondFood = newHead.equals(food.getSecondFoodPosition());
 
         if (ateFirstFood || ateSecondFood) {
+            if (ateFirstFood) {
+                // Load next question from APISection
+                APISection.getInstance().loadNextQuestion();
+                food.setCurrentGame(APISection.getInstance().getCurrentGame());
+            }
             food.spawnFood(snake);
             score++;
         } else {
@@ -118,28 +139,33 @@ public class SnakeGameLogic {
                (direction.equals("DOWN") && newDirection.equals("UP"));
     }
 
-
     public String getDirection() {
         return direction;
     }
     
     public void reset() {
-        System.out.println("Resetting game...");  // ✅ Debugging message
+        System.out.println("Resetting game...");
 
         snake.clear();  
         direction = "RIGHT";  
         running = true;
         score = 0;
+        waitingForAnswer = false;
 
-        // ✅ Reset snake to original starting position
+        // Reset snake to original starting position
         snake.add(new Point(100, 100));
         snake.add(new Point(80, 100));
         snake.add(new Point(60, 100));
 
-        food.spawnFood(snake);  // ✅ Ensure new food is generated
+        // Get new puzzle from APISection
+        APISection.getInstance().loadNextQuestion();
+        food.setCurrentGame(APISection.getInstance().getCurrentGame());
+        food.spawnFood(snake);
 
-        System.out.println("Snake size after reset: " + snake.size());  // ✅ Debugging message
+        System.out.println("Snake size after reset: " + snake.size());
     }
 
-
+    public boolean isWaitingForAnswer() {
+        return waitingForAnswer;
+    }
 }

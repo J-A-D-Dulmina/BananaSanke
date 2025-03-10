@@ -25,8 +25,6 @@ public class BananaAPI {
             throw new MalformedURLException("API response is empty or null.");
         }
 
-        System.out.println("API Response: " + dataRaw);
-
         String[] data = dataRaw.split(",");
         if (data.length < 2) {
             throw new MalformedURLException("Invalid response format from API.");
@@ -35,7 +33,6 @@ public class BananaAPI {
         try {
             URL questionImageUrl = new URL(data[0].trim());
             int solution = Integer.parseInt(data[1].trim());
-
             return new Game(questionImageUrl, solution);
         } catch (Exception e) {
             throw new MalformedURLException("Error parsing API response: " + e.getMessage());
@@ -50,21 +47,21 @@ public class BananaAPI {
     private String readUrl(String urlString) {
         try {
             URL url = new URL(urlString);
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("GET");
-            connection.connect();
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
 
-            BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-            StringBuilder response = new StringBuilder();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                response.append(line);
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
+                StringBuilder response = new StringBuilder();
+                String line;
+
+                while ((line = reader.readLine()) != null) {
+                    response.append(line);
+                }
+
+                return response.toString();
             }
-            reader.close();
-
-            return response.toString().trim();
         } catch (Exception e) {
-            System.out.println("Error fetching data from API: " + e.getMessage());
+            System.err.println("Error reading from API: " + e.getMessage());
             return null;
         }
     }
