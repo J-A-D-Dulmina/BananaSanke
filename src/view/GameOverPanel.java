@@ -2,6 +2,7 @@ package view;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.*;
 import model.SessionManager;
 
 public class GameOverPanel extends JDialog {
@@ -17,6 +18,16 @@ public class GameOverPanel extends JDialog {
         setSize(400, 300);
         setLocationRelativeTo(mainFrame);
         setResizable(false);
+        setUndecorated(true); // Remove window decorations
+        setBackground(new Color(0, 0, 0, 0)); // Make dialog background transparent
+        
+        // Add window closing listener to reset game when dialog is closed
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowClosing(java.awt.event.WindowEvent e) {
+                resetAndClose();
+            }
+        });
         
         initializeComponents();
     }
@@ -24,11 +35,34 @@ public class GameOverPanel extends JDialog {
     private void initializeComponents() {
         setLayout(new BorderLayout());
         
-        // Main panel with dark background
-        JPanel mainPanel = new JPanel();
-        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
-        mainPanel.setBackground(new Color(40, 40, 40));
+        // Main panel with semi-transparent dark background
+        JPanel mainPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2d.setColor(new Color(40, 40, 40, 230)); // Semi-transparent background
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20); // Rounded corners
+                g2d.dispose();
+            }
+        };
+        mainPanel.setLayout(new BorderLayout());
+        mainPanel.setOpaque(false);
         mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        // Create top panel for close button
+        JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        topPanel.setOpaque(false);
+        
+        // Create close button
+        JButton closeButton = createCloseButton();
+        topPanel.add(closeButton);
+
+        // Center panel for content
+        JPanel centerPanel = new JPanel();
+        centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
+        centerPanel.setOpaque(false);
 
         // Game Over text
         JLabel gameOverLabel = createStyledLabel("Game Over!", 32);
@@ -52,14 +86,11 @@ public class GameOverPanel extends JDialog {
         buttonPanel.setOpaque(false);
 
         // Try Again button
-        JButton tryAgainButton = createStyledButton("Try Again");
-        tryAgainButton.addActionListener(e -> {
-            dispose();
-            mainFrame.getSnakeGameLogic().reset();
-        });
+        JButton tryAgainButton = createStyledButtontry("Try Again");
+        tryAgainButton.addActionListener(e -> resetAndClose());
 
         // Leaderboard button
-        JButton leaderboardButton = createStyledButton("Leaderboard");
+        JButton leaderboardButton = createStyledButtonleader("Leaderboard");
         leaderboardButton.addActionListener(e -> {
             mainFrame.showLeaderboard();
         });
@@ -68,17 +99,36 @@ public class GameOverPanel extends JDialog {
         buttonPanel.add(leaderboardButton);
 
         // Add components with spacing
-        mainPanel.add(Box.createVerticalGlue());
-        mainPanel.add(gameOverLabel);
-        mainPanel.add(Box.createVerticalStrut(20));
-        mainPanel.add(usernameLabel);
-        mainPanel.add(Box.createVerticalStrut(10));
-        mainPanel.add(scoreLabel);
-        mainPanel.add(Box.createVerticalStrut(30));
-        mainPanel.add(buttonPanel);
-        mainPanel.add(Box.createVerticalGlue());
+        centerPanel.add(Box.createVerticalGlue());
+        centerPanel.add(gameOverLabel);
+        centerPanel.add(Box.createVerticalStrut(20));
+        centerPanel.add(usernameLabel);
+        centerPanel.add(Box.createVerticalStrut(10));
+        centerPanel.add(scoreLabel);
+        centerPanel.add(Box.createVerticalStrut(30));
+        centerPanel.add(buttonPanel);
+        centerPanel.add(Box.createVerticalGlue());
 
+        mainPanel.add(topPanel, BorderLayout.NORTH);
+        mainPanel.add(centerPanel, BorderLayout.CENTER);
         add(mainPanel, BorderLayout.CENTER);
+    }
+
+    private void resetAndClose() {
+        // Close the dialog first
+        dispose();
+        
+        // Use SwingUtilities.invokeLater to ensure proper UI update sequence
+        SwingUtilities.invokeLater(() -> {
+            // Reset the game to starting state
+            mainFrame.getSnakeGameLogic().reset();
+            
+            // Reset the snake panel to click-to-start state
+            mainFrame.getSnakePanel().resetToStart();
+            
+            // Make sure the main frame is focused
+            mainFrame.requestFocusInWindow();
+        });
     }
 
     private JLabel createStyledLabel(String text, int fontSize) {
@@ -88,14 +138,106 @@ public class GameOverPanel extends JDialog {
         return label;
     }
 
-    private JButton createStyledButton(String text) {
-        JButton button = new JButton(text);
+    private JButton createCloseButton() {
+        JButton closeButton = new JButton("×") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                
+                // Draw button background
+                if (getModel().isPressed()) {
+                    g2d.setColor(new Color(255, 0, 0, 180));
+                } else if (getModel().isRollover()) {
+                    g2d.setColor(new Color(255, 0, 0, 220));
+                } else {
+                    g2d.setColor(new Color(255, 0, 0, 160));
+                }
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
+                
+                // Draw X symbol
+                g2d.setColor(Color.WHITE);
+                g2d.setFont(new Font("Arial", Font.BOLD, 16));
+                FontMetrics fm = g2d.getFontMetrics();
+                int x = (getWidth() - fm.stringWidth(getText())) / 2;
+                int y = ((getHeight() - fm.getHeight()) / 2) + fm.getAscent();
+                g2d.drawString(getText(), x, y);
+                
+                g2d.dispose();
+            }
+        };
+        closeButton.setPreferredSize(new Dimension(25, 25));
+        closeButton.setForeground(Color.WHITE);
+        closeButton.setFocusPainted(false);
+        closeButton.setBorderPainted(false);
+        closeButton.setContentAreaFilled(false);
+        closeButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        closeButton.addActionListener(e -> resetAndClose());
+        return closeButton;
+    }
+
+    private JButton createStyledButtontry(String text) {
+        JButton button = new JButton(text) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                if (getModel().isPressed()) {
+                    g2d.setColor(new Color(0, 150, 0)); // Darker when pressed
+                } else if (getModel().isRollover()) {
+                    g2d.setColor(new Color(0, 220, 0)); // Brighter when hovered
+                } else {
+                    g2d.setColor(new Color(0, 200, 0)); // Normal state
+                }
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20); // Rounded corners
+                g2d.setColor(getForeground());
+                FontMetrics fm = g2d.getFontMetrics();
+                int x = (getWidth() - fm.stringWidth(getText())) / 2;
+                int y = (getHeight() - fm.getHeight()) / 2 + fm.getAscent();
+                g2d.drawString(getText(), x, y);
+                g2d.dispose();
+            }
+        };
         button.setPreferredSize(new Dimension(150, 40));
         button.setFont(new Font("Arial", Font.BOLD, 16));
-        button.setBackground(new Color(0, 150, 255));
         button.setForeground(Color.WHITE);
         button.setFocusPainted(false);
         button.setBorderPainted(false);
+        button.setContentAreaFilled(false);
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        button.addActionListener(e -> resetAndClose());
+        return button;
+    }
+    
+    private JButton createStyledButtonleader(String text) {
+        JButton button = new JButton(text) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                if (getModel().isPressed()) {
+                    g2d.setColor(new Color(200, 200, 0)); // Darker when pressed
+                } else if (getModel().isRollover()) {
+                    g2d.setColor(new Color(255, 255, 100)); // Brighter when hovered
+                } else {
+                    g2d.setColor(Color.YELLOW); // Normal state
+                }
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20); // Rounded corners
+                g2d.setColor(getForeground());
+                FontMetrics fm = g2d.getFontMetrics();
+                int x = (getWidth() - fm.stringWidth(getText())) / 2;
+                int y = (getHeight() - fm.getHeight()) / 2 + fm.getAscent();
+                g2d.drawString(getText(), x, y);
+                g2d.dispose();
+            }
+        };
+        button.setPreferredSize(new Dimension(150, 40));
+        button.setFont(new Font("Arial", Font.BOLD, 16));
+        button.setForeground(Color.BLACK);
+        button.setFocusPainted(false);
+        button.setBorderPainted(false);
+        button.setContentAreaFilled(false);
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
         return button;
     }
 } 

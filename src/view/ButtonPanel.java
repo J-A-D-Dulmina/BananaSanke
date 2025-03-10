@@ -12,10 +12,12 @@ public class ButtonPanel extends JPanel {
     private ImageIcon leaderboardIcon, pauseIcon, resetIcon, logoutIcon;
     private GameMainInterface gameMainInterface;
     private SnakeGameLogic gameLogic; 
+    private SnakePanel snakePanel;
 
-    public ButtonPanel(GameMainInterface gameMainInterface, SnakeGameLogic gameLogic) { 
+    public ButtonPanel(GameMainInterface gameMainInterface, SnakeGameLogic gameLogic, SnakePanel snakePanel) { 
         this.gameMainInterface = gameMainInterface;
         this.gameLogic = gameLogic; 
+        this.snakePanel = snakePanel;
 
         setLayout(new GridBagLayout());
         setPreferredSize(new Dimension(500, 65));
@@ -94,12 +96,8 @@ public class ButtonPanel extends JPanel {
             if (confirm == JOptionPane.YES_OPTION) {
                 System.out.println("Reset button clicked!");  
                 gameLogic.reset();  
-
-               
-                SwingUtilities.invokeLater(() -> {
-                    gameMainInterface.repaint();
-                    gameMainInterface.revalidate();
-                });
+                
+                snakePanel.resetToStart();
 
                 System.out.println("UI repaint triggered!");
             }
@@ -107,8 +105,6 @@ public class ButtonPanel extends JPanel {
 
         return button;
     }
-
-
 
     private ImageIcon resizeIcon(ImageIcon icon) {
         Image img = icon.getImage().getScaledInstance(30, 30, Image.SCALE_SMOOTH);

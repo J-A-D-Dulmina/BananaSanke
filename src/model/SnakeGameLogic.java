@@ -3,7 +3,6 @@ package model;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
-import api.BananaAPI;
 import view.APISection;
 import view.BananaPanel;
 import view.GameMainInterface;
@@ -20,6 +19,7 @@ public class SnakeGameLogic {
     private boolean running;
     private int score;
     private boolean waitingForAnswer;
+    private static final Point STARTING_POSITION = new Point(240, 240); // Center position
 
     public SnakeGameLogic(int panelWidth, int panelHeight, int tileSize) {
         this.tileSize = tileSize;
@@ -31,29 +31,31 @@ public class SnakeGameLogic {
         this.score = 0;
         this.waitingForAnswer = false;
 
-        // Initialize snake with 3 segments
-        snake.add(new Point(100, 100));
-        snake.add(new Point(80, 100));
-        snake.add(new Point(60, 100));
+        // Initialize snake at the center with 3 segments
+        initializeSnake();
 
         food = new Food(panelWidth, panelHeight, tileSize);
         
-        // Wait briefly for APISection to initialize
-        try {
-            Thread.sleep(100);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        
-        // Set initial game from APISection
-        if (APISection.getInstance() != null) {
-            Game currentGame = APISection.getInstance().getCurrentGame();
-            if (currentGame != null) {
-                System.out.println("API Response: " + currentGame.getLocation() + ", Answer: " + currentGame.getSolution());
+        // Initialize API and food with a small delay to ensure proper setup
+        SwingUtilities.invokeLater(() -> {
+            if (APISection.getInstance() != null) {
+                Game currentGame = APISection.getInstance().getCurrentGame();
+                if (currentGame != null) {
+                    System.out.println("Initial API Response - URL: " + currentGame.getLocation());
+                    System.out.println("Initial API Response - Answer: " + currentGame.getSolution());
+                    food.setCurrentGame(currentGame);
+                    food.spawnFood(snake);
+                }
             }
-            food.setCurrentGame(currentGame);
-        }
-        food.spawnFood(snake);
+        });
+    }
+
+    private void initializeSnake() {
+        snake.clear();
+        // Start at the center position
+        snake.add(new Point(STARTING_POSITION.x, STARTING_POSITION.y));
+        snake.add(new Point(STARTING_POSITION.x - tileSize, STARTING_POSITION.y));
+        snake.add(new Point(STARTING_POSITION.x - (2 * tileSize), STARTING_POSITION.y));
     }
 
     public void updateGame() {
@@ -83,6 +85,14 @@ public class SnakeGameLogic {
         if (newHead.x >= panelWidth) newHead.x = 0;
         if (newHead.y < 0) newHead.y = panelHeight - tileSize;
         if (newHead.y >= panelHeight) newHead.y = 0;
+
+        // Check for self collision
+        if (snake.contains(newHead)) {
+            System.out.println("Snake hit itself! Game Over!");
+            running = false;
+            showGameOver();
+            return;
+        }
 
         // Check if the snake eats either of the two food items
         boolean ateFirstFood = newHead.equals(food.getFirstFoodPosition());
@@ -150,11 +160,8 @@ public class SnakeGameLogic {
             snake.remove(snake.size() - 1);
         }
 
-        if (snake.contains(newHead)) {
-            running = false;
-        } else {
-            snake.add(0, newHead);
-        }
+        // Add the new head position
+        snake.add(0, newHead);
     }
 
     public int getScore() {
@@ -202,37 +209,51 @@ public class SnakeGameLogic {
     }
     
     public void reset() {
-        System.out.println("Resetting game...");
+        System.out.println("Resetting game to starting state...");
 
-        snake.clear();  
+        // Reset all game variables
         direction = "RIGHT";  
-        running = true;
         score = 0;
         waitingForAnswer = false;
+        running = false;  // Make sure game is not running
 
-        // Reset snake to original starting position
-        snake.add(new Point(100, 100));
-        snake.add(new Point(80, 100));
-        snake.add(new Point(60, 100));
+        // Reset snake to center starting position
+        initializeSnake();
 
-        // Reset health to full
+        // Reset health and score
         if (APISection.getInstance() != null) {
+            // Reset health
             BananaPanel parent = (BananaPanel) SwingUtilities.getAncestorOfClass(BananaPanel.class, APISection.getInstance());
             if (parent != null) {
                 parent.getHealthPanel().resetHealth();
             }
+            
+            // Reset score display
+            APISection.getInstance().updateScore(0);
+            
+            // Load new question
+            APISection.getInstance().loadNextQuestion();
+            Game newGame = APISection.getInstance().getCurrentGame();
+            if (newGame != null) {
+                System.out.println("New question loaded - Answer: " + newGame.getSolution());
+                food.setCurrentGame(newGame);
+            }
         }
 
-        // Get new puzzle from APISection
-        APISection.getInstance().loadNextQuestion();
-        Game newGame = APISection.getInstance().getCurrentGame();
-        if (newGame != null) {
-            System.out.println("API Response: " + newGame.getLocation() + ", Answer: " + newGame.getSolution());
-        }
-        food.setCurrentGame(newGame);
+        // Reset food positions
         food.spawnFood(snake);
 
-        System.out.println("Snake size after reset: " + snake.size());
+        // Notify any listeners that game state has been reset
+        SwingUtilities.invokeLater(() -> {
+            // Find the parent components
+            BananaPanel parent = (BananaPanel) SwingUtilities.getAncestorOfClass(BananaPanel.class, APISection.getInstance());
+            if (parent != null) {
+                // Trigger a repaint of the game area
+                parent.repaint();
+            }
+        });
+
+        System.out.println("Game reset to starting state - Score: 0, Direction: RIGHT, Health: Full");
     }
 
     public boolean isWaitingForAnswer() {
@@ -255,5 +276,9 @@ public class SnakeGameLogic {
                 }
             }
         });
+    }
+
+    public void setRunning(boolean running) {
+        this.running = running;
     }
 }

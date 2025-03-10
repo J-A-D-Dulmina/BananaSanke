@@ -115,4 +115,8 @@ public class GameMainInterface extends JFrame {
     public SnakeGameLogic getSnakeGameLogic() {
         return snakePanel.getGameLogic();
     }
+
+    public SnakePanel getSnakePanel() {
+        return snakePanel;
+    }
 }

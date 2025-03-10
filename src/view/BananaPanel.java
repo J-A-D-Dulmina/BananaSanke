@@ -29,8 +29,7 @@ public class BananaPanel extends JPanel {
         healthPanel = new HealthPanel();
 
         // Top section: Button panel
-
-        ButtonPanel buttonPanel = new ButtonPanel(mainFrame, snakePanel.getGameLogic());
+        ButtonPanel buttonPanel = new ButtonPanel(mainFrame, snakePanel.getGameLogic(), snakePanel);
         add(buttonPanel, BorderLayout.NORTH);
 
         // Center section: API section with an image and label
