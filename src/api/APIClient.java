@@ -13,7 +13,7 @@ import model.SessionManager; // For storing authentication tokens
  */
 public class APIClient {
 
-    private static final String BASE_URL = "https://deshandulmina.info/db_api.php";
+    private static final String BASE_URL = "https://deshandulmina.info/api.php";
     private static final String CONTENT_TYPE = "application/x-www-form-urlencoded";
     private static final String ACCEPT_TYPE = "application/json";
 

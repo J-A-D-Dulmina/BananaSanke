@@ -42,24 +42,66 @@ public class RegisterUI extends JDialog {
         JPanel panel = new JPanel(new GridBagLayout());
         panel.setOpaque(false);
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(10, 10, 10, 10);
+        
+        // Title
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.gridwidth = 1;
+        gbc.insets = new Insets(10, 10, 20, 10);
         gbc.anchor = GridBagConstraints.CENTER;
+        JLabel titleLabel = createLabel("Create an Account", Color.WHITE, new Font("SansSerif", Font.BOLD, 28));
+        titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        panel.add(titleLabel, gbc);
 
-        addComponent(panel, createLabel("Create an Account", Color.WHITE, new Font("SansSerif", Font.BOLD, 28)), gbc, 0, 0, 2);
+        // Username section
+        gbc.gridy++;
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.insets = new Insets(5, 10, 2, 10);
+        panel.add(createLabel("Username", Color.WHITE, new Font("Arial", Font.BOLD, 14)), gbc);
 
-        usernameField = createPlaceholderField("Username");
-        addComponent(panel, usernameField, gbc, 0, 1, 2);
+        gbc.gridy++;
+        gbc.insets = new Insets(0, 10, 10, 10);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        usernameField = createPlaceholderField("3-20 characters, letters and numbers only");
+        panel.add(usernameField, gbc);
 
-        emailField = createPlaceholderField("Email");
-        addComponent(panel, emailField, gbc, 0, 2, 2);
+        // Email section
+        gbc.gridy++;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.insets = new Insets(5, 10, 2, 10);
+        panel.add(createLabel("Email Address", Color.WHITE, new Font("Arial", Font.BOLD, 14)), gbc);
 
-        passwordField = createPlaceholderPasswordField("Password");
-        addComponent(panel, passwordField, gbc, 0, 3, 2);
+        gbc.gridy++;
+        gbc.insets = new Insets(0, 10, 10, 10);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        emailField = createPlaceholderField("Enter valid email address");
+        panel.add(emailField, gbc);
 
+        // Password section
+        gbc.gridy++;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.insets = new Insets(5, 10, 2, 10);
+        panel.add(createLabel("Password", Color.WHITE, new Font("Arial", Font.BOLD, 14)), gbc);
+
+        gbc.gridy++;
+        gbc.insets = new Insets(0, 10, 10, 10);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        passwordField = createPlaceholderPasswordField("Minimum 6 characters");
+        panel.add(passwordField, gbc);
+
+        // Register button
+        gbc.gridy++;
+        gbc.insets = new Insets(15, 10, 10, 10);
+        gbc.anchor = GridBagConstraints.CENTER;
+        gbc.fill = GridBagConstraints.NONE;
         registerButton = createButton("Register", new Color(0, 200, 0), Color.WHITE, e -> validateAndRegister());
-        addComponent(panel, registerButton, gbc, 0, 4, 2);
+        panel.add(registerButton, gbc);
 
+        // Back to Login link
+        gbc.gridy++;
+        gbc.insets = new Insets(5, 10, 5, 10);
         backToLoginLabel = createLabel("Back to Login", Color.YELLOW, new Font("Arial", Font.BOLD, 14));
+        backToLoginLabel.setHorizontalAlignment(SwingConstants.CENTER);
         backToLoginLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
         backToLoginLabel.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
@@ -67,10 +109,13 @@ public class RegisterUI extends JDialog {
                 SwingUtilities.invokeLater(() -> new LoginUI().setVisible(true));
             }
         });
-        addComponent(panel, backToLoginLabel, gbc, 0, 5, 2);
+        panel.add(backToLoginLabel, gbc);
 
+        // Message label
+        gbc.gridy++;
         messageLabel = createLabel("", Color.RED, null);
-        addComponent(panel, messageLabel, gbc, 0, 6, 2);
+        messageLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        panel.add(messageLabel, gbc);
 
         backgroundLabel.add(panel);
     }
@@ -84,7 +129,7 @@ public class RegisterUI extends JDialog {
     }
 
     private JLabel createLabel(String text, Color color, Font font) {
-        JLabel label = new JLabel(text, SwingConstants.CENTER);
+        JLabel label = new JLabel(text, SwingConstants.LEFT);
         label.setForeground(color);
         if (font != null) {
             label.setFont(font);
@@ -110,7 +155,8 @@ public class RegisterUI extends JDialog {
         field.setBackground(Color.WHITE);
         field.setText(placeholder);
         field.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
-        field.setPreferredSize(new Dimension(220, 45));
+        field.setPreferredSize(new Dimension(280, 45));  // Made wider to accommodate validation text
+
         field.addFocusListener(new FocusAdapter() {
             public void focusGained(FocusEvent e) {
                 if (field.getText().equals(placeholder)) {
@@ -149,7 +195,6 @@ public class RegisterUI extends JDialog {
         gbc.gridx = x;
         gbc.gridy = y;
         gbc.gridwidth = gridWidth;
-        gbc.anchor = GridBagConstraints.CENTER;
         panel.add(component, gbc);
     }
     
@@ -167,18 +212,37 @@ public class RegisterUI extends JDialog {
         // Disable the Register button to prevent multiple clicks
         registerButton.setEnabled(false);
 
-        // Validate input fields
-        if (username.isEmpty() || username.equals("Username")) {
+        // Validate username
+        if (username.isEmpty() || username.equals("3-20 characters, letters and numbers only")) {
             showMessage("Username is required!", false);
             registerButton.setEnabled(true);
             return;
         }
-        if (email.isEmpty() || email.equals("Email") || !email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
-            showMessage("Enter a valid email!", false);
+        if (!username.matches("^[a-zA-Z0-9]{3,20}$")) {
+            showMessage("Username must be 3-20 characters long and contain only letters and numbers!", false);
             registerButton.setEnabled(true);
             return;
         }
-        if (password.isEmpty() || password.equals("Password") || password.length() < 6) {
+
+        // Validate email
+        if (email.isEmpty() || email.equals("Enter valid email address")) {
+            showMessage("Email is required!", false);
+            registerButton.setEnabled(true);
+            return;
+        }
+        if (!email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+            showMessage("Please enter a valid email address!", false);
+            registerButton.setEnabled(true);
+            return;
+        }
+
+        // Validate password
+        if (password.isEmpty() || password.equals("Minimum 6 characters")) {
+            showMessage("Password is required!", false);
+            registerButton.setEnabled(true);
+            return;
+        }
+        if (password.length() < 6) {
             showMessage("Password must be at least 6 characters!", false);
             registerButton.setEnabled(true);
             return;

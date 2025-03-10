@@ -48,25 +48,65 @@ public class ForgotPasswordUI extends JDialog {
         backgroundLabel = createBackgroundLabel("resources/background_image login.png");
         add(backgroundLabel, BorderLayout.CENTER);
 
-        JPanel panel = new JPanel(new GridBagLayout());
-        panel.setOpaque(false);
+        JPanel mainPanel = new JPanel(new GridBagLayout());
+        mainPanel.setOpaque(false);
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(10, 10, 10, 10);
-        gbc.anchor = GridBagConstraints.CENTER;
+        gbc.gridwidth = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(5, 10, 5, 10);
 
-        addComponent(panel, createLabel("Forgot Password", Color.WHITE, new Font("SansSerif", Font.BOLD, 28)), gbc, 0, 0, 2);
+        // Title
+        JLabel titleLabel = createLabel("Forgot Password", Color.WHITE, new Font("SansSerif", Font.BOLD, 28));
+        titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        gbc.gridy = 0;
+        mainPanel.add(titleLabel, gbc);
 
+        // Username section
+        JPanel usernamePanel = new JPanel();
+        usernamePanel.setLayout(new BoxLayout(usernamePanel, BoxLayout.Y_AXIS));
+        usernamePanel.setOpaque(false);
+
+        JLabel usernameLabel = createLabel("Username", Color.WHITE, new Font("Arial", Font.BOLD, 14));
+        usernameLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         usernameField = createPlaceholderField("Enter your username");
-        addComponent(panel, usernameField, gbc, 0, 1, 2);
+        usernameField.setAlignmentX(Component.LEFT_ALIGNMENT);
+        
+        usernamePanel.add(usernameLabel);
+        usernamePanel.add(Box.createVerticalStrut(5));
+        usernamePanel.add(usernameField);
+        
+        gbc.gridy = 1;
+        gbc.insets = new Insets(20, 140, 5, 140);
+        mainPanel.add(usernamePanel, gbc);
 
+        // Email section
+        JPanel emailPanel = new JPanel();
+        emailPanel.setLayout(new BoxLayout(emailPanel, BoxLayout.Y_AXIS));
+        emailPanel.setOpaque(false);
+
+        JLabel emailLabel = createLabel("Email Address", Color.WHITE, new Font("Arial", Font.BOLD, 14));
+        emailLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         emailField = createPlaceholderField("Enter your email");
-        addComponent(panel, emailField, gbc, 0, 2, 2);
+        emailField.setAlignmentX(Component.LEFT_ALIGNMENT);
+        
+        emailPanel.add(emailLabel);
+        emailPanel.add(Box.createVerticalStrut(5));
+        emailPanel.add(emailField);
+        
+        gbc.gridy = 2;
+        mainPanel.add(emailPanel, gbc);
 
+        // Send Email button
         sendEmailButton = createButton("Send Email", new Color(0, 200, 255), Color.WHITE, e -> sendResetEmail());
-        addComponent(panel, sendEmailButton, gbc, 0, 3, 2);
+        gbc.gridy = 3;
+        gbc.insets = new Insets(20, 10, 10, 10);
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.CENTER;
+        mainPanel.add(sendEmailButton, gbc);
 
-        // Back to Login label with clickable functionality
+        // Back to Login link
         backToLoginLabel = createLabel("Back to Login", Color.YELLOW, new Font("Arial", Font.BOLD, 14));
+        backToLoginLabel.setHorizontalAlignment(SwingConstants.CENTER);
         backToLoginLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
         backToLoginLabel.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
@@ -74,12 +114,17 @@ public class ForgotPasswordUI extends JDialog {
                 SwingUtilities.invokeLater(() -> new LoginUI().setVisible(true));
             }
         });
-        addComponent(panel, backToLoginLabel, gbc, 0, 4, 2);
+        gbc.gridy = 4;
+        gbc.insets = new Insets(5, 10, 5, 10);
+        mainPanel.add(backToLoginLabel, gbc);
 
+        // Message label
         messageLabel = createLabel("", Color.RED, null);
-        addComponent(panel, messageLabel, gbc, 0, 5, 2);
+        messageLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        gbc.gridy = 5;
+        mainPanel.add(messageLabel, gbc);
 
-        backgroundLabel.add(panel);
+        backgroundLabel.add(mainPanel);
     }
 
     /**
@@ -103,7 +148,7 @@ public class ForgotPasswordUI extends JDialog {
      * @return A styled JLabel.
      */
     private JLabel createLabel(String text, Color color, Font font) {
-        JLabel label = new JLabel(text, SwingConstants.CENTER);
+        JLabel label = new JLabel(text);
         label.setForeground(color);
         if (font != null) {
             label.setFont(font);
@@ -133,8 +178,8 @@ public class ForgotPasswordUI extends JDialog {
         field.setText(placeholder);
         field.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
         field.setPreferredSize(new Dimension(220, 45));
+        field.setMaximumSize(new Dimension(220, 45));
 
-        // Focus listeners to handle placeholder logic
         field.addFocusListener(new FocusAdapter() {
             public void focusGained(FocusEvent e) {
                 if (field.getText().equals(placeholder)) {
@@ -142,7 +187,6 @@ public class ForgotPasswordUI extends JDialog {
                     field.setForeground(Color.BLACK);
                 }
             }
-
             public void focusLost(FocusEvent e) {
                 if (field.getText().isEmpty()) {
                     field.setText(placeholder);
@@ -166,25 +210,9 @@ public class ForgotPasswordUI extends JDialog {
         button.setForeground(textColor);
         button.setBackground(bgColor);
         button.setPreferredSize(new Dimension(140, 40));
+        button.setFocusPainted(false);
         button.addActionListener(action);
         return button;
-    }
-
-    /**
-     * Adds a component to the given panel with specified layout constraints.
-     * @param panel The panel to add the component to.
-     * @param component The component to be added.
-     * @param gbc GridBagConstraints for layout positioning.
-     * @param x Grid X position.
-     * @param y Grid Y position.
-     * @param gridWidth Width of the grid cell.
-     */
-    private void addComponent(JPanel panel, JComponent component, GridBagConstraints gbc, int x, int y, int gridWidth) {
-        gbc.gridx = x;
-        gbc.gridy = y;
-        gbc.gridwidth = gridWidth;
-        gbc.anchor = GridBagConstraints.CENTER;
-        panel.add(component, gbc);
     }
 
     /**
