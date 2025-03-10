@@ -51,7 +51,33 @@ public class AccountPanel extends JDialog {
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
+                
+                // Draw blurred background
+                int blurRadius = 40; // 80% blur effect
+                int w = getWidth();
+                int h = getHeight();
+                
+                // Create a temporary image for blurring
+                Image tempImage = createImage(w, h);
+                Graphics2D tempG = (Graphics2D) tempImage.getGraphics();
+                tempG.drawImage(backgroundImage, 0, 0, w, h, null);
+                tempG.dispose();
+                
+                // Apply blur effect
+                for (int i = 0; i < blurRadius; i++) {
+                    g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.1f));
+                    for (int offsetX = -1; offsetX <= 1; offsetX++) {
+                        for (int offsetY = -1; offsetY <= 1; offsetY++) {
+                            g2.drawImage(tempImage, offsetX, offsetY, null);
+                        }
+                    }
+                }
+                
+                // Draw semi-transparent overlay for better readability
+                g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.6f));
+                g2.setColor(Color.BLACK);
+                g2.fillRect(0, 0, w, h);
+                
                 g2.dispose();
             }
         };
