@@ -8,8 +8,8 @@ import model.SessionManager;
 
 public class ButtonPanel extends JPanel {
     private static final long serialVersionUID = -1015522477771146689L;
-    private JButton leaderboardBtn, playPauseBtn, resetBtn, logoutBtn;
-    private ImageIcon leaderboardIcon, pauseIcon, resetIcon, logoutIcon;
+    private JButton leaderboardBtn, playPauseBtn, resetBtn, logoutBtn, settingsBtn, accountBtn;
+    private ImageIcon leaderboardIcon, pauseIcon, resetIcon, logoutIcon, settingsIcon, accountIcon;
     private GameMainInterface gameMainInterface;
     private SnakeGameLogic gameLogic; 
     private SnakePanel snakePanel;
@@ -31,13 +31,37 @@ public class ButtonPanel extends JPanel {
         leaderboardIcon = resizeIcon(new ImageIcon("resources/leaderboard_icon.png"));
         pauseIcon = resizeIcon(new ImageIcon("resources/pause_icon.png"));
         resetIcon = resizeIcon(new ImageIcon("resources/reset_icon.png"));
-        resizeIcon(new ImageIcon("resources/play_icon.png"));
         logoutIcon = resizeIcon(new ImageIcon("resources/Logout.png"));
+        settingsIcon = resizeIcon(new ImageIcon("resources/settings_icon.png"));
+        accountIcon = resizeIcon(new ImageIcon("resources/account_icon.png"));
 
         leaderboardBtn = createStyledButton(leaderboardIcon);
         playPauseBtn = createStyledButton(pauseIcon);
         resetBtn = createResetButton(); 
         logoutBtn = createLogoutButton();
+        settingsBtn = createStyledButton(settingsIcon);
+        accountBtn = createStyledButton(accountIcon);
+
+        playPauseBtn.addActionListener(e -> {
+            boolean isCurrentlyRunning = gameLogic.isRunning();
+            gameLogic.setRunning(!isCurrentlyRunning);
+            
+            if (!isCurrentlyRunning) {
+                playPauseBtn.setIcon(pauseIcon);
+                snakePanel.hidePauseOverlay();
+            } else {
+                playPauseBtn.setIcon(resizeIcon(new ImageIcon("resources/play_icon.png")));
+                snakePanel.showPauseOverlay();
+            }
+        });
+
+        settingsBtn.addActionListener(e -> {
+            JOptionPane.showMessageDialog(this, "Settings coming soon!");
+        });
+
+        accountBtn.addActionListener(e -> {
+            JOptionPane.showMessageDialog(this, "Account settings coming soon!");
+        });
 
         String loggedInUsername = SessionManager.getUsername();
         if (loggedInUsername == null || loggedInUsername.isEmpty()) {
@@ -63,15 +87,22 @@ public class ButtonPanel extends JPanel {
         add(leaderboardBtn, gbc);
 
         gbc.gridx = 2;
+        add(accountBtn, gbc);
+
+        gbc.gridx = 3;
         gbc.gridwidth = 2;
         add(namePanel, gbc);
 
-        gbc.gridx = 4;
+        gbc.gridx = 5;
         gbc.gridwidth = 1;
         gbc.anchor = GridBagConstraints.EAST;
-        add(playPauseBtn, gbc);
-        gbc.gridx = 5;
+        add(settingsBtn, gbc);
+        
+        gbc.gridx = 6;
         add(resetBtn, gbc);
+        
+        gbc.gridx = 7;
+        add(playPauseBtn, gbc);
 
         setVerticalAlignment();
         

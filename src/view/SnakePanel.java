@@ -13,6 +13,7 @@ public class SnakePanel extends JPanel {
     private final SnakeGameLogic gameLogic;
     private boolean gameStarted = false;
     private JPanel startOverlay;
+    private JPanel pauseOverlay;
     private Image rightMouth, leftMouth, upMouth, downMouth, snakeBody, foodImage;
 
     public SnakePanel() {
@@ -29,6 +30,12 @@ public class SnakePanel extends JPanel {
         requestFocusInWindow();
         setupKeyBindings();
         createStartOverlay();
+        createPauseOverlay();
+        
+        // Only show start overlay initially
+        if (startOverlay != null) {
+            add(startOverlay);
+        }
     }
 
     private void createStartOverlay() {
@@ -64,11 +71,59 @@ public class SnakePanel extends JPanel {
         });
     }
 
+    private void createPauseOverlay() {
+        pauseOverlay = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                g.setColor(new Color(0, 0, 0, 180)); // Semi-transparent black background
+                g.fillRect(0, 0, getWidth(), getHeight());
+                
+                // Draw the "Click to Resume" message
+                g.setColor(Color.WHITE);
+                g.setFont(new Font("Arial", Font.BOLD, 20));
+                String message = "Click to Resume";
+                FontMetrics fm = g.getFontMetrics();
+                int messageWidth = fm.stringWidth(message);
+                g.drawString(message, (getWidth() - messageWidth) / 2, getHeight() / 2);
+            }
+        };
+        
+        pauseOverlay.setOpaque(false);
+        pauseOverlay.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (!gameLogic.isRunning()) {
+                    gameLogic.setRunning(true);
+                    hidePauseOverlay();
+                    requestFocusInWindow();
+                }
+            }
+        });
+    }
+
+    public void showPauseOverlay() {
+        if (pauseOverlay.getParent() == null) {
+            add(pauseOverlay);
+        }
+        pauseOverlay.setBounds(0, 0, getWidth(), getHeight());
+        setComponentZOrder(pauseOverlay, 0);
+        revalidate();
+        repaint();
+    }
+
+    public void hidePauseOverlay() {
+        if (pauseOverlay.getParent() != null) {
+            remove(pauseOverlay);
+            revalidate();
+            repaint();
+        }
+    }
+
     @Override
     public void addNotify() {
         super.addNotify();
-        // Add the overlay once the component is added to its parent
-        if (startOverlay.getParent() == null) {
+        // Only add start overlay initially
+        if (startOverlay != null && startOverlay.getParent() == null) {
             add(startOverlay);
         }
     }
@@ -76,9 +131,12 @@ public class SnakePanel extends JPanel {
     @Override
     public void setBounds(int x, int y, int width, int height) {
         super.setBounds(x, y, width, height);
-        // Update overlay size when panel is resized
+        // Update overlay sizes when panel is resized
         if (startOverlay != null) {
             startOverlay.setBounds(0, 0, width, height);
+        }
+        if (pauseOverlay != null) {
+            pauseOverlay.setBounds(0, 0, width, height);
         }
     }
 

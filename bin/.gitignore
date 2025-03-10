@@ -1,6 +1,4 @@
-/controller/
-/view/
 /api/
+/controller/
 /model/
-/test/
-/main/
+/view/
