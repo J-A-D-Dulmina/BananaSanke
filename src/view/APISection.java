@@ -76,10 +76,6 @@ public class APISection extends JPanel {
 
         if (questionImageUrl != null) {
             currentGame = gameController.getCurrentGame();
-            int answer = currentGame.getSolution();
-            // Print the new puzzle answer to console
-            System.out.println("New Puzzle - Answer: " + answer);
-
             ImageIcon imageIcon = new ImageIcon(questionImageUrl);
             Image resizedImage = imageIcon.getImage().getScaledInstance(480, 250, Image.SCALE_SMOOTH);
             questArea.setIcon(new ImageIcon(resizedImage));

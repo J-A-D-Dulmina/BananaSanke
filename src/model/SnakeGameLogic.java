@@ -43,7 +43,11 @@ public class SnakeGameLogic {
         
         // Set initial game from APISection
         if (APISection.getInstance() != null) {
-            food.setCurrentGame(APISection.getInstance().getCurrentGame());
+            Game currentGame = APISection.getInstance().getCurrentGame();
+            if (currentGame != null) {
+                System.out.println("API Response: " + currentGame.getLocation() + ", Answer: " + currentGame.getSolution());
+            }
+            food.setCurrentGame(currentGame);
         }
         food.spawnFood(snake);
     }
@@ -81,13 +85,32 @@ public class SnakeGameLogic {
         boolean ateSecondFood = newHead.equals(food.getSecondFoodPosition());
 
         if (ateFirstFood || ateSecondFood) {
-            if (ateFirstFood) {
+            // Get the current API answer
+            int correctAnswer = APISection.getInstance().getCorrectAnswer();
+            
+            // Check if we ate the food with the correct answer
+            if (ateFirstFood && food.getFirstFoodNumber() == correctAnswer) {
                 // Load next question from APISection
                 APISection.getInstance().loadNextQuestion();
-                food.setCurrentGame(APISection.getInstance().getCurrentGame());
+                Game newGame = APISection.getInstance().getCurrentGame();
+                if (newGame != null) {
+                    System.out.println("API Response: " + newGame.getLocation() + ", Answer: " + newGame.getSolution());
+                }
+                food.setCurrentGame(newGame);
+                score++;
+            } else if (ateSecondFood && food.getSecondFoodNumber() == correctAnswer) {
+                // Load next question from APISection
+                APISection.getInstance().loadNextQuestion();
+                Game newGame = APISection.getInstance().getCurrentGame();
+                if (newGame != null) {
+                    System.out.println("API Response: " + newGame.getLocation() + ", Answer: " + newGame.getSolution());
+                }
+                food.setCurrentGame(newGame);
+                score++;
             }
+            
+            // Spawn new food regardless of whether the answer was correct
             food.spawnFood(snake);
-            score++;
         } else {
             snake.remove(snake.size() - 1);
         }
@@ -159,7 +182,11 @@ public class SnakeGameLogic {
 
         // Get new puzzle from APISection
         APISection.getInstance().loadNextQuestion();
-        food.setCurrentGame(APISection.getInstance().getCurrentGame());
+        Game newGame = APISection.getInstance().getCurrentGame();
+        if (newGame != null) {
+            System.out.println("API Response: " + newGame.getLocation() + ", Answer: " + newGame.getSolution());
+        }
+        food.setCurrentGame(newGame);
         food.spawnFood(snake);
 
         System.out.println("Snake size after reset: " + snake.size());
