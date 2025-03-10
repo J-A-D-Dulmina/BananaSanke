@@ -94,7 +94,7 @@ public class GameMainInterface extends JFrame {
     }
 
     /**
-     * Asks for confirmation before logging out and closing the game.
+     * Asks for confirmation before closing the game.
      */
     private void confirmAndExit() {
         int confirm = JOptionPane.showConfirmDialog(
@@ -105,10 +105,13 @@ public class GameMainInterface extends JFrame {
         );
 
         if (confirm == JOptionPane.YES_OPTION) {
+            // Destroy auth token and logout user
             APIClient.logoutUser();
             SessionManager.logout();
+            
+            // Close the game window and exit the application
             dispose();
-            SwingUtilities.invokeLater(() -> new LoginUI().setVisible(true));
+            System.exit(0);
         }
     }
     
