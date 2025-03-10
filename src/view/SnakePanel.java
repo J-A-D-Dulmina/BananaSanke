@@ -7,6 +7,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.List;
+import java.util.ArrayList;
 
 public class SnakePanel extends JPanel {
     private final SankeGameController gameController;
@@ -15,6 +16,7 @@ public class SnakePanel extends JPanel {
     private JPanel startOverlay;
     private JPanel pauseOverlay;
     private Image rightMouth, leftMouth, upMouth, downMouth, snakeBody, foodImage;
+    private List<MouseListener> pauseOverlayListeners = new ArrayList<>();
 
     public SnakePanel() {
         setLayout(null); // Use null layout for absolute positioning
@@ -96,6 +98,10 @@ public class SnakePanel extends JPanel {
                     gameLogic.setRunning(true);
                     hidePauseOverlay();
                     requestFocusInWindow();
+                    // Notify listeners
+                    for (MouseListener listener : pauseOverlayListeners) {
+                        listener.mouseClicked(e);
+                    }
                 }
             }
         });
@@ -273,5 +279,13 @@ public class SnakePanel extends JPanel {
         
         // Request focus for key bindings
         requestFocusInWindow();
+    }
+
+    public void addPauseOverlayClickListener(MouseListener listener) {
+        pauseOverlayListeners.add(listener);
+    }
+
+    public void removePauseOverlayClickListener(MouseListener listener) {
+        pauseOverlayListeners.remove(listener);
     }
 }
