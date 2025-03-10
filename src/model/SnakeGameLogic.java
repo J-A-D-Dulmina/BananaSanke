@@ -6,6 +6,8 @@ import java.util.List;
 import api.BananaAPI;
 import view.APISection;
 import view.BananaPanel;
+import view.GameMainInterface;
+import view.GameOverPanel;
 import javax.swing.SwingUtilities;
 
 public class SnakeGameLogic {
@@ -135,6 +137,7 @@ public class SnakeGameLogic {
                     if (!stillAlive) {
                         running = false;
                         System.out.println("Game Over - No more attempts remaining!");
+                        showGameOver();
                     } else if (parent != null && parent.getHealthPanel().isLastAttempt()) {
                         System.out.println("WARNING: This is your final attempt! Next wrong answer will end the game!");
                     }
@@ -234,5 +237,23 @@ public class SnakeGameLogic {
 
     public boolean isWaitingForAnswer() {
         return waitingForAnswer;
+    }
+
+    private void showGameOver() {
+        SwingUtilities.invokeLater(() -> {
+            BananaPanel parent = (BananaPanel) SwingUtilities.getAncestorOfClass(BananaPanel.class, APISection.getInstance());
+            if (parent != null) {
+                Component comp = parent;
+                while (comp != null && !(comp instanceof GameMainInterface)) {
+                    comp = comp.getParent();
+                }
+                
+                if (comp instanceof GameMainInterface) {
+                    GameMainInterface mainFrame = (GameMainInterface) comp;
+                    GameOverPanel gameOverPanel = new GameOverPanel(mainFrame, score);
+                    gameOverPanel.setVisible(true);
+                }
+            }
+        });
     }
 }

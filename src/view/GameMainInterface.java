@@ -1,33 +1,28 @@
 package view;
 
-import controller.LeaderboardController;
-import model.ScoreManager;
-import model.SessionManager; // Ensure session is cleared on logout
-import model.SnakeGameLogic;
-
 import javax.swing.*;
-import api.APIClient;
 import java.awt.*;
+import model.SnakeGameLogic;
+import model.SessionManager;
+import api.APIClient;
 
 /**
  * Main game interface that contains the Banana Snake game layout.
  */
 public class GameMainInterface extends JFrame {
-    private static final long serialVersionUID = 1819086738853566570L;
-    private final ScoreManager scoreManager;
+    private static final long serialVersionUID = 1L;
+    private SnakePanel snakePanel;
     private LeaderboardPanel leaderboardPanel;
-    private LeaderboardController leaderboardController;
-    private SnakePanel snakePanel; // ✅ Declare snakePanel
 
     /**
      * Constructs the main game interface with all UI components.
      */
     public GameMainInterface() {
         setTitle("Banana Snake");
-        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE); // Prevents immediate close
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        // Ask for logout when closing the game
+        // Add window closing listener
         addWindowListener(new java.awt.event.WindowAdapter() {
             @Override
             public void windowClosing(java.awt.event.WindowEvent evt) {
@@ -35,39 +30,44 @@ public class GameMainInterface extends JFrame {
             }
         });
 
-        // Initialize Score Manager & Leaderboard
-        scoreManager = new ScoreManager();
-        leaderboardPanel = new LeaderboardPanel(this);
-        leaderboardController = new LeaderboardController(scoreManager, leaderboardPanel);
+        // Initialize components
+        initializeComponents();
 
-        // Create UI Panels
-        JPanel topBar = createTopBar();
+        // Set window properties
+        setSize(1000, 600);
+        setResizable(false);
+    }
+
+    private void initializeComponents() {
+        // Create panels
         snakePanel = new SnakePanel();
-        JPanel leftPanel = new BananaPanel(this, snakePanel);
-        JPanel rightPanel = new SnakePanel();
-        
+        leaderboardPanel = new LeaderboardPanel(this);
 
-        // Create Split Pane
+        // Create top bar
+        JPanel topBar = createTopBar();
+
+        // Create game panels
+        JPanel leftPanel = new BananaPanel(this, snakePanel);
+        JPanel rightPanel = snakePanel;
+
+        // Create split pane
         JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftPanel, rightPanel);
         splitPane.setResizeWeight(0.5);
         splitPane.setDividerSize(5);
         splitPane.setEnabled(false);
         splitPane.setDividerLocation(500);
 
-        // Add Components
-        setLayout(new BorderLayout());
-        add(topBar, BorderLayout.NORTH);
-        add(splitPane, BorderLayout.CENTER);
-
-        // Ensure Split Pane Resizes Properly
+        // Add resize listener
         addComponentListener(new java.awt.event.ComponentAdapter() {
             public void componentResized(java.awt.event.ComponentEvent evt) {
                 splitPane.setDividerLocation(getWidth() / 2);
             }
         });
 
-        setSize(1000, 600);
-        setResizable(false);
+        // Add components to frame
+        setLayout(new BorderLayout());
+        add(topBar, BorderLayout.NORTH);
+        add(splitPane, BorderLayout.CENTER);
     }
 
     /**
@@ -81,8 +81,8 @@ public class GameMainInterface extends JFrame {
 
         ImageIcon imageIcon = new ImageIcon("resources/Main Header.png");
         JLabel imageLabel = new JLabel(imageIcon);
-
         topBar.add(imageLabel);
+
         return topBar;
     }
 
@@ -90,7 +90,6 @@ public class GameMainInterface extends JFrame {
      * Displays the leaderboard by updating and making it visible.
      */
     public void showLeaderboard() {
-        leaderboardController.updateLeaderboard();
         leaderboardPanel.setVisible(true);
     }
 
@@ -106,15 +105,14 @@ public class GameMainInterface extends JFrame {
         );
 
         if (confirm == JOptionPane.YES_OPTION) {
-            APIClient.logoutUser(); // Logout the user from API
-            SessionManager.logout(); // Clear local session data
-            dispose(); // Close the current game window
-            SwingUtilities.invokeLater(() -> new LoginUI().setVisible(true)); // Redirect to Login
+            APIClient.logoutUser();
+            SessionManager.logout();
+            dispose();
+            SwingUtilities.invokeLater(() -> new LoginUI().setVisible(true));
         }
     }
     
     public SnakeGameLogic getSnakeGameLogic() {
-		return snakePanel.getGameLogic();
+        return snakePanel.getGameLogic();
     }
-
 }
