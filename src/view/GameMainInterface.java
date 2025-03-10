@@ -20,7 +20,6 @@ public class GameMainInterface extends JFrame {
     public GameMainInterface() {
         setTitle("Banana Snake");
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-        setLocationRelativeTo(null);
 
         // Add window closing listener
         addWindowListener(new java.awt.event.WindowAdapter() {
@@ -36,6 +35,12 @@ public class GameMainInterface extends JFrame {
         // Set window properties
         setSize(1000, 600);
         setResizable(false);
+        
+        // Center the window on screen
+        setLocationRelativeTo(null);
+        
+        // Request focus to ensure keyboard input works
+        requestFocus();
     }
 
     private void initializeComponents() {
