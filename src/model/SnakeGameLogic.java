@@ -98,6 +98,7 @@ public class SnakeGameLogic {
                 }
                 food.setCurrentGame(newGame);
                 score++;
+                System.out.println("Score increased! Current score: " + score);
             } else if (ateSecondFood && food.getSecondFoodNumber() == correctAnswer) {
                 // Load next question from APISection
                 APISection.getInstance().loadNextQuestion();
@@ -107,6 +108,7 @@ public class SnakeGameLogic {
                 }
                 food.setCurrentGame(newGame);
                 score++;
+                System.out.println("Score increased! Current score: " + score);
             }
             
             // Spawn new food regardless of whether the answer was correct
