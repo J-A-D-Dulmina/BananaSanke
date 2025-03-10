@@ -14,6 +14,9 @@ public class HealthPanel extends JPanel {
 	private static final long serialVersionUID = 3077270849243182659L;
 	private JLabel healthLabel;
     private JLabel[] hearts = new JLabel[3];
+    private int currentHealth = 3;
+    private int wrongAttempts = 0;
+    private static final int MAX_ATTEMPTS = 4;
 
     /**
      * Constructs the health panel with health text and heart icons.
@@ -54,5 +57,71 @@ public class HealthPanel extends JPanel {
 
         gbc.gridx = 1;
         add(heartPanel, gbc); // Align hearts properly
+    }
+
+    /**
+     * Reduces health by one heart and updates the UI.
+     * @return true if still alive, false if game over
+     */
+    public boolean loseHealth() {
+        wrongAttempts++;
+        
+        if (wrongAttempts <= 3) {
+            currentHealth--;
+            updateHealthDisplay();
+            System.out.println("Lost health! Current health: " + currentHealth + " (Attempt " + wrongAttempts + " of " + MAX_ATTEMPTS + ")");
+            
+            if (wrongAttempts == 3) {
+                healthLabel.setText("FINAL CHANCE!");
+                healthLabel.setForeground(Color.RED);
+                System.out.println("FINAL CHANCE! Next wrong answer will end the game!");
+            }
+            
+            return true;
+        } else if (wrongAttempts == 4) {
+            currentHealth = 0;
+            updateHealthDisplay();
+            System.out.println("Game Over - Used all 4 attempts!");
+            return false;
+        }
+        
+        return false;
+    }
+
+    /**
+     * Updates the heart display based on current health.
+     */
+    private void updateHealthDisplay() {
+        for (int i = 0; i < hearts.length; i++) {
+            hearts[i].setVisible(i < currentHealth);
+        }
+    }
+
+    /**
+     * Resets health to full (3 hearts).
+     */
+    public void resetHealth() {
+        currentHealth = 3;
+        wrongAttempts = 0;
+        healthLabel.setText("Health: ");
+        healthLabel.setForeground(Color.WHITE);
+        updateHealthDisplay();
+        System.out.println("Health reset to full! All attempts reset!");
+    }
+
+    /**
+     * Gets the current health value.
+     * @return Current health count
+     */
+    public int getCurrentHealth() {
+        return currentHealth;
+    }
+
+    public int getWrongAttempts() {
+        return wrongAttempts;
+    }
+
+    public boolean isLastAttempt() {
+        return wrongAttempts == 3;
     }
 }

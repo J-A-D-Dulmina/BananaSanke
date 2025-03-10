@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 import api.BananaAPI;
 import view.APISection;
+import view.BananaPanel;
+import javax.swing.SwingUtilities;
 
 public class SnakeGameLogic {
     private final int tileSize;
@@ -85,11 +87,16 @@ public class SnakeGameLogic {
         boolean ateSecondFood = newHead.equals(food.getSecondFoodPosition());
 
         if (ateFirstFood || ateSecondFood) {
+            System.out.println("Snake ate food! Checking if it's the correct answer...");
             // Get the current API answer
             int correctAnswer = APISection.getInstance().getCorrectAnswer();
+            System.out.println("Correct answer from API: " + correctAnswer);
+            System.out.println("First food number: " + food.getFirstFoodNumber());
+            System.out.println("Second food number: " + food.getSecondFoodNumber());
             
             // Check if we ate the food with the correct answer
             if (ateFirstFood && food.getFirstFoodNumber() == correctAnswer) {
+                System.out.println("Ate first food with correct answer!");
                 // Load next question from APISection
                 APISection.getInstance().loadNextQuestion();
                 Game newGame = APISection.getInstance().getCurrentGame();
@@ -99,7 +106,12 @@ public class SnakeGameLogic {
                 food.setCurrentGame(newGame);
                 score++;
                 System.out.println("Score increased! Current score: " + score);
+                // Update score in UI
+                if (APISection.getInstance() != null) {
+                    APISection.getInstance().updateScore(score);
+                }
             } else if (ateSecondFood && food.getSecondFoodNumber() == correctAnswer) {
+                System.out.println("Ate second food with correct answer!");
                 // Load next question from APISection
                 APISection.getInstance().loadNextQuestion();
                 Game newGame = APISection.getInstance().getCurrentGame();
@@ -109,6 +121,24 @@ public class SnakeGameLogic {
                 food.setCurrentGame(newGame);
                 score++;
                 System.out.println("Score increased! Current score: " + score);
+                // Update score in UI
+                if (APISection.getInstance() != null) {
+                    APISection.getInstance().updateScore(score);
+                }
+            } else {
+                System.out.println("Ate food with wrong answer!");
+                // Reduce health when eating wrong answer
+                if (APISection.getInstance() != null) {
+                    BananaPanel parent = (BananaPanel) SwingUtilities.getAncestorOfClass(BananaPanel.class, APISection.getInstance());
+                    boolean stillAlive = APISection.getInstance().reduceHealth();
+                    
+                    if (!stillAlive) {
+                        running = false;
+                        System.out.println("Game Over - No more attempts remaining!");
+                    } else if (parent != null && parent.getHealthPanel().isLastAttempt()) {
+                        System.out.println("WARNING: This is your final attempt! Next wrong answer will end the game!");
+                    }
+                }
             }
             
             // Spawn new food regardless of whether the answer was correct
@@ -181,6 +211,14 @@ public class SnakeGameLogic {
         snake.add(new Point(100, 100));
         snake.add(new Point(80, 100));
         snake.add(new Point(60, 100));
+
+        // Reset health to full
+        if (APISection.getInstance() != null) {
+            BananaPanel parent = (BananaPanel) SwingUtilities.getAncestorOfClass(BananaPanel.class, APISection.getInstance());
+            if (parent != null) {
+                parent.getHealthPanel().resetHealth();
+            }
+        }
 
         // Get new puzzle from APISection
         APISection.getInstance().loadNextQuestion();

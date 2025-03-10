@@ -146,4 +146,25 @@ public class APISection extends JPanel {
     public void loadNextQuestion() {
         loadQuestionImage();
     }
+
+    /**
+     * Updates the score in the ScorePanel.
+     */
+    public void updateScore(int score) {
+        if (scorePanel != null) {
+            scorePanel.setScore(score);
+        }
+    }
+
+    /**
+     * Reduces health when eating wrong answer.
+     * @return true if still alive, false if game over
+     */
+    public boolean reduceHealth() {
+        BananaPanel parent = (BananaPanel) SwingUtilities.getAncestorOfClass(BananaPanel.class, this);
+        if (parent != null) {
+            return parent.getHealthPanel().loseHealth();
+        }
+        return true;
+    }
 }

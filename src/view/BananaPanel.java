@@ -12,6 +12,7 @@ public class BananaPanel extends JPanel {
     private final ScorePanel scorePanel; // Score Panel Reference
     private final APISection apiSection; // API Section Reference
     private final SnakePanel snakePanel;
+    private final HealthPanel healthPanel;
     
 
     /**
@@ -25,6 +26,7 @@ public class BananaPanel extends JPanel {
 
         // Initialize Score Panel
         scorePanel = new ScorePanel();
+        healthPanel = new HealthPanel();
 
         // Top section: Button panel
 
@@ -59,7 +61,7 @@ public class BananaPanel extends JPanel {
         // Health panel (right side)
         JPanel healthPanelContainer = new JPanel(new GridBagLayout());
         healthPanelContainer.setOpaque(false);
-        healthPanelContainer.add(new HealthPanel());
+        healthPanelContainer.add(healthPanel);
         bottomPanel.add(healthPanelContainer, BorderLayout.EAST);
 
         return bottomPanel;
@@ -70,5 +72,9 @@ public class BananaPanel extends JPanel {
      */
     public ScorePanel getScorePanel() {
         return scorePanel;
+    }
+
+    public HealthPanel getHealthPanel() {
+        return healthPanel;
     }
 }

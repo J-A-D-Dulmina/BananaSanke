@@ -49,4 +49,12 @@ public class ScorePanel extends JPanel {
     public int getScore() {
         return score;
     }
+
+    /**
+     * Sets the score and updates the display.
+     */
+    public void setScore(int newScore) {
+        score = newScore;
+        updateScoreLabel();
+    }
 }
