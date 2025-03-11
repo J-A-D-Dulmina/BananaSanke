@@ -6,6 +6,8 @@ import java.awt.geom.RoundRectangle2D;
 
 public class CustomDialogUtils {
     
+    private static JDialog customDialog;
+    
     public static JOptionPane showCustomConfirmDialog(Component parentComponent, String message, String title) {
         // Create custom buttons with curved edges
         JButton yesButton = new JButton("YES") {
@@ -91,25 +93,27 @@ public class CustomDialogUtils {
         optionPane.setBackground(Color.WHITE);
 
         // Create and configure the dialog
-        JDialog dialog = optionPane.createDialog(parentComponent, title);
-        dialog.setUndecorated(true); // Remove window decorations
-        dialog.setBackground(Color.WHITE);
+        customDialog = new JDialog((Window)null);
+        customDialog.setUndecorated(true);
+        customDialog.setBackground(new Color(0, 0, 0, 0));
+        customDialog.setContentPane(optionPane);
+        customDialog.pack();
         
         // Set rounded corners for the dialog
-        dialog.setShape(new RoundRectangle2D.Double(0, 0, dialog.getWidth(), dialog.getHeight(), 20, 20));
+        customDialog.setShape(new RoundRectangle2D.Double(0, 0, customDialog.getWidth(), customDialog.getHeight(), 20, 20));
         
         // Apply white background to all components recursively
-        applyWhiteBackground(dialog);
+        applyWhiteBackground(customDialog);
 
         // Add action listeners
         yesButton.addActionListener(e -> {
             optionPane.setValue(JOptionPane.YES_OPTION);
-            dialog.dispose();
+            customDialog.dispose();
         });
 
         noButton.addActionListener(e -> {
             optionPane.setValue(JOptionPane.NO_OPTION);
-            dialog.dispose();
+            customDialog.dispose();
         });
         
         return optionPane;
@@ -136,24 +140,21 @@ public class CustomDialogUtils {
 
     public static int showConfirmDialog(Component parentComponent, String message, String title) {
         JOptionPane optionPane = showCustomConfirmDialog(parentComponent, message, title);
-        JDialog dialog = optionPane.createDialog(parentComponent, title);
-        dialog.setUndecorated(true); // Remove window decorations
-        
-        // Set rounded corners for the dialog
-        dialog.setShape(new RoundRectangle2D.Double(0, 0, dialog.getWidth(), dialog.getHeight(), 20, 20));
         
         // Center the dialog on the parent component
         if (parentComponent != null) {
             Point parentLocation = parentComponent.getLocationOnScreen();
             Dimension parentSize = parentComponent.getSize();
-            Dimension dialogSize = dialog.getSize();
+            Dimension dialogSize = customDialog.getSize();
             int x = parentLocation.x + (parentSize.width - dialogSize.width) / 2;
             int y = parentLocation.y + (parentSize.height - dialogSize.height) / 2;
-            dialog.setLocation(x, y);
+            customDialog.setLocation(x, y);
+        } else {
+            customDialog.setLocationRelativeTo(null);
         }
         
-        dialog.setVisible(true);
-        dialog.dispose();
+        customDialog.setVisible(true);
+        customDialog.dispose();
         
         Object value = optionPane.getValue();
         if (value == null) {
