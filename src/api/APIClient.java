@@ -64,6 +64,14 @@ public class APIClient {
             HttpURLConnection conn = setupHttpConnection(apiUrl, method, authRequired);
 
             if ("POST".equals(method) && postData != null) {
+                // Only add auth token if it's not already in the postData
+                if (authRequired && !postData.contains("auth_token=")) {
+                    String authToken = SessionManager.getAuthToken();
+                    if (authToken != null && !authToken.isEmpty()) {
+                        String encodedToken = java.net.URLEncoder.encode(authToken, "UTF-8");
+                        postData += (postData.isEmpty() ? "" : "&") + "auth_token=" + encodedToken;
+                    }
+                }
                 writePostData(conn, postData);
             }
 
@@ -95,8 +103,6 @@ public class APIClient {
             String authToken = SessionManager.getAuthToken();
             if (authToken != null && !authToken.isEmpty()) {
                 conn.setRequestProperty("Authorization", "Bearer " + authToken);
-            } else {
-                System.out.println("Warning: No auth token available for authenticated request");
             }
         }
 
@@ -133,6 +139,7 @@ public class APIClient {
         StringBuilder response = new StringBuilder();
         
         int responseCode = conn.getResponseCode();
+        System.out.println("Response Code: " + responseCode);
 
         InputStream inputStream;
         if (responseCode >= 400) {
@@ -151,8 +158,7 @@ public class APIClient {
         }
 
         if (responseCode != HttpURLConnection.HTTP_OK) {
-            System.out.println("Request failed. Response Code: " + responseCode);
-            System.out.println("Response Body: " + response.toString());
+            System.out.println("Request failed. Response: " + response.toString());
         }
 
         return response.toString();
@@ -175,7 +181,7 @@ public class APIClient {
                 java.net.URLEncoder.encode(password, "UTF-8"));
 
             String response = sendHttpRequest(apiUrl, "POST", postData, false);
-            System.out.println("API Response (Register): " + response);
+            System.out.println("Server Response: " + response);
 
             try {
                 JSONObject jsonResponse = new JSONObject(response);
@@ -204,7 +210,7 @@ public class APIClient {
                 java.net.URLEncoder.encode(password, "UTF-8"));
 
             String response = sendHttpRequest(apiUrl, "POST", postData, false);
-            System.out.println("API Response (Login): " + response);
+            System.out.println("Server Response: " + response);
 
             try {
                 JSONObject jsonResponse = new JSONObject(response);
@@ -260,12 +266,13 @@ public class APIClient {
                 }
 
                 String apiUrl = BASE_URL + "?action=update_high_score";
-                String postData = String.format("score=%s",
-                    java.net.URLEncoder.encode(String.valueOf(newScore), "UTF-8"));
+                String postData = String.format("score=%s&auth_token=%s",
+                    java.net.URLEncoder.encode(String.valueOf(newScore), "UTF-8"),
+                    java.net.URLEncoder.encode(token, "UTF-8"));
                 
                 String response = sendHttpRequest(apiUrl, "POST", postData, true);
+                System.out.println("Server Response: " + response);
                 
-                // Clean the response by removing any PHP warnings
                 if (response.contains("<br")) {
                     response = response.replaceAll("^<br[^>]*>.*?<br[^>]*>", "").trim();
                 }
@@ -308,8 +315,8 @@ public class APIClient {
 
                 String apiUrl = BASE_URL + "?action=get_high_score";
                 String response = sendAuthenticatedGetRequest(apiUrl);
+                System.out.println("Server Response: " + response);
                 
-                // Clean the response if needed
                 if (response.contains("<br")) {
                     response = response.replaceAll("^<br[^>]*>.*?<br[^>]*>", "").trim();
                 }
