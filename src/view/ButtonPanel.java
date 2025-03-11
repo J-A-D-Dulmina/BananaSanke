@@ -76,18 +76,87 @@ public class ButtonPanel extends JPanel {
 
         // Settings button
         settingsBtn.addActionListener(e -> {
+            // Pause the game if it's running
+            boolean wasRunning = gameLogic.isRunning();
+            if (wasRunning) {
+                gameLogic.setRunning(false);
+                playPauseBtn.setIcon(resizeIcon(new ImageIcon("resources/play_icon.png")));
+                snakePanel.showPauseOverlay();
+            }
             SettingsPanel settingsPanel = new SettingsPanel(gameMainInterface);
+            settingsPanel.addWindowListener(new java.awt.event.WindowAdapter() {
+                @Override
+                public void windowClosed(java.awt.event.WindowEvent windowEvent) {
+                    snakePanel.requestFocusInWindow();
+                }
+            });
             settingsPanel.setVisible(true);
         });
 
         // Account button
         accountBtn.addActionListener(e -> {
+            // Pause the game if it's running
+            boolean wasRunning = gameLogic.isRunning();
+            if (wasRunning) {
+                gameLogic.setRunning(false);
+                playPauseBtn.setIcon(resizeIcon(new ImageIcon("resources/play_icon.png")));
+                snakePanel.showPauseOverlay();
+            }
             AccountPanel accountPanel = new AccountPanel(gameMainInterface);
+            accountPanel.addWindowListener(new java.awt.event.WindowAdapter() {
+                @Override
+                public void windowClosed(java.awt.event.WindowEvent windowEvent) {
+                    snakePanel.requestFocusInWindow();
+                }
+            });
             accountPanel.setVisible(true);
         });
 
         // Leaderboard button
-        leaderboardBtn.addActionListener(e -> gameMainInterface.showLeaderboard());
+        leaderboardBtn.addActionListener(e -> {
+            // Pause the game if it's running
+            boolean wasRunning = gameLogic.isRunning();
+            if (wasRunning) {
+                gameLogic.setRunning(false);
+                playPauseBtn.setIcon(resizeIcon(new ImageIcon("resources/play_icon.png")));
+                snakePanel.showPauseOverlay();
+            }
+            gameMainInterface.showLeaderboard();
+            snakePanel.requestFocusInWindow();
+        });
+
+        // Reset button
+        resetBtn.addActionListener(e -> {
+            int confirm = JOptionPane.showConfirmDialog(
+                this,
+                "Are you sure you want to reset the game?",
+                "Confirm Reset",
+                JOptionPane.YES_NO_OPTION
+            );
+
+            if (confirm == JOptionPane.YES_OPTION) {
+                gameLogic.reset();  
+                snakePanel.resetToStart();
+                snakePanel.requestFocusInWindow();
+            }
+        });
+
+        // Logout button
+        logoutBtn.addActionListener(e -> {
+            int confirm = JOptionPane.showConfirmDialog(
+                gameMainInterface,
+                "Are you sure you want to logout?",
+                "Confirm Logout",
+                JOptionPane.YES_NO_OPTION
+            );
+
+            if (confirm == JOptionPane.YES_OPTION) {
+                APIClient.logoutUser();
+                gameMainInterface.dispose();  
+                LoginUI loginUI = new LoginUI();
+                loginUI.setVisible(true);
+            }
+        });
 
         // Pause overlay click listener
         snakePanel.addPauseOverlayClickListener(new MouseAdapter() {
@@ -97,6 +166,7 @@ public class ButtonPanel extends JPanel {
                     gameLogic.setRunning(true);
                     playPauseBtn.setIcon(pauseIcon);
                     snakePanel.hidePauseOverlay();
+                    snakePanel.requestFocusInWindow();
                 }
             }
         });

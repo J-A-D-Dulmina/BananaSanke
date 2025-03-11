@@ -90,6 +90,7 @@ public class SnakeGameLogic {
         if (snake.contains(newHead)) {
             System.out.println("Snake hit itself! Game Over!");
             running = false;
+            SoundManager.getInstance().stopRunningSound(); // Stop running sound immediately
             showGameOver();
             return;
         }
@@ -107,23 +108,14 @@ public class SnakeGameLogic {
             System.out.println("Second food number: " + food.getSecondFoodNumber());
             
             // Check if we ate the food with the correct answer
-            if (ateFirstFood && food.getFirstFoodNumber() == correctAnswer) {
-                System.out.println("Ate first food with correct answer!");
-                // Load next question from APISection
-                APISection.getInstance().loadNextQuestion();
-                Game newGame = APISection.getInstance().getCurrentGame();
-                if (newGame != null) {
-                    System.out.println("API Response: " + newGame.getLocation() + ", Answer: " + newGame.getSolution());
-                }
-                food.setCurrentGame(newGame);
-                score++;
-                System.out.println("Score increased! Current score: " + score);
-                // Update score in UI
-                if (APISection.getInstance() != null) {
-                    APISection.getInstance().updateScore(score);
-                }
-            } else if (ateSecondFood && food.getSecondFoodNumber() == correctAnswer) {
-                System.out.println("Ate second food with correct answer!");
+            boolean correctAnswerEaten = (ateFirstFood && food.getFirstFoodNumber() == correctAnswer) ||
+                                       (ateSecondFood && food.getSecondFoodNumber() == correctAnswer);
+            
+            if (correctAnswerEaten) {
+                // Play eat sound for correct answer
+                SoundManager.getInstance().playEatSound();
+                
+                System.out.println("Ate food with correct answer!");
                 // Load next question from APISection
                 APISection.getInstance().loadNextQuestion();
                 Game newGame = APISection.getInstance().getCurrentGame();
@@ -138,6 +130,9 @@ public class SnakeGameLogic {
                     APISection.getInstance().updateScore(score);
                 }
             } else {
+                // Play wrong food sound
+                SoundManager.getInstance().playWrongFoodSound();
+                
                 System.out.println("Ate food with wrong answer!");
                 // Reduce health when eating wrong answer
                 if (APISection.getInstance() != null) {
@@ -147,7 +142,9 @@ public class SnakeGameLogic {
                     if (!stillAlive) {
                         running = false;
                         System.out.println("Game Over - No more attempts remaining!");
+                        SoundManager.getInstance().stopRunningSound(); // Stop running sound immediately
                         showGameOver();
+                        return;
                     } else if (parent != null && parent.getHealthPanel().isLastAttempt()) {
                         System.out.println("WARNING: This is your final attempt! Next wrong answer will end the game!");
                     }
@@ -211,6 +208,9 @@ public class SnakeGameLogic {
     public void reset() {
         System.out.println("Resetting game to starting state...");
 
+        // Stop any running sounds
+        SoundManager.getInstance().stopRunningSound();
+
         // Reset all game variables
         direction = "RIGHT";  
         score = 0;
@@ -262,6 +262,10 @@ public class SnakeGameLogic {
 
     private void showGameOver() {
         SwingUtilities.invokeLater(() -> {
+            // Stop running sound and play game over sound
+            SoundManager.getInstance().stopRunningSound();
+            SoundManager.getInstance().playGameOverSound();
+            
             BananaPanel parent = (BananaPanel) SwingUtilities.getAncestorOfClass(BananaPanel.class, APISection.getInstance());
             if (parent != null) {
                 Component comp = parent;
@@ -279,8 +283,12 @@ public class SnakeGameLogic {
     }
 
     public void setRunning(boolean running) {
+        if (this.running && !running) {
+            // If we're stopping the game, stop the running sound
+            SoundManager.getInstance().stopRunningSound();
+        }
         this.running = running;
-        // Update background music state
+        // Update background music state and running sound
         if (APISection.getInstance() != null) {
             BananaPanel parent = (BananaPanel) SwingUtilities.getAncestorOfClass(BananaPanel.class, APISection.getInstance());
             if (parent != null) {
@@ -290,6 +298,10 @@ public class SnakeGameLogic {
                 }
                 if (comp instanceof GameMainInterface) {
                     ((GameMainInterface) comp).handleGameStateChange(running);
+                    // Handle running sound
+                    if (running) {
+                        SoundManager.getInstance().startRunningSound();
+                    }
                 }
             }
         }
