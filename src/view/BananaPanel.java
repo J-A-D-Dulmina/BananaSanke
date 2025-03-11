@@ -13,6 +13,7 @@ public class BananaPanel extends JPanel {
     private final APISection apiSection; // API Section Reference
     private final SnakePanel snakePanel;
     private final HealthPanel healthPanel;
+    private final TimerPanel timerPanel;
     
 
     /**
@@ -27,6 +28,7 @@ public class BananaPanel extends JPanel {
         // Initialize Score Panel
         scorePanel = new ScorePanel();
         healthPanel = new HealthPanel();
+        timerPanel = new TimerPanel();
 
         // Top section: Button panel
         ButtonPanel buttonPanel = new ButtonPanel(mainFrame, snakePanel.getGameLogic(), snakePanel);
@@ -57,6 +59,12 @@ public class BananaPanel extends JPanel {
         scorePanelContainer.add(scorePanel);
         bottomPanel.add(scorePanelContainer, BorderLayout.WEST);
 
+        // Timer panel (center)
+        JPanel timerPanelContainer = new JPanel(new GridBagLayout());
+        timerPanelContainer.setOpaque(false);
+        timerPanelContainer.add(timerPanel);
+        bottomPanel.add(timerPanelContainer, BorderLayout.CENTER);
+
         // Health panel (right side)
         JPanel healthPanelContainer = new JPanel(new GridBagLayout());
         healthPanelContainer.setOpaque(false);
@@ -75,6 +83,10 @@ public class BananaPanel extends JPanel {
 
     public HealthPanel getHealthPanel() {
         return healthPanel;
+    }
+
+    public TimerPanel getTimerPanel() {
+        return timerPanel;
     }
 
     /**

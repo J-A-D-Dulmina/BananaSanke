@@ -129,6 +129,13 @@ public class SnakeGameLogic {
                 if (APISection.getInstance() != null) {
                     APISection.getInstance().updateScore(score);
                 }
+                
+                // Reset timer for next question
+                BananaPanel parent = (BananaPanel) SwingUtilities.getAncestorOfClass(BananaPanel.class, APISection.getInstance());
+                if (parent != null) {
+                    parent.getTimerPanel().reset();
+                    parent.getTimerPanel().start();
+                }
             } else {
                 // Play wrong food sound
                 SoundManager.getInstance().playWrongFoodSound();
@@ -226,6 +233,8 @@ public class SnakeGameLogic {
             BananaPanel parent = (BananaPanel) SwingUtilities.getAncestorOfClass(BananaPanel.class, APISection.getInstance());
             if (parent != null) {
                 parent.getHealthPanel().resetHealth();
+                // Reset timer
+                parent.getTimerPanel().reset();
             }
             
             // Reset score display
@@ -268,6 +277,9 @@ public class SnakeGameLogic {
             
             BananaPanel parent = (BananaPanel) SwingUtilities.getAncestorOfClass(BananaPanel.class, APISection.getInstance());
             if (parent != null) {
+                // Stop the timer
+                parent.getTimerPanel().stop();
+                
                 Component comp = parent;
                 while (comp != null && !(comp instanceof GameMainInterface)) {
                     comp = comp.getParent();
@@ -301,9 +313,23 @@ public class SnakeGameLogic {
                     // Handle running sound
                     if (running) {
                         SoundManager.getInstance().startRunningSound();
+                        // Start the timer
+                        parent.getTimerPanel().start();
+                    } else {
+                        // Stop the timer
+                        parent.getTimerPanel().stop();
                     }
                 }
             }
+        }
+    }
+
+    public void handleTimeUp() {
+        if (running) {
+            running = false;
+            System.out.println("Time's up! Game Over!");
+            SoundManager.getInstance().stopRunningSound();
+            showGameOver();
         }
     }
 }
