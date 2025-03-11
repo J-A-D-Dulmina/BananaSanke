@@ -6,6 +6,8 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 
 /**
  * Login UI for user authentication.
@@ -146,7 +148,16 @@ public class LoginUI extends JFrame {
                     }
                 }
             }
-
+        });
+        
+        // Add key listener for Enter key
+        field.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                    validateAndLogin();
+                }
+            }
         });
     }
 
