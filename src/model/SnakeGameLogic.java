@@ -1,13 +1,20 @@
 package model;
 
 import java.awt.*;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import org.json.JSONObject;
 import view.APISection;
 import view.BananaPanel;
 import view.GameMainInterface;
 import view.GameOverPanel;
 import javax.swing.SwingUtilities;
+import api.APIClient;
 
 public class SnakeGameLogic {
     private final int tileSize;
@@ -274,6 +281,24 @@ public class SnakeGameLogic {
             // Stop running sound and play game over sound
             SoundManager.getInstance().stopRunningSound();
             SoundManager.getInstance().playGameOverSound();
+            
+            // Update high score using APIClient
+            APIClient.updateHighScore(score, new APIClient.HighScoreCallback() {
+                @Override
+                public void onNewHighScore(int newHighScore) {
+                    System.out.println("New high score achieved: " + newHighScore);
+                }
+
+                @Override
+                public void onScoreNotHigher(String message) {
+                    System.out.println("Score not higher than current high score: " + message);
+                }
+
+                @Override
+                public void onFailure(String error) {
+                    System.out.println("Failed to update high score: " + error);
+                }
+            });
             
             BananaPanel parent = (BananaPanel) SwingUtilities.getAncestorOfClass(BananaPanel.class, APISection.getInstance());
             if (parent != null) {
