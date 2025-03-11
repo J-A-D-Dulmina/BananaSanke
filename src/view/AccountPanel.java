@@ -8,6 +8,9 @@ import java.awt.geom.RoundRectangle2D;
 import model.SessionManager;
 import api.APIClient;
 import model.SoundManager;
+import java.util.List;
+import controller.LeaderboardController;
+import controller.LeaderboardController.LeaderboardEntry;
 
 public class AccountPanel extends JDialog {
     private static final long serialVersionUID = 1L;
@@ -130,13 +133,33 @@ public class AccountPanel extends JDialog {
         JLabel scoreLabel = new JLabel("Best Score: ");
         scoreLabel.setForeground(Color.WHITE);
         scoreLabel.setFont(new Font("Arial", Font.BOLD, 20));
-        bestScoreLabel = new JLabel("0");
+        bestScoreLabel = new JLabel("Loading...");
         bestScoreLabel.setForeground(Color.GREEN);
         bestScoreLabel.setFont(new Font("Arial", Font.BOLD, 24));
         scorePanel.add(scoreLabel);
         scorePanel.add(bestScoreLabel);
         topPanel.add(scorePanel);
         topPanel.add(Box.createVerticalStrut(30));
+
+        // Fetch and display best score
+        LeaderboardController.getInstance().fetchTopScores(new LeaderboardController.LeaderboardCallback() {
+            @Override
+            public void onSuccess(List<LeaderboardEntry> scores) {
+                SwingUtilities.invokeLater(() -> {
+                    String username = SessionManager.getUsername();
+                    int bestScore = LeaderboardController.getInstance().getUserBestScore(username);
+                    bestScoreLabel.setText(String.valueOf(bestScore));
+                });
+            }
+
+            @Override
+            public void onFailure(String error) {
+                SwingUtilities.invokeLater(() -> {
+                    bestScoreLabel.setText("0");
+                    System.err.println("Failed to fetch best score: " + error);
+                });
+            }
+        });
 
         contentPanel.add(topPanel);
 
