@@ -28,7 +28,7 @@ public class AccountPanel extends JDialog {
         this.mainFrame = mainFrame;
         
         // Load background image
-        backgroundImage = new ImageIcon("resources/background_image.png").getImage();
+        backgroundImage = new ImageIcon("resources/background_account.png").getImage();
         
         // Set size and position
         setSize(400, 550);
@@ -365,13 +365,40 @@ public class AccountPanel extends JDialog {
     }
 
     private JTextField createStyledTextField(String text) {
-        JTextField field = new JTextField(text, 20);
+        JTextField field = new JTextField(text, 20) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                if (!isOpaque()) {
+                    Graphics2D g2 = (Graphics2D) g.create();
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    g2.setColor(getBackground());
+                    g2.fill(new RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), 10, 10));
+                    g2.dispose();
+                }
+                super.paintComponent(g);
+            }
+        };
         field.setPreferredSize(new Dimension(200, 30));
         field.setFont(new Font("Arial", Font.PLAIN, 14));
         field.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(Color.WHITE),
-            BorderFactory.createEmptyBorder(5, 5, 5, 5)
+            new AbstractBorder() {
+                @Override
+                public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
+                    Graphics2D g2 = (Graphics2D) g.create();
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    g2.setColor(Color.WHITE);
+                    g2.draw(new RoundRectangle2D.Double(x, y, width - 1, height - 1, 10, 10));
+                    g2.dispose();
+                }
+
+                @Override
+                public Insets getBorderInsets(Component c) {
+                    return new Insets(4, 8, 4, 8);
+                }
+            },
+            BorderFactory.createEmptyBorder(2, 6, 2, 6)
         ));
+        field.setOpaque(false);
         field.setBackground(Color.WHITE);
         field.setForeground(Color.BLACK);
         field.setCaretColor(Color.BLACK);
@@ -379,13 +406,40 @@ public class AccountPanel extends JDialog {
     }
 
     private JPasswordField createStyledPasswordField() {
-        JPasswordField field = new JPasswordField(15);
+        JPasswordField field = new JPasswordField(15) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                if (!isOpaque()) {
+                    Graphics2D g2 = (Graphics2D) g.create();
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    g2.setColor(getBackground());
+                    g2.fill(new RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), 10, 10));
+                    g2.dispose();
+                }
+                super.paintComponent(g);
+            }
+        };
         field.setPreferredSize(new Dimension(180, 30));
         field.setFont(new Font("Arial", Font.PLAIN, 14));
         field.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(Color.WHITE),
-            BorderFactory.createEmptyBorder(5, 5, 5, 5)
+            new AbstractBorder() {
+                @Override
+                public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
+                    Graphics2D g2 = (Graphics2D) g.create();
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    g2.setColor(Color.WHITE);
+                    g2.draw(new RoundRectangle2D.Double(x, y, width - 1, height - 1, 10, 10));
+                    g2.dispose();
+                }
+
+                @Override
+                public Insets getBorderInsets(Component c) {
+                    return new Insets(4, 8, 4, 8);
+                }
+            },
+            BorderFactory.createEmptyBorder(2, 6, 2, 6)
         ));
+        field.setOpaque(false);
         field.setBackground(Color.WHITE);
         field.setForeground(Color.BLACK);
         field.setCaretColor(Color.BLACK);
