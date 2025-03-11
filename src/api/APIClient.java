@@ -409,6 +409,44 @@ public class APIClient {
         }
     }
 
+    /**
+     * Updates the user's password.
+     *
+     * @param oldPassword The user's current password
+     * @param newPassword The new password to set
+     * @return The API response as a JSONObject
+     */
+    public static JSONObject updatePassword(String oldPassword, String newPassword) {
+        try {
+            String apiUrl = BASE_URL + "?action=update_password";
+            String postData = String.format("old_password=%s&new_password=%s",
+                java.net.URLEncoder.encode(oldPassword, "UTF-8"),
+                java.net.URLEncoder.encode(newPassword, "UTF-8"));
+
+            String response = sendAuthenticatedPostRequest(apiUrl, postData);
+            
+            // Handle HTML error responses
+            if (response.contains("<br") || response.contains("<html")) {
+                String errorMessage = response.replaceAll("<[^>]*>", "")
+                    .replaceAll("\\s+", " ")
+                    .trim();
+                JSONObject errorResponse = new JSONObject();
+                errorResponse.put("status", "error");
+                errorResponse.put("message", "Server Error: " + errorMessage);
+                return errorResponse;
+            }
+            
+            // Parse and return JSON response
+            return new JSONObject(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            JSONObject errorResponse = new JSONObject();
+            errorResponse.put("status", "error");
+            errorResponse.put("message", "Failed to update password: " + e.getMessage());
+            return errorResponse;
+        }
+    }
+
     public interface HighScoreCallback {
         void onNewHighScore(int newHighScore);
         void onScoreNotHigher(String message);

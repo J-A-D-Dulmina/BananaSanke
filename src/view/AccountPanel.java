@@ -596,35 +596,45 @@ public class AccountPanel extends JDialog {
         String newPassword = new String(newPasswordField.getPassword());
         String confirmPassword = new String(confirmPasswordField.getPassword());
         
+        // Validate input fields
         if (oldPassword.isEmpty() || newPassword.isEmpty() || confirmPassword.isEmpty()) {
             errorLabel.setText("Please fill in all password fields");
+            errorLabel.setForeground(Color.RED);
             return;
         }
         
         if (!newPassword.equals(confirmPassword)) {
             errorLabel.setText("New passwords do not match");
+            errorLabel.setForeground(Color.RED);
             return;
         }
 
-        // Create JSON object for the API request
-        JSONObject requestData = new JSONObject();
-        requestData.put("action", "update_password");
-        requestData.put("old_password", oldPassword);
-        requestData.put("new_password", newPassword);
-        requestData.put("auth_token", SessionManager.getAuthToken());
+        if (newPassword.length() < 6) {
+            errorLabel.setText("New password must be at least 6 characters long");
+            errorLabel.setForeground(Color.RED);
+            return;
+        }
 
         try {
-            String response = APIClient.sendAuthenticatedPostRequest(APIClient.BASE_URL, requestData.toString());
-            JSONObject jsonResponse = new JSONObject(response);
-
-            if (jsonResponse.getString("status").equals("success")) {
-                errorLabel.setText("Password updated successfully!");
-                errorLabel.setForeground(new Color(0, 200, 0));
+            // Send update request to API
+            JSONObject response = APIClient.updatePassword(oldPassword, newPassword);
+            
+            if (response.getString("status").equals("success")) {
+                // Clear password fields
                 oldPasswordField.setText("");
                 newPasswordField.setText("");
                 confirmPasswordField.setText("");
+                
+                // Show success message
+                errorLabel.setText("Password updated successfully!");
+                errorLabel.setForeground(new Color(0, 200, 0));
+                
+                // Play success sound
+                SoundManager.getInstance().playButtonClickSound();
             } else {
-                errorLabel.setText(jsonResponse.getString("message"));
+                // Show error message from server
+                String errorMessage = response.getString("message");
+                errorLabel.setText(errorMessage);
                 errorLabel.setForeground(Color.RED);
             }
         } catch (Exception e) {
@@ -633,10 +643,10 @@ public class AccountPanel extends JDialog {
             e.printStackTrace();
         }
         
-        // Reset error color after 2 seconds
+        // Schedule the message to disappear after 2 seconds
         Timer timer = new Timer(2000, e -> {
             errorLabel.setText("");
-            errorLabel.setForeground(Color.RED);
+            errorLabel.setForeground(Color.RED); // Reset to red for future errors
         });
         timer.setRepeats(false);
         timer.start();

@@ -48,7 +48,7 @@ public class LoginUI extends JFrame {
         gbc.insets = new Insets(10, 10, 10, 10);
         gbc.anchor = GridBagConstraints.CENTER;
 
-        JLabel titleLabel = new JLabel("Game Login", SwingConstants.CENTER);
+        JLabel titleLabel = new JLabel("Snake Login", SwingConstants.CENTER);
         titleLabel.setFont(new Font("SansSerif", Font.BOLD, 28));
         titleLabel.setForeground(Color.WHITE);
         addComponent(panel, titleLabel, gbc, 0, 0, 2);
