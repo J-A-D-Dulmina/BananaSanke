@@ -7,6 +7,7 @@ import java.awt.event.*;
 import java.awt.geom.RoundRectangle2D;
 import model.SessionManager;
 import api.APIClient;
+import model.SoundManager;
 
 public class AccountPanel extends JDialog {
     private static final long serialVersionUID = 1L;
@@ -100,6 +101,7 @@ public class AccountPanel extends JDialog {
         closeButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
+                SoundManager.getInstance().playButtonClickSound();
                 dispose();
             }
         });
@@ -287,18 +289,19 @@ public class AccountPanel extends JDialog {
         closeButtonPanel.setMinimumSize(new Dimension(30, 30));
         
         // Create close (X) button for username edit
-        JLabel closeButton = new JLabel("×");
-        closeButton.setForeground(new Color(220, 0, 0));
-        closeButton.setFont(new Font("Arial", Font.BOLD, 24));
-        closeButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        closeButton.addMouseListener(new MouseAdapter() {
+        JLabel closeEditButton = new JLabel("×");
+        closeEditButton.setForeground(new Color(220, 0, 0));
+        closeEditButton.setFont(new Font("Arial", Font.BOLD, 24));
+        closeEditButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        closeEditButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
+                SoundManager.getInstance().playButtonClickSound();
                 cancelEditing(labelPanel, editPanel);
             }
         });
         
-        closeButtonPanel.add(closeButton, BorderLayout.CENTER);
+        closeButtonPanel.add(closeEditButton, BorderLayout.CENTER);
         editPanel.add(closeButtonPanel);
         
         // Initially show label panel, hide edit panel
@@ -311,12 +314,15 @@ public class AccountPanel extends JDialog {
         editIconLabel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
+                SoundManager.getInstance().playButtonClickSound();
                 if (!isEditingUsername) {
                     isEditingUsername = true;
                     usernameField.setText(SessionManager.getUsername());
                     labelPanel.setVisible(false);
                     editPanel.setVisible(true);
                     usernameField.requestFocus();
+                    usernamePanel.revalidate();
+                    usernamePanel.repaint();
                 }
             }
         });
@@ -328,7 +334,7 @@ public class AccountPanel extends JDialog {
                 // Use SwingUtilities.invokeLater to handle focus changes properly
                 SwingUtilities.invokeLater(() -> {
                     Component focusOwner = KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
-                    if (focusOwner != closeButton) {
+                    if (focusOwner != closeEditButton) {
                         cancelEditing(labelPanel, editPanel);
                     }
                 });

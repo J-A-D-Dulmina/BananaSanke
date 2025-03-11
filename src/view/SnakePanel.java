@@ -2,6 +2,7 @@ package view;
 
 import controller.SankeGameController;
 import model.SnakeGameLogic;
+import model.SoundManager;
 
 import javax.swing.*;
 import java.awt.*;
@@ -44,10 +45,9 @@ public class SnakePanel extends JPanel {
         startOverlay = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
-                g.setColor(new Color(0, 0, 0, 255)); // Solid black background
+                g.setColor(new Color(0, 0, 0, 255));
                 g.fillRect(0, 0, getWidth(), getHeight());
                 
-                // Draw the "Click to Start" message
                 g.setColor(Color.WHITE);
                 g.setFont(new Font("Arial", Font.BOLD, 20));
                 String message = "Click to Start the Game";
@@ -62,13 +62,9 @@ public class SnakePanel extends JPanel {
             @Override
             public void mouseClicked(MouseEvent e) {
                 if (!gameStarted) {
-                    gameStarted = true;
-                    gameLogic.setRunning(true);
-                    gameController.startGame();
-                    remove(startOverlay);
-                    repaint();
+                    SoundManager.getInstance().playButtonClickSound();
+                    startGame();
                 }
-                requestFocusInWindow();
             }
         });
     }
@@ -77,10 +73,9 @@ public class SnakePanel extends JPanel {
         pauseOverlay = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
-                g.setColor(new Color(0, 0, 0, 180)); // Semi-transparent black background
+                g.setColor(new Color(0, 0, 0, 180));
                 g.fillRect(0, 0, getWidth(), getHeight());
                 
-                // Draw the "Click to Resume" message
                 g.setColor(Color.WHITE);
                 g.setFont(new Font("Arial", Font.BOLD, 20));
                 String message = "Click to Resume";
@@ -94,7 +89,8 @@ public class SnakePanel extends JPanel {
         pauseOverlay.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                if (!gameLogic.isRunning()) {
+                if (!gameLogic.isRunning() && gameStarted) {
+                    SoundManager.getInstance().playButtonClickSound();
                     gameLogic.setRunning(true);
                     hidePauseOverlay();
                     requestFocusInWindow();
@@ -108,17 +104,23 @@ public class SnakePanel extends JPanel {
     }
 
     public void showPauseOverlay() {
+        if (!gameStarted) return;  // Don't show pause overlay if game hasn't started
+        
+        if (pauseOverlay == null) {
+            createPauseOverlay();
+        }
+        
         if (pauseOverlay.getParent() == null) {
             add(pauseOverlay);
+            pauseOverlay.setBounds(0, 0, getWidth(), getHeight());
+            setComponentZOrder(pauseOverlay, 0);
+            revalidate();
+            repaint();
         }
-        pauseOverlay.setBounds(0, 0, getWidth(), getHeight());
-        setComponentZOrder(pauseOverlay, 0);
-        revalidate();
-        repaint();
     }
 
     public void hidePauseOverlay() {
-        if (pauseOverlay.getParent() != null) {
+        if (pauseOverlay != null && pauseOverlay.getParent() != null) {
             remove(pauseOverlay);
             revalidate();
             repaint();
@@ -128,9 +130,9 @@ public class SnakePanel extends JPanel {
     @Override
     public void addNotify() {
         super.addNotify();
-        // Only add start overlay initially
-        if (startOverlay != null && startOverlay.getParent() == null) {
+        if (!gameStarted && startOverlay != null && startOverlay.getParent() == null) {
             add(startOverlay);
+            startOverlay.setBounds(0, 0, getWidth(), getHeight());
         }
     }
 
@@ -256,28 +258,28 @@ public class SnakePanel extends JPanel {
         return gameController;
     }
 
-    // Add method to reset the panel state
+    // Reset method to properly handle game state
     public void resetToStart() {
         gameStarted = false;
         gameLogic.setRunning(false);
         
-        // Remove existing overlay if it exists
+        // Remove existing overlays
         if (startOverlay != null && startOverlay.getParent() != null) {
             remove(startOverlay);
+            startOverlay = null;
+        }
+        if (pauseOverlay != null && pauseOverlay.getParent() != null) {
+            remove(pauseOverlay);
         }
         
-        // Create and add new overlay
+        // Create fresh start overlay
         createStartOverlay();
         startOverlay.setBounds(0, 0, getWidth(), getHeight());
         add(startOverlay);
-        
-        // Make sure the overlay is on top
         setComponentZOrder(startOverlay, 0);
         
         revalidate();
         repaint();
-        
-        // Request focus for key bindings
         requestFocusInWindow();
     }
 
@@ -287,5 +289,24 @@ public class SnakePanel extends JPanel {
 
     public void removePauseOverlayClickListener(MouseListener listener) {
         pauseOverlayListeners.remove(listener);
+    }
+
+    public boolean isGameStarted() {
+        return gameStarted;
+    }
+
+    public void startGame() {
+        if (!gameStarted) {
+            gameStarted = true;
+            gameLogic.setRunning(true);
+            gameController.startGame();
+            if (startOverlay != null) {
+                remove(startOverlay);
+                startOverlay = null;  // Clear the reference
+            }
+            revalidate();
+            repaint();
+            requestFocusInWindow();
+        }
     }
 }

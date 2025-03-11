@@ -68,7 +68,9 @@ public class SettingsPanel extends JDialog implements Observer {
         closeButton.setForeground(new Color(220, 0, 0));
         closeButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         closeButton.addMouseListener(new MouseAdapter() {
+            @Override
             public void mouseClicked(MouseEvent e) {
+                SoundManager.getInstance().playButtonClickSound();
                 dispose();
             }
             public void mouseEntered(MouseEvent e) {
@@ -190,9 +192,10 @@ public class SettingsPanel extends JDialog implements Observer {
 
         // Update mute button listener
         muteButton.addActionListener(e -> {
-            soundManager.setMuted(muteButton.isSelected());
-            volumeSlider.setEnabled(!muteButton.isSelected());
-            muteButton.setIcon(muteButton.isSelected() ? muteIcon : audioIcon);
+            SoundManager.getInstance().playButtonClickSound();
+            boolean newMuteState = !soundManager.isMuted();
+            soundManager.setMuted(newMuteState);
+            updateMuteButtonIcon();
         });
     }
 
@@ -282,5 +285,10 @@ public class SettingsPanel extends JDialog implements Observer {
                 }
             }
         });
+    }
+
+    private void updateMuteButtonIcon() {
+        muteButton.setIcon(soundManager.isMuted() ? muteIcon : audioIcon);
+        volumeSlider.setEnabled(!soundManager.isMuted());
     }
 } 

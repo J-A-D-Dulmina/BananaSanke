@@ -7,6 +7,7 @@ import api.APIClient;
 import model.SessionManager;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import model.SoundManager;
 
 public class ButtonPanel extends JPanel {
     private static final long serialVersionUID = -1015522477771146689L;
@@ -62,20 +63,29 @@ public class ButtonPanel extends JPanel {
     private void setupButtonListeners() {
         // Play/Pause button
         playPauseBtn.addActionListener(e -> {
-            boolean isCurrentlyRunning = gameLogic.isRunning();
-            gameLogic.setRunning(!isCurrentlyRunning);
-            
-            if (!isCurrentlyRunning) {
+            SoundManager.getInstance().playButtonClickSound();
+            if (!snakePanel.isGameStarted()) {
+                // If game hasn't started, start it
+                snakePanel.startGame();
                 playPauseBtn.setIcon(pauseIcon);
-                snakePanel.hidePauseOverlay();
             } else {
-                playPauseBtn.setIcon(resizeIcon(new ImageIcon("resources/play_icon.png")));
-                snakePanel.showPauseOverlay();
+                // If game has started, toggle pause state
+                boolean isCurrentlyRunning = gameLogic.isRunning();
+                gameLogic.setRunning(!isCurrentlyRunning);
+                
+                if (!isCurrentlyRunning) {
+                    playPauseBtn.setIcon(pauseIcon);
+                    snakePanel.hidePauseOverlay();
+                } else {
+                    playPauseBtn.setIcon(resizeIcon(new ImageIcon("resources/play_icon.png")));
+                    snakePanel.showPauseOverlay();
+                }
             }
         });
 
         // Settings button
         settingsBtn.addActionListener(e -> {
+            SoundManager.getInstance().playButtonClickSound();
             // Pause the game if it's running
             boolean wasRunning = gameLogic.isRunning();
             if (wasRunning) {
@@ -95,6 +105,7 @@ public class ButtonPanel extends JPanel {
 
         // Account button
         accountBtn.addActionListener(e -> {
+            SoundManager.getInstance().playButtonClickSound();
             // Pause the game if it's running
             boolean wasRunning = gameLogic.isRunning();
             if (wasRunning) {
@@ -114,6 +125,7 @@ public class ButtonPanel extends JPanel {
 
         // Leaderboard button
         leaderboardBtn.addActionListener(e -> {
+            SoundManager.getInstance().playButtonClickSound();
             // Pause the game if it's running
             boolean wasRunning = gameLogic.isRunning();
             if (wasRunning) {
@@ -127,6 +139,7 @@ public class ButtonPanel extends JPanel {
 
         // Reset button
         resetBtn.addActionListener(e -> {
+            SoundManager.getInstance().playButtonClickSound();
             int confirm = JOptionPane.showConfirmDialog(
                 this,
                 "Are you sure you want to reset the game?",
@@ -143,6 +156,7 @@ public class ButtonPanel extends JPanel {
 
         // Logout button
         logoutBtn.addActionListener(e -> {
+            SoundManager.getInstance().playButtonClickSound();
             int confirm = JOptionPane.showConfirmDialog(
                 gameMainInterface,
                 "Are you sure you want to logout?",
@@ -163,6 +177,7 @@ public class ButtonPanel extends JPanel {
             @Override
             public void mouseClicked(MouseEvent e) {
                 if (!gameLogic.isRunning()) {
+                    SoundManager.getInstance().playButtonClickSound();
                     gameLogic.setRunning(true);
                     playPauseBtn.setIcon(pauseIcon);
                     snakePanel.hidePauseOverlay();
@@ -244,21 +259,6 @@ public class ButtonPanel extends JPanel {
         button.setContentAreaFilled(false);
         button.setBorderPainted(false);
         button.setFocusPainted(false);
-
-        button.addActionListener(e -> {
-            int confirm = JOptionPane.showConfirmDialog(
-                this,
-                "Are you sure you want to reset the game?",
-                "Confirm Reset",
-                JOptionPane.YES_NO_OPTION
-            );
-
-            if (confirm == JOptionPane.YES_OPTION) {
-                gameLogic.reset();  
-                snakePanel.resetToStart();
-            }
-        });
-
         return button;
     }
 
@@ -270,23 +270,6 @@ public class ButtonPanel extends JPanel {
         button.setContentAreaFilled(false);
         button.setBorderPainted(false);
         button.setFocusPainted(false);
-        
-        button.addActionListener(e -> {
-            int confirm = JOptionPane.showConfirmDialog(
-                gameMainInterface,
-                "Are you sure you want to logout?",
-                "Confirm Logout",
-                JOptionPane.YES_NO_OPTION
-            );
-
-            if (confirm == JOptionPane.YES_OPTION) {
-                APIClient.logoutUser();
-                gameMainInterface.dispose();  
-                LoginUI loginUI = new LoginUI();
-                loginUI.setVisible(true);
-            }
-        });
-
         return button;
     }
 
