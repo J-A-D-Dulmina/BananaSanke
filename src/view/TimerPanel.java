@@ -9,28 +9,33 @@ public class TimerPanel extends JPanel {
     private JLabel timerLabel;
     private JLabel remainLabel;
     private Timer timer;
-    private int seconds = 30;  // Start from 30 seconds
+    private int seconds = 10;  // Start from 10 seconds
     private boolean isRunning = false;
 
     public TimerPanel() {
-        setLayout(new FlowLayout(FlowLayout.CENTER, 5, 0));
-        setBackground(new Color(40, 40, 40));
-        setPreferredSize(new Dimension(200, 30));
-        setMaximumSize(new Dimension(200, 30));
+        setLayout(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        setBackground(new Color(30, 30, 30)); 
+//        setBorder(BorderFactory.createLineBorder(Color.YELLOW, 2));  
+        setPreferredSize(new Dimension(200, 60));
+        setMaximumSize(new Dimension(200, 60));
 
-        // Create "Remain Time:" label
-        remainLabel = new JLabel("Remain Time:");
+        // Create panel for labels
+        JPanel labelPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        labelPanel.setOpaque(false);
+
+        // Create "Time" label
+        remainLabel = new JLabel("Time:");
         remainLabel.setFont(new Font("Arial", Font.BOLD, 16));
         remainLabel.setForeground(Color.WHITE);
-        add(remainLabel);
+        labelPanel.add(remainLabel);
 
         // Create timer label with custom styling
-        timerLabel = new JLabel("30");  // Start from 30
-        timerLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        timerLabel = new JLabel("10");  // Start from 10
+        timerLabel.setFont(new Font("Arial", Font.BOLD, 24));
         timerLabel.setForeground(Color.WHITE);
-        timerLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        timerLabel.setPreferredSize(new Dimension(50, 30));
-        add(timerLabel);
+        labelPanel.add(timerLabel);
+
+        add(labelPanel);
 
         // Initialize timer to count down
         timer = new Timer(1000, new ActionListener() {
@@ -52,8 +57,8 @@ public class TimerPanel extends JPanel {
 
     private void updateDisplay() {
         timerLabel.setText(String.valueOf(seconds));
-        // Change color to red when less than 10 seconds remain
-        if (seconds <= 10) {
+        // Change color to red when 3 or fewer seconds remain
+        if (seconds <= 3) {
             timerLabel.setForeground(Color.RED);
         } else {
             timerLabel.setForeground(Color.WHITE);
@@ -76,7 +81,7 @@ public class TimerPanel extends JPanel {
 
     public void reset() {
         stop();
-        seconds = 30;  // Reset to 30 seconds
+        seconds = 10;  // Reset to 10 seconds
         timerLabel.setForeground(Color.WHITE);  // Reset color
         updateDisplay();
     }
