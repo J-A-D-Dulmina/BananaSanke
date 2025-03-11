@@ -6,6 +6,11 @@ import java.io.IOException;
 import java.util.Observable;
 import java.util.HashMap;
 import java.util.Map;
+import javax.swing.SwingUtilities;
+import view.APISection;
+import view.BananaPanel;
+import view.SnakePanel;
+import java.awt.Component;
 
 public class SoundManager extends Observable {
     private static SoundManager instance;
@@ -14,7 +19,8 @@ public class SoundManager extends Observable {
     private float volume = 0.5f; // 50% default volume
     private boolean isMuted = false;
     private boolean isPlaying = false;
-    private Clip runningSound = null;
+    private volatile Clip runningSound = null;
+    private final Object runningSoundLock = new Object();
 
     private SoundManager() {
         soundEffects = new HashMap<>();
@@ -34,6 +40,7 @@ public class SoundManager extends Observable {
         loadClip("wrong_food", "resources/Sound Effect/Wrong_Food_Sound.wav");
         loadClip("game_over", "resources/Sound Effect/Game_Over_Sound.wav");
         loadClip("snake_running", "resources/Sound Effect/Snake_Running_Sound.wav");
+        loadClip("button_click", "resources/Sound Effect/Button_click.wav");
     }
 
     private void loadClip(String name, String path) {
@@ -47,10 +54,8 @@ public class SoundManager extends Observable {
             AudioInputStream audioStream = AudioSystem.getAudioInputStream(soundFile);
             AudioFormat format = audioStream.getFormat();
             
-            // Create compatible line info
             DataLine.Info info = new DataLine.Info(Clip.class, format);
             
-            // Check if system supports the audio format
             if (!AudioSystem.isLineSupported(info)) {
                 System.err.println("Error: Audio line not supported for " + name);
                 return;
@@ -76,10 +81,8 @@ public class SoundManager extends Observable {
             AudioInputStream audioStream = AudioSystem.getAudioInputStream(musicFile);
             AudioFormat format = audioStream.getFormat();
             
-            // Create compatible line info
             DataLine.Info info = new DataLine.Info(Clip.class, format);
             
-            // Check if system supports the audio format
             if (!AudioSystem.isLineSupported(info)) {
                 System.err.println("Error: Audio line not supported");
                 return;
@@ -87,19 +90,17 @@ public class SoundManager extends Observable {
             
             backgroundMusic = (Clip) AudioSystem.getLine(info);
             backgroundMusic.open(audioStream);
-            
-            // Set up loop points for continuous playback
             backgroundMusic.setLoopPoints(0, -1);
             
-            // Add listener to handle clip completion
             backgroundMusic.addLineListener(event -> {
-                if (event.getType() == LineEvent.Type.STOP && isPlaying) {
-                    backgroundMusic.setFramePosition(0);
-                    backgroundMusic.start();
+                if (event.getType() == LineEvent.Type.STOP && isPlaying && !isMuted) {
+                    SwingUtilities.invokeLater(() -> {
+                        backgroundMusic.setFramePosition(0);
+                        backgroundMusic.start();
+                    });
                 }
             });
 
-            // Set initial volume
             updateVolume();
             
         } catch (Exception e) {
@@ -108,56 +109,76 @@ public class SoundManager extends Observable {
     }
 
     public void playEatSound() {
-        if (runningSound != null && runningSound.isRunning()) {
-            runningSound.stop();
-        }
-        playSound("eat");
-        // Restart running sound after a short delay
-        if (!isMuted) {
-            new Thread(() -> {
-                try {
-                    Thread.sleep(300); // Wait for eat sound to finish
-                    startRunningSound();
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-            }).start();
+        synchronized (runningSoundLock) {
+            stopRunningSound();
+            playSound("eat");
+            if (!isMuted) {
+                SwingUtilities.invokeLater(() -> {
+                    try {
+                        Thread.sleep(300);
+                        startRunningSound();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                });
+            }
         }
     }
 
     public void playWrongFoodSound() {
-        if (runningSound != null && runningSound.isRunning()) {
-            runningSound.stop();
-        }
-        playSound("wrong_food");
-        // Restart running sound after a short delay
-        if (!isMuted) {
-            new Thread(() -> {
-                try {
-                    Thread.sleep(300); // Wait for wrong food sound to finish
-                    startRunningSound();
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-            }).start();
+        synchronized (runningSoundLock) {
+            stopRunningSound();
+            playSound("wrong_food");
+            if (!isMuted) {
+                SwingUtilities.invokeLater(() -> {
+                    try {
+                        Thread.sleep(300);
+                        if (isGameRunning()) {
+                            startRunningSound();
+                        }
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                });
+            }
         }
     }
 
-    public void playGameOverSound() {
-        if (runningSound != null && runningSound.isRunning()) {
-            runningSound.stop();
+    private boolean isGameRunning() {
+        try {
+            if (APISection.getInstance() != null) {
+                Component parent = SwingUtilities.getAncestorOfClass(BananaPanel.class, APISection.getInstance());
+                if (parent instanceof BananaPanel) {
+                    BananaPanel bananaPanel = (BananaPanel) parent;
+                    SnakePanel snakePanel = bananaPanel.getSnakePanel();
+                    if (snakePanel != null) {
+                        SnakeGameLogic gameLogic = snakePanel.getGameLogic();
+                        return gameLogic != null && gameLogic.isRunning();
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error checking game running state: " + e.getMessage());
         }
-        playSound("game_over");
-        // Don't restart running sound after game over
+        return false;
+    }
+
+    public void playGameOverSound() {
+        synchronized (runningSoundLock) {
+            stopRunningSound();
+            playSound("game_over");
+        }
     }
 
     private void playSound(String name) {
         if (!isMuted && soundEffects.containsKey(name)) {
             try {
                 Clip clip = soundEffects.get(name);
-                clip.setFramePosition(0);
-                updateClipVolume(clip);
-                clip.start();
+                if (clip != null) {
+                    clip.setFramePosition(0);
+                    updateClipVolume(clip);
+                    clip.start();
+                }
             } catch (Exception e) {
                 System.err.println("Error playing sound " + name + ": " + e.getMessage());
             }
@@ -193,32 +214,38 @@ public class SoundManager extends Observable {
     }
 
     public void startRunningSound() {
-        if (!isMuted && soundEffects.containsKey("snake_running")) {
-            try {
-                if (runningSound == null) {
-                    runningSound = soundEffects.get("snake_running");
+        synchronized (runningSoundLock) {
+            if (!isMuted && soundEffects.containsKey("snake_running")) {
+                try {
+                    if (runningSound == null) {
+                        runningSound = soundEffects.get("snake_running");
+                    }
+                    if (runningSound != null && !runningSound.isRunning()) {
+                        runningSound.setFramePosition(0);
+                        updateClipVolume(runningSound);
+                        runningSound.loop(Clip.LOOP_CONTINUOUSLY);
+                    }
+                } catch (Exception e) {
+                    System.err.println("Error playing running sound: " + e.getMessage());
                 }
-                runningSound.setFramePosition(0);
-                updateClipVolume(runningSound);
-                runningSound.loop(Clip.LOOP_CONTINUOUSLY);
-            } catch (Exception e) {
-                System.err.println("Error playing running sound: " + e.getMessage());
             }
         }
     }
 
     public void stopRunningSound() {
-        if (runningSound != null) {
-            try {
-                runningSound.stop();
-            } catch (Exception e) {
-                System.err.println("Error stopping running sound: " + e.getMessage());
+        synchronized (runningSoundLock) {
+            if (runningSound != null && runningSound.isRunning()) {
+                try {
+                    runningSound.stop();
+                } catch (Exception e) {
+                    System.err.println("Error stopping running sound: " + e.getMessage());
+                }
             }
         }
     }
 
     public void setVolume(float volume) {
-        this.volume = volume;
+        this.volume = Math.max(0.0f, Math.min(1.0f, volume));
         updateVolume();
         setChanged();
         notifyObservers();
@@ -229,22 +256,18 @@ public class SoundManager extends Observable {
         updateVolume();
         
         if (muted) {
-            // Stop all sounds when muted
             pauseBackgroundMusic();
             stopRunningSound();
-            // Stop any playing sound effects
             for (Clip clip : soundEffects.values()) {
-                if (clip.isRunning()) {
+                if (clip != null && clip.isRunning()) {
                     clip.stop();
                 }
             }
         } else {
-            // Only restart background music if it was playing before
             if (isPlaying) {
                 playBackgroundMusic();
             }
-            // Only restart running sound if the game is running
-            if (runningSound != null && runningSound.isRunning()) {
+            if (isGameRunning()) {
                 startRunningSound();
             }
         }
@@ -257,23 +280,20 @@ public class SoundManager extends Observable {
             updateClipVolume(backgroundMusic);
         }
         for (Clip clip : soundEffects.values()) {
-            updateClipVolume(clip);
+            if (clip != null) {
+                updateClipVolume(clip);
+            }
         }
     }
 
     private void updateClipVolume(Clip clip) {
         try {
-            FloatControl gainControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
-            float range = gainControl.getMaximum() - gainControl.getMinimum();
-            float gain;
-            
-            if (isMuted) {
-                gain = gainControl.getMinimum();
-            } else {
-                gain = (range * volume) + gainControl.getMinimum();
+            if (clip.isControlSupported(FloatControl.Type.MASTER_GAIN)) {
+                FloatControl gainControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
+                float range = gainControl.getMaximum() - gainControl.getMinimum();
+                float gain = isMuted ? gainControl.getMinimum() : (range * volume) + gainControl.getMinimum();
+                gainControl.setValue(gain);
             }
-            
-            gainControl.setValue(gain);
         } catch (Exception e) {
             System.err.println("Error updating volume: " + e.getMessage());
         }
@@ -289,5 +309,11 @@ public class SoundManager extends Observable {
 
     public boolean isPlaying() {
         return isPlaying;
+    }
+
+    public void playButtonClickSound() {
+        if (!isMuted) {
+            playSound("button_click");
+        }
     }
 } 

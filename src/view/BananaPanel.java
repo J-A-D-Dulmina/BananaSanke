@@ -76,4 +76,11 @@ public class BananaPanel extends JPanel {
     public HealthPanel getHealthPanel() {
         return healthPanel;
     }
+
+    /**
+     * Returns the Snake Panel for game control.
+     */
+    public SnakePanel getSnakePanel() {
+        return snakePanel;
+    }
 }
