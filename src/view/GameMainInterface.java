@@ -5,6 +5,7 @@ import java.awt.*;
 import model.SnakeGameLogic;
 import model.SessionManager;
 import api.APIClient;
+import model.SoundManager;
 
 /**
  * Main game interface that contains the Banana Snake game layout.
@@ -13,12 +14,18 @@ public class GameMainInterface extends JFrame {
     private static final long serialVersionUID = 1L;
     private SnakePanel snakePanel;
     private LeaderboardPanel leaderboardPanel;
+    private SoundManager soundManager;
 
     /**
      * Constructs the main game interface with all UI components.
      */
     public GameMainInterface() {
-        setTitle("Banana Snake");
+        super("Banana Snake");
+        soundManager = SoundManager.getInstance();
+        
+        // Start playing background music
+        soundManager.playBackgroundMusic();
+
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 
         // Add window closing listener
@@ -126,5 +133,14 @@ public class GameMainInterface extends JFrame {
 
     public SnakePanel getSnakePanel() {
         return snakePanel;
+    }
+
+    // Add method to control music based on game state
+    public void handleGameStateChange(boolean isPlaying) {
+        if (isPlaying) {
+            soundManager.pauseBackgroundMusic();
+        } else {
+            soundManager.playBackgroundMusic();
+        }
     }
 }

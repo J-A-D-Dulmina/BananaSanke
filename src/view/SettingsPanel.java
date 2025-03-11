@@ -5,20 +5,25 @@ import javax.swing.border.AbstractBorder;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.RoundRectangle2D;
+import model.SoundManager;
+import java.util.Observer;
+import java.util.Observable;
 
-public class SettingsPanel extends JDialog {
+public class SettingsPanel extends JDialog implements Observer {
     private static final long serialVersionUID = 1L;
     private final GameMainInterface mainFrame;
     private JSlider volumeSlider;
     private JToggleButton muteButton;
-    private boolean isMuted = false;
-    private int lastVolume = 50;
+    private JLabel volumeNumberLabel;
     private ImageIcon muteIcon;
     private ImageIcon audioIcon;
+    private final SoundManager soundManager;
 
     public SettingsPanel(GameMainInterface mainFrame) {
         super(mainFrame, true);
         this.mainFrame = mainFrame;
+        this.soundManager = SoundManager.getInstance();
+        soundManager.addObserver(this);
         setUndecorated(true); // Remove window decorations
         setSize(400, 300);
         setResizable(false);
@@ -142,18 +147,10 @@ public class SettingsPanel extends JDialog {
         volumeSlider.setMaximumSize(new Dimension(200, 40));
 
         // Volume number label
-        JLabel volumeNumberLabel = new JLabel("50%");
+        volumeNumberLabel = new JLabel("50%");
         volumeNumberLabel.setFont(new Font("Arial", Font.BOLD, 16));
         volumeNumberLabel.setForeground(Color.WHITE);
         volumeNumberLabel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
-
-        volumeSlider.addChangeListener(e -> {
-            if (!isMuted) {
-                lastVolume = volumeSlider.getValue();
-                volumeNumberLabel.setText(lastVolume + "%");
-                System.out.println("Volume changed to: " + lastVolume);
-            }
-        });
 
         volumeControlPanel.add(volumeSlider);
         volumeControlPanel.add(volumeNumberLabel);
@@ -163,7 +160,8 @@ public class SettingsPanel extends JDialog {
         // Mute button with icon
         muteButton = createStyledToggleButton("", new Color(60, 60, 60), Color.WHITE);
         muteButton.setIcon(audioIcon);
-        muteButton.addActionListener(e -> toggleMute());
+        muteButton.setSelected(soundManager.isMuted());
+        muteButton.setIcon(soundManager.isMuted() ? muteIcon : audioIcon);
         muteButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         volumePanel.add(muteButton);
 
@@ -175,21 +173,41 @@ public class SettingsPanel extends JDialog {
 
         // Add window drag functionality
         addWindowDragListener();
+
+        // Update initial values from SoundManager
+        volumeSlider.setValue((int)(soundManager.getVolume() * 100));
+        volumeNumberLabel.setText((int)(soundManager.getVolume() * 100) + "%");
+        muteButton.setSelected(soundManager.isMuted());
+        muteButton.setIcon(soundManager.isMuted() ? muteIcon : audioIcon);
+        volumeSlider.setEnabled(!soundManager.isMuted());
+
+        // Update volume slider listener
+        volumeSlider.addChangeListener(e -> {
+            float volume = volumeSlider.getValue() / 100f;
+            soundManager.setVolume(volume);
+            volumeNumberLabel.setText(volumeSlider.getValue() + "%");
+        });
+
+        // Update mute button listener
+        muteButton.addActionListener(e -> {
+            soundManager.setMuted(muteButton.isSelected());
+            volumeSlider.setEnabled(!muteButton.isSelected());
+            muteButton.setIcon(muteButton.isSelected() ? muteIcon : audioIcon);
+        });
     }
 
-    private void toggleMute() {
-        isMuted = !isMuted;
-        if (isMuted) {
-            lastVolume = volumeSlider.getValue();
-            volumeSlider.setValue(0);
-            volumeSlider.setEnabled(false);
-            muteButton.setIcon(muteIcon);
-        } else {
-            volumeSlider.setValue(lastVolume);
-            volumeSlider.setEnabled(true);
-            muteButton.setIcon(audioIcon);
+    @Override
+    public void update(Observable o, Object arg) {
+        if (o instanceof SoundManager) {
+            SoundManager manager = (SoundManager) o;
+            SwingUtilities.invokeLater(() -> {
+                volumeSlider.setValue((int)(manager.getVolume() * 100));
+                volumeNumberLabel.setText((int)(manager.getVolume() * 100) + "%");
+                muteButton.setSelected(manager.isMuted());
+                muteButton.setIcon(manager.isMuted() ? muteIcon : audioIcon);
+                volumeSlider.setEnabled(!manager.isMuted());
+            });
         }
-        System.out.println("Sound " + (isMuted ? "muted" : "unmuted"));
     }
 
     private JToggleButton createStyledToggleButton(String text, Color bgColor, Color textColor) {

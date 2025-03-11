@@ -280,5 +280,18 @@ public class SnakeGameLogic {
 
     public void setRunning(boolean running) {
         this.running = running;
+        // Update background music state
+        if (APISection.getInstance() != null) {
+            BananaPanel parent = (BananaPanel) SwingUtilities.getAncestorOfClass(BananaPanel.class, APISection.getInstance());
+            if (parent != null) {
+                Component comp = parent;
+                while (comp != null && !(comp instanceof GameMainInterface)) {
+                    comp = comp.getParent();
+                }
+                if (comp instanceof GameMainInterface) {
+                    ((GameMainInterface) comp).handleGameStateChange(running);
+                }
+            }
+        }
     }
 }
