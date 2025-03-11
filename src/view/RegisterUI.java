@@ -7,8 +7,8 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
-import javax.swing.border.AbstractBorder;
 import java.awt.geom.RoundRectangle2D;
+import javax.swing.border.AbstractBorder;
 
 /**
  * Register UI dialog for user account creation.
@@ -26,7 +26,7 @@ public class RegisterUI extends JDialog {
 
     public RegisterUI(JFrame parent) {
         super(parent, "Register", true);
-        setSize(500, 450);
+        setSize(500, 480);
         setResizable(false);
         setLocationRelativeTo(parent);
         setLayout(new BorderLayout());
@@ -51,6 +51,7 @@ public class RegisterUI extends JDialog {
         gbc.gridwidth = 1;
         gbc.insets = new Insets(10, 10, 20, 10);
         gbc.anchor = GridBagConstraints.CENTER;
+        gbc.fill = GridBagConstraints.NONE;
         JLabel titleLabel = createLabel("Create an Account", Color.WHITE, new Font("SansSerif", Font.BOLD, 28));
         titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
         panel.add(titleLabel, gbc);
@@ -63,31 +64,27 @@ public class RegisterUI extends JDialog {
 
         gbc.gridy++;
         gbc.insets = new Insets(0, 10, 10, 10);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.fill = GridBagConstraints.NONE;
         usernameField = createPlaceholderField("3-20 characters, letters and numbers only");
         panel.add(usernameField, gbc);
 
         // Email section
         gbc.gridy++;
-        gbc.fill = GridBagConstraints.NONE;
         gbc.insets = new Insets(5, 10, 2, 10);
         panel.add(createLabel("Email Address", Color.WHITE, new Font("Arial", Font.BOLD, 14)), gbc);
 
         gbc.gridy++;
         gbc.insets = new Insets(0, 10, 10, 10);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
         emailField = createPlaceholderField("Enter valid email address");
         panel.add(emailField, gbc);
 
         // Password section
         gbc.gridy++;
-        gbc.fill = GridBagConstraints.NONE;
         gbc.insets = new Insets(5, 10, 2, 10);
         panel.add(createLabel("Password", Color.WHITE, new Font("Arial", Font.BOLD, 14)), gbc);
 
         gbc.gridy++;
         gbc.insets = new Insets(0, 10, 10, 10);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
         passwordField = createPlaceholderPasswordField("Minimum 6 characters");
         panel.add(passwordField, gbc);
 
@@ -140,13 +137,67 @@ public class RegisterUI extends JDialog {
     }
 
     private JTextField createPlaceholderField(String placeholder) {
-        JTextField field = new JTextField(20);
+        JTextField field = new JTextField(20) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                if (!isOpaque()) {
+                    Graphics2D g2 = (Graphics2D) g.create();
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    g2.setColor(getBackground());
+                    g2.fill(new RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), 10, 10));
+                    g2.dispose();
+                }
+                super.paintComponent(g);
+            }
+
+            @Override
+            public Dimension getPreferredSize() {
+                return new Dimension(280, 45);
+            }
+
+            @Override
+            public Dimension getMinimumSize() {
+                return getPreferredSize();
+            }
+
+            @Override
+            public Dimension getMaximumSize() {
+                return getPreferredSize();
+            }
+        };
         configurePlaceholderField(field, placeholder);
         return field;
     }
 
     private JPasswordField createPlaceholderPasswordField(String placeholder) {
-        JPasswordField field = new JPasswordField(20);
+        JPasswordField field = new JPasswordField(20) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                if (!isOpaque()) {
+                    Graphics2D g2 = (Graphics2D) g.create();
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    g2.setColor(getBackground());
+                    g2.fill(new RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), 10, 10));
+                    g2.dispose();
+                }
+                super.paintComponent(g);
+            }
+
+            @Override
+            public Dimension getPreferredSize() {
+                return new Dimension(280, 45);
+            }
+
+            @Override
+            public Dimension getMinimumSize() {
+                return getPreferredSize();
+            }
+
+            @Override
+            public Dimension getMaximumSize() {
+                return getPreferredSize();
+            }
+        };
         configurePlaceholderField(field, placeholder);
         field.setEchoChar((char) 0);
         return field;
@@ -156,12 +207,6 @@ public class RegisterUI extends JDialog {
         field.setForeground(Color.GRAY);
         field.setBackground(Color.WHITE);
         field.setText(placeholder);
-        field.setPreferredSize(new Dimension(280, 45));  // Made wider to accommodate validation text
-        
-        // Make field non-opaque for custom painting
-        field.setOpaque(false);
-        
-        // Custom rounded border and background
         field.setBorder(BorderFactory.createCompoundBorder(
             new AbstractBorder() {
                 @Override
@@ -178,50 +223,81 @@ public class RegisterUI extends JDialog {
                     return new Insets(4, 8, 4, 8);
                 }
             },
-            BorderFactory.createEmptyBorder(2, 10, 2, 10)
+            BorderFactory.createEmptyBorder(2, 6, 2, 6)
         ));
-
-        // Add custom background painting
-        field.setUI(new javax.swing.plaf.basic.BasicTextFieldUI() {
-            @Override
-            protected void paintBackground(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(Color.WHITE);
-                g2.fill(new RoundRectangle2D.Double(0, 0, field.getWidth(), field.getHeight(), 10, 10));
-                g2.dispose();
-            }
-        });
+        field.setPreferredSize(new Dimension(280, 45));
+        field.setMinimumSize(new Dimension(280, 45));
+        field.setMaximumSize(new Dimension(280, 45));
+        field.setOpaque(true);
+        field.setCaretColor(Color.BLACK);
 
         field.addFocusListener(new FocusAdapter() {
             public void focusGained(FocusEvent e) {
                 if (field.getText().equals(placeholder)) {
                     field.setText("");
                     field.setForeground(Color.BLACK);
-                    if (field instanceof JPasswordField) {
-                        ((JPasswordField) field).setEchoChar('*');
-                    }
                 }
             }
             public void focusLost(FocusEvent e) {
                 if (field.getText().isEmpty()) {
                     field.setText(placeholder);
                     field.setForeground(Color.GRAY);
-                    if (field instanceof JPasswordField) {
-                        ((JPasswordField) field).setEchoChar((char) 0);
-                    }
                 }
             }
         });
     }
 
     private JButton createButton(String text, Color bgColor, Color textColor, ActionListener action) {
-        JButton button = new JButton(text);
+        JButton button = new JButton(text) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                
+                // Button background color based on state
+                if (getModel().isPressed()) {
+                    g2.setColor(bgColor.darker());
+                } else if (getModel().isRollover()) {
+                    g2.setColor(bgColor.brighter());
+                } else {
+                    g2.setColor(bgColor);
+                }
+                
+                g2.fill(new RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), 10, 10));
+                g2.dispose();
+                
+                // Draw the text
+                FontMetrics fm = g.getFontMetrics();
+                int x = (getWidth() - fm.stringWidth(getText())) / 2;
+                int y = ((getHeight() - fm.getHeight()) / 2) + fm.getAscent();
+                g.setColor(textColor);
+                g.drawString(getText(), x, y);
+            }
+
+            @Override
+            public Dimension getPreferredSize() {
+                return new Dimension(140, 40);
+            }
+
+            @Override
+            public Dimension getMinimumSize() {
+                return getPreferredSize();
+            }
+
+            @Override
+            public Dimension getMaximumSize() {
+                return getPreferredSize();
+            }
+        };
+        
         button.setFont(new Font("Arial", Font.BOLD, 16));
         button.setForeground(textColor);
         button.setBackground(bgColor);
-        button.setPreferredSize(new Dimension(140, 40));
         button.setFocusPainted(false);
+        button.setBorderPainted(false);
+        button.setContentAreaFilled(false);
+        button.setOpaque(false);
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
         button.addActionListener(action);
         return button;
     }

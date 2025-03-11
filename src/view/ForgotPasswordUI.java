@@ -5,8 +5,8 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
-import javax.swing.border.AbstractBorder;
 import java.awt.geom.RoundRectangle2D;
+import javax.swing.border.AbstractBorder;
 
 /**
  * Forgot Password UI dialog allowing users to reset their password via email.
@@ -54,7 +54,7 @@ public class ForgotPasswordUI extends JDialog {
         mainPanel.setOpaque(false);
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridwidth = 1;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.fill = GridBagConstraints.NONE;
         gbc.insets = new Insets(5, 10, 5, 10);
 
         // Title
@@ -67,6 +67,7 @@ public class ForgotPasswordUI extends JDialog {
         JPanel usernamePanel = new JPanel();
         usernamePanel.setLayout(new BoxLayout(usernamePanel, BoxLayout.Y_AXIS));
         usernamePanel.setOpaque(false);
+        usernamePanel.setMaximumSize(new Dimension(220, 80));
 
         JLabel usernameLabel = createLabel("Username", Color.WHITE, new Font("Arial", Font.BOLD, 14));
         usernameLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -85,6 +86,7 @@ public class ForgotPasswordUI extends JDialog {
         JPanel emailPanel = new JPanel();
         emailPanel.setLayout(new BoxLayout(emailPanel, BoxLayout.Y_AXIS));
         emailPanel.setOpaque(false);
+        emailPanel.setMaximumSize(new Dimension(220, 80));
 
         JLabel emailLabel = createLabel("Email Address", Color.WHITE, new Font("Arial", Font.BOLD, 14));
         emailLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -99,7 +101,7 @@ public class ForgotPasswordUI extends JDialog {
         mainPanel.add(emailPanel, gbc);
 
         // Send Email button
-        sendEmailButton = createButton("Send Email", new Color(0, 200, 255), Color.WHITE, e -> sendResetEmail());
+        sendEmailButton = createButton("Send Email", Color.GREEN, Color.WHITE, e -> sendResetEmail());
         gbc.gridy = 3;
         gbc.insets = new Insets(20, 10, 10, 10);
         gbc.fill = GridBagConstraints.NONE;
@@ -164,27 +166,38 @@ public class ForgotPasswordUI extends JDialog {
      * @return A JTextField with placeholder functionality.
      */
     private JTextField createPlaceholderField(String placeholder) {
-        JTextField field = new JTextField(20);
-        configurePlaceholderField(field, placeholder);
-        return field;
-    }
+        JTextField field = new JTextField(20) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                if (!isOpaque()) {
+                    Graphics2D g2 = (Graphics2D) g.create();
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    g2.setColor(getBackground());
+                    g2.fill(new RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), 10, 10));
+                    g2.dispose();
+                }
+                super.paintComponent(g);
+            }
 
-    /**
-     * Configures placeholder behavior for a JTextField.
-     * @param field The text field to configure.
-     * @param placeholder The placeholder text.
-     */
-    private void configurePlaceholderField(JTextField field, String placeholder) {
+            @Override
+            public Dimension getPreferredSize() {
+                return new Dimension(220, 45);
+            }
+
+            @Override
+            public Dimension getMinimumSize() {
+                return getPreferredSize();
+            }
+
+            @Override
+            public Dimension getMaximumSize() {
+                return getPreferredSize();
+            }
+        };
+        
         field.setForeground(Color.GRAY);
         field.setBackground(Color.WHITE);
         field.setText(placeholder);
-        field.setPreferredSize(new Dimension(220, 45));
-        field.setMaximumSize(new Dimension(220, 45));
-        
-        // Make field non-opaque for custom painting
-        field.setOpaque(false);
-        
-        // Custom rounded border and background
         field.setBorder(BorderFactory.createCompoundBorder(
             new AbstractBorder() {
                 @Override
@@ -201,20 +214,62 @@ public class ForgotPasswordUI extends JDialog {
                     return new Insets(4, 8, 4, 8);
                 }
             },
-            BorderFactory.createEmptyBorder(2, 10, 2, 10)
+            BorderFactory.createEmptyBorder(2, 6, 2, 6)
         ));
+        field.setPreferredSize(new Dimension(220, 45));
+        field.setMinimumSize(new Dimension(220, 45));
+        field.setMaximumSize(new Dimension(220, 45));
+        field.setOpaque(true);
+        field.setCaretColor(Color.BLACK);
 
-        // Add custom background painting
-        field.setUI(new javax.swing.plaf.basic.BasicTextFieldUI() {
-            @Override
-            protected void paintBackground(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(Color.WHITE);
-                g2.fill(new RoundRectangle2D.Double(0, 0, field.getWidth(), field.getHeight(), 10, 10));
-                g2.dispose();
+        field.addFocusListener(new FocusAdapter() {
+            public void focusGained(FocusEvent e) {
+                if (field.getText().equals(placeholder)) {
+                    field.setText("");
+                    field.setForeground(Color.BLACK);
+                }
+            }
+            public void focusLost(FocusEvent e) {
+                if (field.getText().isEmpty()) {
+                    field.setText(placeholder);
+                    field.setForeground(Color.GRAY);
+                }
             }
         });
+        return field;
+    }
+
+    /**
+     * Configures placeholder behavior for a JTextField.
+     * @param field The text field to configure.
+     * @param placeholder The placeholder text.
+     */
+    private void configurePlaceholderField(JTextField field, String placeholder) {
+        field.setForeground(Color.GRAY);
+        field.setBackground(Color.WHITE);
+        field.setText(placeholder);
+        field.setBorder(BorderFactory.createCompoundBorder(
+            new AbstractBorder() {
+                @Override
+                public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
+                    Graphics2D g2 = (Graphics2D) g.create();
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    g2.setColor(Color.WHITE);
+                    g2.draw(new RoundRectangle2D.Double(x, y, width - 1, height - 1, 10, 10));
+                    g2.dispose();
+                }
+
+                @Override
+                public Insets getBorderInsets(Component c) {
+                    return new Insets(4, 8, 4, 8);
+                }
+            },
+            BorderFactory.createEmptyBorder(2, 6, 2, 6)
+        ));
+        field.setPreferredSize(new Dimension(220, 45));
+        field.setMaximumSize(new Dimension(220, 45));
+        field.setOpaque(true);
+        field.setCaretColor(Color.BLACK);
 
         field.addFocusListener(new FocusAdapter() {
             public void focusGained(FocusEvent e) {
@@ -241,12 +296,56 @@ public class ForgotPasswordUI extends JDialog {
      * @return A styled JButton.
      */
     private JButton createButton(String text, Color bgColor, Color textColor, ActionListener action) {
-        JButton button = new JButton(text);
+        JButton button = new JButton(text) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                
+                // Button background color based on state
+                if (getModel().isPressed()) {
+                    g2.setColor(bgColor.darker());
+                } else if (getModel().isRollover()) {
+                    g2.setColor(bgColor.brighter());
+                } else {
+                    g2.setColor(bgColor);
+                }
+                
+                g2.fill(new RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), 10, 10));
+                g2.dispose();
+                
+                // Draw the text
+                FontMetrics fm = g.getFontMetrics();
+                int x = (getWidth() - fm.stringWidth(getText())) / 2;
+                int y = ((getHeight() - fm.getHeight()) / 2) + fm.getAscent();
+                g.setColor(textColor);
+                g.drawString(getText(), x, y);
+            }
+
+            @Override
+            public Dimension getPreferredSize() {
+                return new Dimension(140, 40);
+            }
+
+            @Override
+            public Dimension getMinimumSize() {
+                return getPreferredSize();
+            }
+
+            @Override
+            public Dimension getMaximumSize() {
+                return getPreferredSize();
+            }
+        };
+        
         button.setFont(new Font("Arial", Font.BOLD, 16));
         button.setForeground(textColor);
         button.setBackground(bgColor);
-        button.setPreferredSize(new Dimension(140, 40));
         button.setFocusPainted(false);
+        button.setBorderPainted(false);
+        button.setContentAreaFilled(false);
+        button.setOpaque(false);
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
         button.addActionListener(action);
         return button;
     }

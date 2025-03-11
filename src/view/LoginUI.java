@@ -6,8 +6,6 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
-import javax.swing.border.AbstractBorder;
-import java.awt.geom.RoundRectangle2D;
 
 /**
  * Login UI for user authentication.
@@ -127,43 +125,8 @@ public class LoginUI extends JFrame {
         field.setForeground(Color.GRAY);
         field.setBackground(Color.WHITE);
         field.setText(placeholder);
+        field.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
         field.setPreferredSize(new Dimension(220, 45));
-        
-        // Make field non-opaque for custom painting
-        field.setOpaque(false);
-        
-        // Custom rounded border and background
-        field.setBorder(BorderFactory.createCompoundBorder(
-            new AbstractBorder() {
-                @Override
-                public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
-                    Graphics2D g2 = (Graphics2D) g.create();
-                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                    g2.setColor(Color.WHITE);
-                    g2.draw(new RoundRectangle2D.Double(x, y, width - 1, height - 1, 10, 10));
-                    g2.dispose();
-                }
-
-                @Override
-                public Insets getBorderInsets(Component c) {
-                    return new Insets(4, 8, 4, 8);
-                }
-            },
-            BorderFactory.createEmptyBorder(2, 10, 2, 10)
-        ));
-
-        // Add custom background painting
-        field.setUI(new javax.swing.plaf.basic.BasicTextFieldUI() {
-            @Override
-            protected void paintBackground(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(Color.WHITE);
-                g2.fill(new RoundRectangle2D.Double(0, 0, field.getWidth(), field.getHeight(), 10, 10));
-                g2.dispose();
-            }
-        });
-
         field.addFocusListener(new FocusAdapter() {
             public void focusGained(FocusEvent e) {
                 if (field.getText().equals(placeholder)) {
@@ -183,6 +146,7 @@ public class LoginUI extends JFrame {
                     }
                 }
             }
+
         });
     }
 
