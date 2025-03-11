@@ -4,12 +4,12 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.RoundRectangle2D;
 
+
 public class CustomDialogUtils {
-    
-    private static JDialog customDialog;
     
     public static JOptionPane showCustomConfirmDialog(Component parentComponent, String message, String title) {
         // Create custom buttons with curved edges
+    	
         JButton yesButton = new JButton("YES") {
             @Override
             protected void paintComponent(Graphics g) {
@@ -65,55 +65,41 @@ public class CustomDialogUtils {
         // Create message label with custom font
         JLabel messageLabel = new JLabel(message);
         messageLabel.setFont(new Font("Arial", Font.PLAIN, 14));
-        messageLabel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-        messageLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        messageLabel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         // Create button panel with spacing
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
         buttonPanel.setBackground(Color.WHITE);
-        buttonPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 20, 0));
         buttonPanel.add(yesButton);
         buttonPanel.add(noButton);
 
-        // Create main content panel
-        JPanel contentPanel = new JPanel(new BorderLayout());
-        contentPanel.setBackground(Color.WHITE);
-        contentPanel.add(messageLabel, BorderLayout.CENTER);
-        contentPanel.add(buttonPanel, BorderLayout.SOUTH);
-
         // Create the JOptionPane with custom styling
         JOptionPane optionPane = new JOptionPane(
-            contentPanel,
-            JOptionPane.PLAIN_MESSAGE,
+            messageLabel,
+            JOptionPane.QUESTION_MESSAGE,
             JOptionPane.DEFAULT_OPTION,
             null,
-            new Object[]{},
+            new Object[]{buttonPanel},
             null
         );
         optionPane.setBackground(Color.WHITE);
 
         // Create and configure the dialog
-        customDialog = new JDialog((Window)null);
-        customDialog.setUndecorated(true);
-        customDialog.setBackground(new Color(0, 0, 0, 0));
-        customDialog.setContentPane(optionPane);
-        customDialog.pack();
-        
-        // Set rounded corners for the dialog
-        customDialog.setShape(new RoundRectangle2D.Double(0, 0, customDialog.getWidth(), customDialog.getHeight(), 20, 20));
+        JDialog dialog = optionPane.createDialog(parentComponent, title);
+        dialog.setBackground(Color.WHITE);
         
         // Apply white background to all components recursively
-        applyWhiteBackground(customDialog);
+        applyWhiteBackground(dialog);
 
         // Add action listeners
         yesButton.addActionListener(e -> {
             optionPane.setValue(JOptionPane.YES_OPTION);
-            customDialog.dispose();
+            dialog.dispose();
         });
 
         noButton.addActionListener(e -> {
             optionPane.setValue(JOptionPane.NO_OPTION);
-            customDialog.dispose();
+            dialog.dispose();
         });
         
         return optionPane;
@@ -140,21 +126,20 @@ public class CustomDialogUtils {
 
     public static int showConfirmDialog(Component parentComponent, String message, String title) {
         JOptionPane optionPane = showCustomConfirmDialog(parentComponent, message, title);
+        JDialog dialog = optionPane.createDialog(parentComponent, title);
         
         // Center the dialog on the parent component
         if (parentComponent != null) {
             Point parentLocation = parentComponent.getLocationOnScreen();
             Dimension parentSize = parentComponent.getSize();
-            Dimension dialogSize = customDialog.getSize();
+            Dimension dialogSize = dialog.getSize();
             int x = parentLocation.x + (parentSize.width - dialogSize.width) / 2;
             int y = parentLocation.y + (parentSize.height - dialogSize.height) / 2;
-            customDialog.setLocation(x, y);
-        } else {
-            customDialog.setLocationRelativeTo(null);
+            dialog.setLocation(x, y);
         }
         
-        customDialog.setVisible(true);
-        customDialog.dispose();
+        dialog.setVisible(true);
+        dialog.dispose();
         
         Object value = optionPane.getValue();
         if (value == null) {
