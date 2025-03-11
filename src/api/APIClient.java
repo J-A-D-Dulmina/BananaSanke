@@ -13,7 +13,7 @@ import model.SessionManager; // For storing authentication tokens
  */
 public class APIClient {
 
-    private static final String BASE_URL = "https://deshandulmina.info/api.php";
+    public static final String BASE_URL = "https://deshandulmina.info/api.php";
     private static final String CONTENT_TYPE = "application/x-www-form-urlencoded";
     private static final String ACCEPT_TYPE = "application/json";
     private static APIClient instance;
@@ -339,6 +339,74 @@ public class APIClient {
                 callback.onFailure("Error getting high score: " + e.getMessage());
             }
         }).start();
+    }
+
+    /**
+     * Gets the user's email from the server.
+     *
+     * @return The API response containing the user's email.
+     */
+    public static String getUserEmail() {
+        try {
+            String apiUrl = BASE_URL + "?action=get_user_email";
+            String response = sendAuthenticatedGetRequest(apiUrl);
+            
+            // Check if response is empty or not JSON
+            if (response == null || response.isEmpty() || !response.trim().startsWith("{")) {
+                System.err.println("Invalid response format from server: " + response);
+                return null;
+            }
+            
+            JSONObject jsonResponse = new JSONObject(response);
+            if (jsonResponse.getString("status").equals("success")) {
+                String email = jsonResponse.getString("email");
+                SessionManager.setEmail(email); // Cache the email
+                return email;
+            } else {
+                System.err.println("Failed to get email: " + jsonResponse.optString("message"));
+                return null;
+            }
+        } catch (Exception e) {
+            System.err.println("Error getting user email: " + e.getMessage());
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    /**
+     * Updates the user's username.
+     *
+     * @param newUsername The new username to set
+     * @return The API response as a JSONObject
+     */
+    public static JSONObject updateUsername(String newUsername) {
+        try {
+            String apiUrl = BASE_URL + "?action=update_username";
+            String postData = String.format("new_username=%s",
+                java.net.URLEncoder.encode(newUsername, "UTF-8"));
+
+            String response = sendAuthenticatedPostRequest(apiUrl, postData);
+            
+            // Handle HTML error responses
+            if (response.contains("<br") || response.contains("<html")) {
+                String errorMessage = response.replaceAll("<[^>]*>", "")
+                    .replaceAll("\\s+", " ")
+                    .trim();
+                JSONObject errorResponse = new JSONObject();
+                errorResponse.put("status", "error");
+                errorResponse.put("message", "Server Error: " + errorMessage);
+                return errorResponse;
+            }
+            
+            // Parse and return JSON response
+            return new JSONObject(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            JSONObject errorResponse = new JSONObject();
+            errorResponse.put("status", "error");
+            errorResponse.put("message", "Failed to update username: " + e.getMessage());
+            return errorResponse;
+        }
     }
 
     public interface HighScoreCallback {

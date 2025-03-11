@@ -11,6 +11,7 @@ import model.SoundManager;
 import java.util.List;
 import controller.LeaderboardController;
 import controller.LeaderboardController.LeaderboardEntry;
+import org.json.JSONObject;
 
 public class AccountPanel extends JDialog {
     private static final long serialVersionUID = 1L;
@@ -139,7 +140,7 @@ public class AccountPanel extends JDialog {
         scorePanel.add(scoreLabel);
         scorePanel.add(bestScoreLabel);
         topPanel.add(scorePanel);
-        topPanel.add(Box.createVerticalStrut(30));
+        topPanel.add(Box.createVerticalStrut(15));
 
         // Fetch and display best score
         LeaderboardController.getInstance().fetchTopScores(new LeaderboardController.LeaderboardCallback() {
@@ -166,7 +167,29 @@ public class AccountPanel extends JDialog {
         // Username section with edit icon
         setupUsernameSection();
         contentPanel.add(usernamePanel);
-        contentPanel.add(Box.createVerticalStrut(30));
+        contentPanel.add(Box.createVerticalStrut(15));
+
+        // Email display section
+        JPanel emailPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+        emailPanel.setOpaque(false);
+        emailPanel.setMaximumSize(new Dimension(340, 40));
+        emailPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        
+        JLabel emailTitleLabel = new JLabel("User Email      :");
+        emailTitleLabel.setPreferredSize(new Dimension(120, 30));
+        emailTitleLabel.setForeground(Color.WHITE);
+        emailTitleLabel.setFont(new Font("Arial", Font.PLAIN, 14));
+        
+        String userEmail = SessionManager.getEmail();
+        JLabel emailValueLabel = new JLabel(userEmail != null ? userEmail : "Not available");
+        emailValueLabel.setForeground(Color.WHITE);
+        emailValueLabel.setFont(new Font("Arial", Font.PLAIN, 14));
+        
+        emailPanel.add(emailTitleLabel);
+        emailPanel.add(emailValueLabel);
+        
+        contentPanel.add(emailPanel);
+        contentPanel.add(Box.createVerticalStrut(20));
 
         // Password section with styled fields
         JPanel passwordPanel = new JPanel();
@@ -178,7 +201,7 @@ public class AccountPanel extends JDialog {
         // Old Password
         JPanel oldPassPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
         oldPassPanel.setOpaque(false);
-        JLabel oldPasswordLabel = new JLabel("Old Password:");
+        JLabel oldPasswordLabel = new JLabel("Old Password    :");
         oldPasswordLabel.setPreferredSize(new Dimension(120, 30));
         oldPasswordLabel.setForeground(Color.WHITE);
         oldPasswordLabel.setFont(new Font("Arial", Font.PLAIN, 14));
@@ -189,7 +212,7 @@ public class AccountPanel extends JDialog {
         // New Password
         JPanel newPassPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
         newPassPanel.setOpaque(false);
-        JLabel newPasswordLabel = new JLabel("New Password:");
+        JLabel newPasswordLabel = new JLabel("New Password    :");
         newPasswordLabel.setPreferredSize(new Dimension(120, 30));
         newPasswordLabel.setForeground(Color.WHITE);
         newPasswordLabel.setFont(new Font("Arial", Font.PLAIN, 14));
@@ -530,19 +553,42 @@ public class AccountPanel extends JDialog {
             errorLabel.setText("Username cannot be empty");
             return;
         }
-        
-        // TODO: Add API call to update username
-        SessionManager.setUsername(newUsername);
-        errorLabel.setText("Username updated successfully!");
-        errorLabel.setForeground(new Color(0, 200, 0)); // Green color for success
-        
-        // Schedule the error message to disappear after 2 seconds
-        Timer timer = new Timer(2000, e -> {
-            errorLabel.setText("");
-            errorLabel.setForeground(Color.RED); // Reset to red for future errors
-        });
-        timer.setRepeats(false);
-        timer.start();
+
+        try {
+            JSONObject response = APIClient.updateUsername(newUsername);
+            
+            if (response.getString("status").equals("success")) {
+                // Update the session and UI
+                SessionManager.setUsername(newUsername);
+                usernameLabel.setText(newUsername);
+                usernameField.setText(newUsername);
+                errorLabel.setText("Username updated successfully!");
+                errorLabel.setForeground(new Color(0, 200, 0));
+                
+                // Update the main frame title and any other components that display the username
+                mainFrame.setTitle("Banana Snake - " + newUsername);
+                mainFrame.updateUsernameDisplay(newUsername);
+                
+                // Play success sound
+                SoundManager.getInstance().playButtonClickSound();
+            } else {
+                String errorMessage = response.getString("message");
+                errorLabel.setText(errorMessage);
+                errorLabel.setForeground(Color.RED);
+            }
+            
+            // Schedule the error message to disappear after 2 seconds
+            Timer timer = new Timer(2000, e -> {
+                errorLabel.setText("");
+                errorLabel.setForeground(Color.RED); // Reset to red for future errors
+            });
+            timer.setRepeats(false);
+            timer.start();
+        } catch (Exception e) {
+            errorLabel.setText("Error updating username: " + e.getMessage());
+            errorLabel.setForeground(Color.RED);
+            e.printStackTrace();
+        }
     }
 
     private void updatePassword() {
@@ -559,13 +605,33 @@ public class AccountPanel extends JDialog {
             errorLabel.setText("New passwords do not match");
             return;
         }
-        
-        // TODO: Add API call to update password
-        errorLabel.setText("Password updated successfully!");
-        errorLabel.setForeground(new Color(0, 200, 0));
-        oldPasswordField.setText("");
-        newPasswordField.setText("");
-        confirmPasswordField.setText("");
+
+        // Create JSON object for the API request
+        JSONObject requestData = new JSONObject();
+        requestData.put("action", "update_password");
+        requestData.put("old_password", oldPassword);
+        requestData.put("new_password", newPassword);
+        requestData.put("auth_token", SessionManager.getAuthToken());
+
+        try {
+            String response = APIClient.sendAuthenticatedPostRequest(APIClient.BASE_URL, requestData.toString());
+            JSONObject jsonResponse = new JSONObject(response);
+
+            if (jsonResponse.getString("status").equals("success")) {
+                errorLabel.setText("Password updated successfully!");
+                errorLabel.setForeground(new Color(0, 200, 0));
+                oldPasswordField.setText("");
+                newPasswordField.setText("");
+                confirmPasswordField.setText("");
+            } else {
+                errorLabel.setText(jsonResponse.getString("message"));
+                errorLabel.setForeground(Color.RED);
+            }
+        } catch (Exception e) {
+            errorLabel.setText("Failed to update password: " + e.getMessage());
+            errorLabel.setForeground(Color.RED);
+            e.printStackTrace();
+        }
         
         // Reset error color after 2 seconds
         Timer timer = new Timer(2000, e -> {

@@ -285,4 +285,19 @@ public class ButtonPanel extends JPanel {
             gbc.anchor = GridBagConstraints.CENTER;
         }
     }
+
+    public void updateUsername(String newUsername) {
+        if (namePanel != null) {
+            Component[] components = namePanel.getComponents();
+            for (Component component : components) {
+                if (component instanceof JLabel) {
+                    JLabel nameLabel = (JLabel) component;
+                    nameLabel.setText(newUsername);
+                    namePanel.revalidate();
+                    namePanel.repaint();
+                    break;
+                }
+            }
+        }
+    }
 }

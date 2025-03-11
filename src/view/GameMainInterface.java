@@ -143,4 +143,29 @@ public class GameMainInterface extends JFrame {
             soundManager.playBackgroundMusic();
         }
     }
+
+    public void updateUsernameDisplay(String newUsername) {
+        // Update the button panel's username display
+        if (snakePanel != null) {
+            Component[] components = getContentPane().getComponents();
+            for (Component component : components) {
+                if (component instanceof JSplitPane) {
+                    JSplitPane splitPane = (JSplitPane) component;
+                    Component leftComponent = splitPane.getLeftComponent();
+                    if (leftComponent instanceof BananaPanel) {
+                        BananaPanel bananaPanel = (BananaPanel) leftComponent;
+                        Component[] bananaComponents = bananaPanel.getComponents();
+                        for (Component bananaComponent : bananaComponents) {
+                            if (bananaComponent instanceof ButtonPanel) {
+                                ButtonPanel buttonPanel = (ButtonPanel) bananaComponent;
+                                buttonPanel.updateUsername(newUsername);
+                                break;
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+    }
 }
