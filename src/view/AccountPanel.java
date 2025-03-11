@@ -175,7 +175,7 @@ public class AccountPanel extends JDialog {
         emailPanel.setMaximumSize(new Dimension(340, 40));
         emailPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
         
-        JLabel emailTitleLabel = new JLabel("User Email      :");
+        JLabel emailTitleLabel = new JLabel("User Email            :");
         emailTitleLabel.setPreferredSize(new Dimension(120, 30));
         emailTitleLabel.setForeground(Color.WHITE);
         emailTitleLabel.setFont(new Font("Arial", Font.PLAIN, 14));
@@ -201,7 +201,7 @@ public class AccountPanel extends JDialog {
         // Old Password
         JPanel oldPassPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
         oldPassPanel.setOpaque(false);
-        JLabel oldPasswordLabel = new JLabel("Old Password    :");
+        JLabel oldPasswordLabel = new JLabel("Old Password        :");
         oldPasswordLabel.setPreferredSize(new Dimension(120, 30));
         oldPasswordLabel.setForeground(Color.WHITE);
         oldPasswordLabel.setFont(new Font("Arial", Font.PLAIN, 14));
@@ -212,7 +212,7 @@ public class AccountPanel extends JDialog {
         // New Password
         JPanel newPassPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
         newPassPanel.setOpaque(false);
-        JLabel newPasswordLabel = new JLabel("New Password    :");
+        JLabel newPasswordLabel = new JLabel("New Password        :");
         newPasswordLabel.setPreferredSize(new Dimension(120, 30));
         newPasswordLabel.setForeground(Color.WHITE);
         newPasswordLabel.setFont(new Font("Arial", Font.PLAIN, 14));
