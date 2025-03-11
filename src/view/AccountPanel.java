@@ -93,33 +93,14 @@ public class AccountPanel extends JDialog {
         JPanel headerPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
         headerPanel.setOpaque(false);
 
-        JButton closeButton = new JButton("×");
+        JLabel closeButton = new JLabel("×");
+        closeButton.setForeground(new Color(220, 0, 0));
         closeButton.setFont(new Font("Arial", Font.BOLD, 24));
-        closeButton.setForeground(Color.WHITE);
         closeButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        closeButton.setContentAreaFilled(false);
-        closeButton.setBorderPainted(false);
-        closeButton.setFocusPainted(false);
-        closeButton.setOpaque(false);
-        closeButton.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
-        closeButton.setPreferredSize(new Dimension(30, 30));
-        closeButton.setMaximumSize(new Dimension(30, 30));
-        closeButton.setMinimumSize(new Dimension(30, 30));
-
         closeButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 dispose();
-            }
-
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                closeButton.setForeground(new Color(220, 0, 0));
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-                closeButton.setForeground(Color.WHITE);
             }
         });
 
@@ -283,19 +264,42 @@ public class AccountPanel extends JDialog {
         // Create username field and edit panel
         usernameField = createStyledTextField(SessionManager.getUsername());
         
-        // Create close button for editing mode
-        JPanel editPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 0));
+        // Create edit panel with fixed width
+        JPanel editPanel = new JPanel();
+        editPanel.setLayout(new BoxLayout(editPanel, BoxLayout.X_AXIS));
         editPanel.setBackground(new Color(40, 40, 40, 0));
-        editPanel.add(usernameField);
+        editPanel.setPreferredSize(new Dimension(250, 35));
+        editPanel.setMaximumSize(new Dimension(250, 35));
+        editPanel.setMinimumSize(new Dimension(250, 35));
         
-        // Create close (X) button
+        // Add username field with fixed size
+        usernameField.setPreferredSize(new Dimension(200, 30));
+        usernameField.setMaximumSize(new Dimension(200, 30));
+        usernameField.setMinimumSize(new Dimension(200, 30));
+        editPanel.add(usernameField);
+        editPanel.add(Box.createHorizontalStrut(10));
+        
+        // Create close button panel with fixed size
+        JPanel closeButtonPanel = new JPanel(new BorderLayout());
+        closeButtonPanel.setOpaque(false);
+        closeButtonPanel.setPreferredSize(new Dimension(30, 30));
+        closeButtonPanel.setMaximumSize(new Dimension(30, 30));
+        closeButtonPanel.setMinimumSize(new Dimension(30, 30));
+        
+        // Create close (X) button for username edit
         JLabel closeButton = new JLabel("×");
-        closeButton.setForeground(Color.WHITE);
+        closeButton.setForeground(new Color(220, 0, 0));
         closeButton.setFont(new Font("Arial", Font.BOLD, 24));
-        closeButton.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
         closeButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        closeButton.setToolTipText("Cancel editing");
-        editPanel.add(closeButton);
+        closeButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                cancelEditing(labelPanel, editPanel);
+            }
+        });
+        
+        closeButtonPanel.add(closeButton, BorderLayout.CENTER);
+        editPanel.add(closeButtonPanel);
         
         // Initially show label panel, hide edit panel
         usernamePanel.add(labelPanel);
@@ -317,33 +321,17 @@ public class AccountPanel extends JDialog {
             }
         });
 
-        // Add click listener to close button
-        closeButton.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                cancelEditing(labelPanel, editPanel);
-                e.consume();
-            }
-            
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                closeButton.setForeground(new Color(220, 0, 0));
-            }
-            
-            @Override
-            public void mouseExited(MouseEvent e) {
-                closeButton.setForeground(Color.WHITE);
-            }
-        });
-
         // Add focus listener to username field
         usernameField.addFocusListener(new FocusAdapter() {
             @Override
             public void focusLost(FocusEvent e) {
-                // Only cancel if focus is not moving to the close button
-                if (closeButton.getMousePosition() == null) {
-                    cancelEditing(labelPanel, editPanel);
-                }
+                // Use SwingUtilities.invokeLater to handle focus changes properly
+                SwingUtilities.invokeLater(() -> {
+                    Component focusOwner = KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
+                    if (focusOwner != closeButton) {
+                        cancelEditing(labelPanel, editPanel);
+                    }
+                });
             }
         });
 
