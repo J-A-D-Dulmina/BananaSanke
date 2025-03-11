@@ -28,7 +28,7 @@ public class AccountPanel extends JDialog {
         this.mainFrame = mainFrame;
         
         // Load background image
-        backgroundImage = new ImageIcon("resources/background_account.png").getImage();
+        backgroundImage = new ImageIcon("resources/background_account.jpg").getImage();
         
         // Set size and position
         setSize(400, 550);

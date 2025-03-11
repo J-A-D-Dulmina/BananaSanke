@@ -76,7 +76,8 @@ public class ButtonPanel extends JPanel {
 
         // Settings button
         settingsBtn.addActionListener(e -> {
-            JOptionPane.showMessageDialog(this, "Settings coming soon!");
+            SettingsPanel settingsPanel = new SettingsPanel(gameMainInterface);
+            settingsPanel.setVisible(true);
         });
 
         // Account button
