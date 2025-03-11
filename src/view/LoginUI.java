@@ -199,7 +199,6 @@ public class LoginUI extends JFrame {
         messageLabel.setText(message);
     }
 
-
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new LoginUI().setVisible(true));
     }

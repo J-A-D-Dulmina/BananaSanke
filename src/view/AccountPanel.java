@@ -12,6 +12,7 @@ import java.util.List;
 import controller.LeaderboardController;
 import controller.LeaderboardController.LeaderboardEntry;
 import org.json.JSONObject;
+import utils.CustomDialogUtils;
 
 public class AccountPanel extends JDialog {
     private static final long serialVersionUID = 1L;
@@ -268,11 +269,10 @@ public class AccountPanel extends JDialog {
         // Add action listeners
         updatePasswordBtn.addActionListener(e -> updatePassword());
         logoutBtn.addActionListener(e -> {
-            int confirm = JOptionPane.showConfirmDialog(
+            int confirm = CustomDialogUtils.showConfirmDialog(
                 this,
                 "Are you sure you want to logout?",
-                "Confirm Logout",
-                JOptionPane.YES_NO_OPTION
+                "Confirm Logout"
             );
 
             if (confirm == JOptionPane.YES_OPTION) {

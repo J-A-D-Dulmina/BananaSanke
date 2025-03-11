@@ -8,6 +8,7 @@ import model.SessionManager;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import model.SoundManager;
+import utils.CustomDialogUtils;
 
 public class ButtonPanel extends JPanel {
     private static final long serialVersionUID = -1015522477771146689L;
@@ -140,11 +141,10 @@ public class ButtonPanel extends JPanel {
         // Reset button
         resetBtn.addActionListener(e -> {
             SoundManager.getInstance().playButtonClickSound();
-            int confirm = JOptionPane.showConfirmDialog(
+            int confirm = CustomDialogUtils.showConfirmDialog(
                 this,
                 "Are you sure you want to reset the game?",
-                "Confirm Reset",
-                JOptionPane.YES_NO_OPTION
+                "Confirm Reset"
             );
 
             if (confirm == JOptionPane.YES_OPTION) {
@@ -157,11 +157,10 @@ public class ButtonPanel extends JPanel {
         // Logout button
         logoutBtn.addActionListener(e -> {
             SoundManager.getInstance().playButtonClickSound();
-            int confirm = JOptionPane.showConfirmDialog(
+            int confirm = CustomDialogUtils.showConfirmDialog(
                 gameMainInterface,
                 "Are you sure you want to logout?",
-                "Confirm Logout",
-                JOptionPane.YES_NO_OPTION
+                "Confirm Logout"
             );
 
             if (confirm == JOptionPane.YES_OPTION) {

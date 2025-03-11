@@ -6,6 +6,7 @@ import model.SnakeGameLogic;
 import model.SessionManager;
 import api.APIClient;
 import model.SoundManager;
+import utils.CustomDialogUtils;
 
 /**
  * Main game interface that contains the Banana Snake game layout.
@@ -109,11 +110,10 @@ public class GameMainInterface extends JFrame {
      * Asks for confirmation before closing the game.
      */
     private void confirmAndExit() {
-        int confirm = JOptionPane.showConfirmDialog(
+        int confirm = CustomDialogUtils.showConfirmDialog(
             this,
             "Are you sure you want to exit the game?",
-            "Exit Game",
-            JOptionPane.YES_NO_OPTION
+            "Exit Game"
         );
 
         if (confirm == JOptionPane.YES_OPTION) {
