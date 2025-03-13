@@ -1,4 +1,5 @@
-/view/
 /api/
 /controller/
+/interfaces/
 /model/
+/view/
