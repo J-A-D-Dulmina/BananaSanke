@@ -38,8 +38,14 @@ public class LoginController {
                 String message = jsonResponse.optString("message", "Login failed. Please try again.");
                 loginUI.showMessage(message, false);
             }
-        } catch (Exception e) {
+        } catch (JSONException e) {
+            System.err.println("JSON parsing error: " + e.getMessage());
+            e.printStackTrace();
             loginUI.showMessage("An error occurred. Please try again.", false);
+        } catch (Exception e) {
+            System.err.println("Login error: " + e.getMessage());
+            e.printStackTrace();
+            loginUI.showMessage("An unexpected error occurred. Please try again.", false);
         }
     }
 
@@ -49,6 +55,8 @@ public class LoginController {
                 GameMainInterface gameMain = new GameMainInterface();
                 gameMain.setVisible(true);
             } catch (Exception e) {
+                System.err.println("Error opening game interface: " + e.getMessage());
+                e.printStackTrace();
                 loginUI.showMessage("Error starting game. Please try logging in again.", false);
             }
         });

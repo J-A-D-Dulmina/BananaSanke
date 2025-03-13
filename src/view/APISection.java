@@ -83,15 +83,20 @@ public class APISection extends JPanel {
                         Image resizedImage = imageIcon.getImage().getScaledInstance(480, 250, Image.SCALE_SMOOTH);
                         questArea.setIcon(new ImageIcon(resizedImage));
                     } else {
+                        System.err.println("Failed to load image from URL: " + questionImageUrl);
                         questArea.setText("Error: Unable to load image");
                     }
                 } else {
+                    System.err.println("Failed to get current game from controller");
                     questArea.setText("Error: Unable to load game");
                 }
             } else {
+                System.err.println("Failed to get next game from controller");
                 questArea.setText("Error: Unable to load game");
             }
         } catch (Exception e) {
+            System.err.println("Error loading question image: " + e.getMessage());
+            e.printStackTrace();
             questArea.setText("Error: Unable to load game");
         }
     }

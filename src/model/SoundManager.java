@@ -47,6 +47,7 @@ public class SoundManager extends Observable {
         try {
             File soundFile = new File(path);
             if (!soundFile.exists()) {
+                System.err.println("Error: Sound effect not found at " + soundFile.getAbsolutePath());
                 return;
             }
 
@@ -56,6 +57,7 @@ public class SoundManager extends Observable {
             DataLine.Info info = new DataLine.Info(Clip.class, format);
             
             if (!AudioSystem.isLineSupported(info)) {
+                System.err.println("Error: Audio line not supported for " + name);
                 return;
             }
             
@@ -64,7 +66,7 @@ public class SoundManager extends Observable {
             soundEffects.put(name, clip);
             
         } catch (Exception e) {
-            // Silently fail for sound loading errors
+            System.err.println("Error loading sound effect " + name + ": " + e.getMessage());
         }
     }
 
@@ -72,6 +74,7 @@ public class SoundManager extends Observable {
         try {
             File musicFile = new File("resources/Sound Effect/background_music.wav");
             if (!musicFile.exists()) {
+                System.err.println("Error: Audio file not found at " + musicFile.getAbsolutePath());
                 return;
             }
 
@@ -81,6 +84,7 @@ public class SoundManager extends Observable {
             DataLine.Info info = new DataLine.Info(Clip.class, format);
             
             if (!AudioSystem.isLineSupported(info)) {
+                System.err.println("Error: Audio line not supported");
                 return;
             }
             
@@ -100,7 +104,7 @@ public class SoundManager extends Observable {
             updateVolume();
             
         } catch (Exception e) {
-            // Silently fail for background music loading errors
+            System.err.println("Error loading background music: " + e.getMessage());
         }
     }
 
@@ -154,7 +158,7 @@ public class SoundManager extends Observable {
                 }
             }
         } catch (Exception e) {
-            // Silently fail for game state check errors
+            System.err.println("Error checking game running state: " + e.getMessage());
         }
         return false;
     }
@@ -176,7 +180,7 @@ public class SoundManager extends Observable {
                     clip.start();
                 }
             } catch (Exception e) {
-                // Silently fail for sound playing errors
+                System.err.println("Error playing sound " + name + ": " + e.getMessage());
             }
         }
     }
@@ -191,7 +195,7 @@ public class SoundManager extends Observable {
                 setChanged();
                 notifyObservers();
             } catch (Exception e) {
-                // Silently fail for background music playing errors
+                System.err.println("Error playing background music: " + e.getMessage());
             }
         }
     }
@@ -204,7 +208,7 @@ public class SoundManager extends Observable {
                 setChanged();
                 notifyObservers();
             } catch (Exception e) {
-                // Silently fail for background music pausing errors
+                System.err.println("Error pausing background music: " + e.getMessage());
             }
         }
     }
@@ -218,7 +222,7 @@ public class SoundManager extends Observable {
                 setChanged();
                 notifyObservers();
             } catch (Exception e) {
-                // Silently fail for background music stopping errors
+                System.err.println("Error stopping background music: " + e.getMessage());
             }
         }
     }
@@ -236,7 +240,7 @@ public class SoundManager extends Observable {
                         runningSound.loop(Clip.LOOP_CONTINUOUSLY);
                     }
                 } catch (Exception e) {
-                    // Silently fail for running sound errors
+                    System.err.println("Error playing running sound: " + e.getMessage());
                 }
             }
         }
@@ -248,7 +252,7 @@ public class SoundManager extends Observable {
                 try {
                     runningSound.stop();
                 } catch (Exception e) {
-                    // Silently fail for running sound stopping errors
+                    System.err.println("Error stopping running sound: " + e.getMessage());
                 }
             }
         }
@@ -305,7 +309,7 @@ public class SoundManager extends Observable {
                 gainControl.setValue(gain);
             }
         } catch (Exception e) {
-            // Silently fail for volume update errors
+            System.err.println("Error updating volume: " + e.getMessage());
         }
     }
 

@@ -14,47 +14,63 @@ public class LeaderboardModel {
     private volatile int userRank;
     private volatile int userScore;
     private volatile int totalPlayers;
+    private volatile String lastError;
 
     public LeaderboardModel() {
         this.entries = Collections.synchronizedList(new ArrayList<>());
         this.userRank = 0;
         this.userScore = 0;
         this.totalPlayers = 0;
+        this.lastError = "";
     }
 
     public synchronized List<LeaderboardEntry> fetchLeaderboard() throws Exception {
-        String response = APIClient.getLeaderboard();
-        if (response == null || response.trim().isEmpty()) {
-            throw new Exception("Empty response from server");
-        }
-
-        JSONObject jsonResponse = new JSONObject(response);
-        
-        if (!"success".equals(jsonResponse.optString("status"))) {
-            throw new Exception("Failed to fetch leaderboard: " + jsonResponse.optString("message", "Unknown error occurred"));
-        }
-
-        synchronized (entries) {
-            entries.clear();
-            
-            JSONArray scores = jsonResponse.getJSONArray("scores");
-            for (int i = 0; i < scores.length(); i++) {
-                JSONObject score = scores.getJSONObject(i);
-                LeaderboardEntry entry = new LeaderboardEntry(
-                    score.optInt("id", 0),
-                    score.optString("username", "Unknown"),
-                    score.optInt("id", 0),
-                    score.optInt("score", 0),
-                    score.optString("created_at", "")
-                );
-                entries.add(entry);
+        try {
+            String response = APIClient.getLeaderboard();
+            if (response == null || response.trim().isEmpty()) {
+                throw new Exception("Empty response from server");
             }
 
-            this.userRank = jsonResponse.optInt("user_rank", 0);
-            this.userScore = jsonResponse.optInt("user_score", 0);
-            this.totalPlayers = jsonResponse.optInt("total_players", 0);
+            JSONObject jsonResponse = new JSONObject(response);
+            
+            if (!"success".equals(jsonResponse.optString("status"))) {
+                String errorMessage = jsonResponse.optString("message", "Unknown error occurred");
+                this.lastError = errorMessage;
+                throw new Exception("Failed to fetch leaderboard: " + errorMessage);
+            }
 
-            return new ArrayList<>(entries);
+            // Clear existing entries in a thread-safe way
+            synchronized (entries) {
+                entries.clear();
+                
+                // Parse scores array
+                JSONArray scores = jsonResponse.getJSONArray("scores");
+                for (int i = 0; i < scores.length(); i++) {
+                    JSONObject score = scores.getJSONObject(i);
+                    LeaderboardEntry entry = new LeaderboardEntry(
+                        score.optInt("id", 0),
+                        score.optString("username", "Unknown"),
+                        score.optInt("id", 0),
+                        score.optInt("score", 0),
+                        score.optString("created_at", "")
+                    );
+                    entries.add(entry);
+                }
+
+                // Update user data
+                this.userRank = jsonResponse.optInt("user_rank", 0);
+                this.userScore = jsonResponse.optInt("user_score", 0);
+                this.totalPlayers = jsonResponse.optInt("total_players", 0);
+                this.lastError = "";
+
+                // Return a copy of the list to prevent external modification
+                return new ArrayList<>(entries);
+            }
+        } catch (Exception e) {
+            this.lastError = "Failed to fetch leaderboard: " + e.getMessage();
+            System.err.println("Error fetching leaderboard: " + e.getMessage());
+            e.printStackTrace();
+            throw new Exception(this.lastError);
         }
     }
 
@@ -68,6 +84,10 @@ public class LeaderboardModel {
 
     public synchronized int getTotalPlayers() {
         return totalPlayers;
+    }
+
+    public synchronized String getLastError() {
+        return lastError;
     }
 
     public synchronized List<LeaderboardEntry> getEntries() {

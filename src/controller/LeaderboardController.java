@@ -62,19 +62,24 @@ public class LeaderboardController {
     private void initializeView() {
         if (!isInitialized) {
             try {
+                // Initial update of the leaderboard
                 model.fetchLeaderboard();
                 List<LeaderboardEntry> entries = model.getEntries();
                 view.updateLeaderboard(entries);
                 updateUserStats(entries);
                 isInitialized = true;
             } catch (Exception e) {
+                System.err.println("Error initializing view: " + e.getMessage());
+                e.printStackTrace();
                 view.showError("Failed to initialize leaderboard: " + e.getMessage());
+                // Don't rethrow - handle the error gracefully
                 isInitialized = false;
             }
         }
     }
 
     public void updateLeaderboard() {
+        // Prevent concurrent updates
         if (!isUpdating.compareAndSet(false, true)) {
             return;
         }
@@ -88,6 +93,8 @@ public class LeaderboardController {
                     view.updateLeaderboard(entries);
                     updateUserStats(entries);
                 } catch (Exception e) {
+                    System.err.println("Error updating leaderboard view: " + e.getMessage());
+                    e.printStackTrace();
                     view.showError("Failed to update leaderboard: " + e.getMessage());
                 } finally {
                     view.showLoading(false);
@@ -95,6 +102,8 @@ public class LeaderboardController {
                 }
             });
         } catch (Exception e) {
+            System.err.println("Error in updateLeaderboard: " + e.getMessage());
+            e.printStackTrace();
             view.showError("Failed to fetch leaderboard data: " + e.getMessage());
             view.showLoading(false);
             isUpdating.set(false);

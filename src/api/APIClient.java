@@ -53,18 +53,22 @@ public class APIClient {
             conn = setupHttpConnection(apiUrl, method, authRequired);
 
             if ("POST".equals(method) && postData != null) {
+                // Set content length for POST requests
                 byte[] postDataBytes = postData.getBytes("UTF-8");
                 conn.setRequestProperty("Content-Length", String.valueOf(postDataBytes.length));
                 
+                // Write POST data
                 try (OutputStream os = conn.getOutputStream()) {
                     os.write(postDataBytes);
                     os.flush();
                 }
             }
 
+            // Get response code and message
             int responseCode = conn.getResponseCode();
             String responseMessage = conn.getResponseMessage();
             
+            // Read the response
             InputStream inputStream = (responseCode >= 400) ? conn.getErrorStream() : conn.getInputStream();
             
             if (inputStream != null) {
@@ -76,6 +80,7 @@ public class APIClient {
                 }
             }
 
+            // If empty response, return error JSON with HTTP status info
             if (response.length() == 0) {
                 return String.format(
                     "{\"status\":\"error\", \"message\":\"Empty response from server (HTTP %d: %s)\", \"http_code\":%d}",
@@ -85,19 +90,27 @@ public class APIClient {
                 );
             }
 
+            // Try to parse the response as JSON
             try {
                 new JSONObject(response.toString());
                 return response.toString();
             } catch (JSONException e) {
+                // If response is not JSON, wrap it in a JSON error object
+                System.err.println("Non-JSON response from server: " + response.toString());
                 return String.format(
-                    "{\"status\":\"error\", \"message\":\"Invalid JSON response from server\", \"http_code\":%d}",
+                    "{\"status\":\"error\", \"message\":\"Invalid JSON response from server (HTTP %d: %s): %s\", \"http_code\":%d}",
+                    responseCode,
+                    responseMessage,
+                    response.toString().replace("\"", "'").replace("\n", " "),
                     responseCode
                 );
             }
             
         } catch (IOException e) {
+            e.printStackTrace();
             return String.format(
-                "{\"status\":\"error\", \"message\":\"Network error\", \"error_type\":\"network\"}"
+                "{\"status\":\"error\", \"message\":\"Network error: %s\", \"error_type\":\"network\"}",
+                e.getMessage().replace("\"", "'")
             );
         } finally {
             if (conn != null) {
@@ -151,6 +164,7 @@ public class APIClient {
 
     public static String registerUser(String username, String email, String password) {
         try {
+            // Client-side validation
             if (username == null || username.trim().isEmpty()) {
                 return "{\"status\":\"error\", \"message\":\"Username is required\"}";
             }
@@ -172,21 +186,39 @@ public class APIClient {
 
             String apiUrl = BASE_URL + "?action=register_user";
             
+            // Build POST data with proper encoding
             StringBuilder postData = new StringBuilder();
             postData.append("username=").append(URLEncoder.encode(username.trim(), "UTF-8"));
             postData.append("&email=").append(URLEncoder.encode(email.trim(), "UTF-8"));
             postData.append("&password=").append(URLEncoder.encode(password, "UTF-8"));
 
+            // Log request details (remove in production)
+            System.out.println("Sending registration request to: " + apiUrl);
+            System.out.println("POST data (encoded): " + postData.toString());
+
             String response = sendHttpRequest(apiUrl, "POST", postData.toString(), false);
+            System.out.println("Raw server response: " + response);
             
+            // Validate JSON response
             try {
-                new JSONObject(response);
+                JSONObject jsonResponse = new JSONObject(response);
+                System.out.println("Response status: " + jsonResponse.optString("status"));
+                
+                // Log debug information if available
+                if (jsonResponse.has("debug")) {
+                    System.out.println("Debug info: " + jsonResponse.getJSONObject("debug").toString(2));
+                }
+                
                 return response;
             } catch (JSONException e) {
-                return "{\"status\":\"error\", \"message\":\"Server returned invalid response\"}";
+                System.err.println("Invalid JSON response from server: " + response);
+                return "{\"status\":\"error\", \"message\":\"Server returned invalid response: " + 
+                       response.replace("\"", "'").replace("\n", " ") + "\"}";
             }
         } catch (Exception e) {
-            return "{\"status\":\"error\", \"message\":\"Error processing registration request\"}";
+            e.printStackTrace();
+            return "{\"status\":\"error\", \"message\":\"Error processing registration request: " + 
+                   e.getMessage().replace("\"", "'") + "\"}";
         }
     }
 
@@ -194,12 +226,14 @@ public class APIClient {
         try {
             String apiUrl = BASE_URL + "?action=login_user";
             
+            // Build POST data with proper encoding
             StringBuilder postData = new StringBuilder();
             postData.append("email=").append(URLEncoder.encode(email, "UTF-8"));
             postData.append("&password=").append(URLEncoder.encode(password, "UTF-8"));
 
             String response = sendHttpRequest(apiUrl, "POST", postData.toString(), false);
             
+            // Validate JSON response
             try {
                 JSONObject jsonResponse = new JSONObject(response);
                 
@@ -209,45 +243,80 @@ public class APIClient {
                         return "{\"status\":\"error\", \"message\":\"Server did not provide authentication token\"}";
                     }
                     
+                    // Store the auth token
                     SessionManager.setAuthToken(authToken);
                     
+                    // Verify the token was stored
                     String storedToken = SessionManager.getAuthToken();
                     if (storedToken == null || storedToken.isEmpty()) {
                         return "{\"status\":\"error\", \"message\":\"Failed to store authentication token\"}";
                     }
                 } else if (jsonResponse.optString("status").equals("error") && 
                           jsonResponse.optString("message").contains("already logged in")) {
+                    // Handle case where user is already logged in
                     return "{\"status\":\"error\", \"message\":\"You are already logged in on another device. Please logout first.\"}";
                 }
                 
                 return response;
             } catch (JSONException e) {
-                return "{\"status\":\"error\", \"message\":\"Server returned invalid response\"}";
+                return "{\"status\":\"error\", \"message\":\"Server returned invalid response: " + 
+                       response.replace("\"", "'").replace("\n", " ") + "\"}";
             }
         } catch (Exception e) {
-            return "{\"status\":\"error\", \"message\":\"Error processing login request\"}";
+            return "{\"status\":\"error\", \"message\":\"Error processing login request: " + 
+                   e.getMessage().replace("\"", "'") + "\"}";
         }
     }
 
     public static String logoutUser() {
         try {
-            String apiUrl = BASE_URL + "?action=logout";
-            String response = sendAuthenticatedPostRequest(apiUrl, "");
+            String apiUrl = BASE_URL + "?action=logout_user";
             
-            try {
-                JSONObject jsonResponse = new JSONObject(response);
-                if (!jsonResponse.optString("status").equals("success")) {
-                    return "{\"status\":\"error\", \"message\":\"Logout failed: " + 
-                           jsonResponse.optString("message") + "\"}";
-                }
-            } catch (JSONException e) {
-                return "{\"status\":\"error\", \"message\":\"Server returned invalid response\"}";
+            // Get the current auth token before clearing the session
+            String authToken = SessionManager.getAuthToken();
+            if (authToken == null || authToken.isEmpty()) {
+                // If no token exists, just clear local session and return success
+                SessionManager.logout();
+                return "{\"status\":\"success\",\"message\":\"Logged out successfully\"}";
             }
             
-            return response;
+            // Send the logout request with the current token
+            String response = sendHttpRequest(apiUrl, "GET", null, true);
+            
+            // Extract JSON part from response if it contains PHP warnings
+            String jsonResponse = response;
+            int jsonStart = response.indexOf("{");
+            int jsonEnd = response.lastIndexOf("}") + 1;
+            
+            if (jsonStart >= 0 && jsonEnd > jsonStart) {
+                jsonResponse = response.substring(jsonStart, jsonEnd);
+            }
+            
+            // Try to parse the response
+            try {
+                JSONObject jsonObj = new JSONObject(jsonResponse);
+                if (jsonObj.optString("status").equals("success")) {
+                    // Only clear local session if server confirms success
+                    SessionManager.logout();
+                    return jsonResponse;
+                } else {
+                    // If server reports error, log it but still clear local session
+                    System.err.println("Server reported logout error: " + jsonObj.optString("message"));
+                    SessionManager.logout();
+                    return "{\"status\":\"success\",\"message\":\"Logged out successfully\"}";
+                }
+            } catch (JSONException e) {
+                // If response is not valid JSON, log it but still clear local session
+                System.err.println("Invalid JSON response from server: " + jsonResponse);
+                SessionManager.logout();
+                return "{\"status\":\"success\",\"message\":\"Logged out successfully\"}";
+            }
         } catch (Exception e) {
-            return "{\"status\":\"error\", \"message\":\"Error logging out: " + 
-                   e.getMessage().replace("\"", "'") + "\"}";
+            // Log the error but still clear local session
+            System.err.println("Error during logout: " + e.getMessage());
+            e.printStackTrace();
+            SessionManager.logout();
+            return "{\"status\":\"success\",\"message\":\"Logged out successfully\"}";
         }
     }
 
@@ -255,20 +324,29 @@ public class APIClient {
         try {
             String apiUrl = BASE_URL + "?action=reset_password";
             
+            // Build POST data with proper encoding
             StringBuilder postData = new StringBuilder();
             postData.append("email=").append(URLEncoder.encode(email, "UTF-8"));
             postData.append("&new_password=").append(URLEncoder.encode(newPassword, "UTF-8"));
 
+            // Log request details (remove in production)
+            System.out.println("Sending password reset request to: " + apiUrl);
+            System.out.println("POST data (encoded): " + postData.toString());
+
             String response = sendHttpRequest(apiUrl, "POST", postData.toString(), false);
+            System.out.println("Raw server response: " + response);
             
+            // Validate JSON response
             try {
                 JSONObject jsonResponse = new JSONObject(response);
-                return response;
+        return response;
             } catch (JSONException e) {
+                System.err.println("Invalid JSON response from server: " + response);
                 return "{\"status\":\"error\", \"message\":\"Server returned invalid response: " + 
                        response.replace("\"", "'").replace("\n", " ") + "\"}";
             }
         } catch (Exception e) {
+            e.printStackTrace();
             return "{\"status\":\"error\", \"message\":\"Error resetting password: " + 
                    e.getMessage().replace("\"", "'") + "\"}";
         }
@@ -278,6 +356,7 @@ public class APIClient {
         try {
             String apiUrl = BASE_URL + "?action=update_username";
             
+            // Build POST data with proper encoding
             StringBuilder postData = new StringBuilder();
             postData.append("new_username=").append(URLEncoder.encode(newUsername, "UTF-8"));
 
@@ -292,6 +371,7 @@ public class APIClient {
         try {
             String apiUrl = BASE_URL + "?action=update_password";
             
+            // Build POST data with proper encoding
             StringBuilder postData = new StringBuilder();
             postData.append("old_password=").append(URLEncoder.encode(oldPassword, "UTF-8"));
             postData.append("&new_password=").append(URLEncoder.encode(newPassword, "UTF-8"));
@@ -306,16 +386,24 @@ public class APIClient {
     public static String getUserEmail() {
         try {
             String apiUrl = BASE_URL + "?action=get_user_email";
-            String response = sendAuthenticatedGetRequest(apiUrl);
             
+            // Log request details (remove in production)
+            System.out.println("Sending get user email request to: " + apiUrl);
+
+            String response = sendAuthenticatedGetRequest(apiUrl);
+            System.out.println("Raw server response: " + response);
+            
+            // Validate JSON response
             try {
                 JSONObject jsonResponse = new JSONObject(response);
                 return response;
             } catch (JSONException e) {
+                System.err.println("Invalid JSON response from server: " + response);
                 return "{\"status\":\"error\", \"message\":\"Server returned invalid response: " + 
                        response.replace("\"", "'").replace("\n", " ") + "\"}";
             }
         } catch (Exception e) {
+            e.printStackTrace();
             return "{\"status\":\"error\", \"message\":\"Error getting user email: " + 
                    e.getMessage().replace("\"", "'") + "\"}";
         }
@@ -324,16 +412,24 @@ public class APIClient {
     public static String getUsers() {
         try {
             String apiUrl = BASE_URL + "?action=get_users";
-            String response = sendAuthenticatedGetRequest(apiUrl);
             
+            // Log request details (remove in production)
+            System.out.println("Sending get users request to: " + apiUrl);
+
+            String response = sendAuthenticatedGetRequest(apiUrl);
+            System.out.println("Raw server response: " + response);
+            
+            // Validate JSON response
             try {
                 JSONObject jsonResponse = new JSONObject(response);
                 return response;
             } catch (JSONException e) {
+                System.err.println("Invalid JSON response from server: " + response);
                 return "{\"status\":\"error\", \"message\":\"Server returned invalid response: " + 
                        response.replace("\"", "'").replace("\n", " ") + "\"}";
             }
         } catch (Exception e) {
+            e.printStackTrace();
             return "{\"status\":\"error\", \"message\":\"Error getting users list: " + 
                    e.getMessage().replace("\"", "'") + "\"}";
         }
@@ -342,10 +438,21 @@ public class APIClient {
     public static String updateHighScore(int score) {
         try {
             String apiUrl = BASE_URL + "?action=update_score";
+            
+            // Build POST data with proper encoding
             StringBuilder postData = new StringBuilder();
             postData.append("score=").append(URLEncoder.encode(String.valueOf(score), "UTF-8"));
-            return sendHttpRequest(apiUrl, "POST", postData.toString(), true);
+
+            // Log request details
+            System.out.println("Sending score update request to: " + apiUrl);
+            System.out.println("Score being sent: " + score);
+
+            String response = sendHttpRequest(apiUrl, "POST", postData.toString(), true);
+            System.out.println("Score update response: " + response);
+            
+            return response;
         } catch (Exception e) {
+            e.printStackTrace();
             return "{\"status\":\"error\", \"message\":\"Error updating score: " + 
                    e.getMessage().replace("\"", "'") + "\"}";
         }
@@ -354,22 +461,45 @@ public class APIClient {
     public static String getBestScore() {
         try {
             String apiUrl = BASE_URL + "?action=get_best_score";
+            
+            // Log request details
+            System.out.println("Sending get best score request to: " + apiUrl);
+            
+            // Ensure we have an auth token
             String authToken = SessionManager.getAuthToken();
+            System.out.println("Auth token present: " + (authToken != null && !authToken.isEmpty()));
             
             if (authToken == null || authToken.isEmpty()) {
+                System.err.println("No auth token available for getBestScore request");
                 return "{\"status\":\"error\", \"message\":\"Not authenticated\"}";
             }
             
             String response = sendAuthenticatedGetRequest(apiUrl);
+            System.out.println("Raw best score response: " + response);
             
+            // Validate JSON response
             try {
                 JSONObject jsonResponse = new JSONObject(response);
-                return response;
+                if (jsonResponse.getString("status").equals("success")) {
+                    int bestScore = jsonResponse.getInt("best_score");
+                    System.out.println("Successfully retrieved best score: " + bestScore);
+                    return response;
+                } else {
+                    String errorMessage = jsonResponse.optString("message", "Unknown error");
+                    System.err.println("Error getting best score: " + errorMessage);
+                    if (jsonResponse.has("debug")) {
+                        System.err.println("Debug info: " + jsonResponse.getJSONObject("debug").toString(2));
+                    }
+                    return response;
+                }
             } catch (JSONException e) {
+                System.err.println("Invalid JSON response from server: " + response);
                 return "{\"status\":\"error\", \"message\":\"Server returned invalid response: " + 
                        response.replace("\"", "'").replace("\n", " ") + "\"}";
             }
         } catch (Exception e) {
+            System.err.println("Error in getBestScore: " + e.getMessage());
+            e.printStackTrace();
             return "{\"status\":\"error\", \"message\":\"Error fetching best score: " + 
                    e.getMessage().replace("\"", "'") + "\"}";
         }
@@ -388,9 +518,11 @@ public class APIClient {
     public static String requestPasswordReset(String username, String email) {
         try {
             String apiUrl = BASE_URL + "?action=request_password_reset";
+            
             StringBuilder postData = new StringBuilder();
             postData.append("username=").append(URLEncoder.encode(username, "UTF-8"));
             postData.append("&email=").append(URLEncoder.encode(email, "UTF-8"));
+
             return sendHttpRequest(apiUrl, "POST", postData.toString(), false);
         } catch (Exception e) {
             return "{\"status\":\"error\", \"message\":\"Error requesting password reset: " + 
@@ -401,10 +533,12 @@ public class APIClient {
     public static String verifyResetToken(String username, String token, String newPassword) {
         try {
             String apiUrl = BASE_URL + "?action=verify_reset_token";
+            
             StringBuilder postData = new StringBuilder();
             postData.append("username=").append(URLEncoder.encode(username, "UTF-8"));
             postData.append("&token=").append(URLEncoder.encode(token, "UTF-8"));
             postData.append("&new_password=").append(URLEncoder.encode(newPassword, "UTF-8"));
+
             return sendHttpRequest(apiUrl, "POST", postData.toString(), false);
         } catch (Exception e) {
             return "{\"status\":\"error\", \"message\":\"Error verifying reset token: " + 
@@ -415,8 +549,10 @@ public class APIClient {
     public static String clearResetToken(String username) {
         try {
             String apiUrl = BASE_URL + "?action=clear_reset_token";
+            
             StringBuilder postData = new StringBuilder();
             postData.append("username=").append(URLEncoder.encode(username, "UTF-8"));
+
             return sendHttpRequest(apiUrl, "POST", postData.toString(), false);
         } catch (Exception e) {
             return "{\"status\":\"error\", \"message\":\"Error clearing reset token: " + 

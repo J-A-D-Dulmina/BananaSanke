@@ -116,18 +116,36 @@ public class BananaPanel extends JPanel {
      * Shows the game over screen with the final score.
      */
     public void showGameOver(int score) {
-        timerPanel.stop();
-        snakePanel.getGameLogic().setRunning(false);
-        
-        Component comp = this;
-        while (comp != null && !(comp instanceof GameMainInterface)) {
-            comp = comp.getParent();
-        }
-        
-        if (comp instanceof GameMainInterface) {
-            GameMainInterface mainFrame = (GameMainInterface) comp;
-            GameOverPanel gameOverPanel = new GameOverPanel(mainFrame, score);
-            gameOverPanel.setVisible(true);
+        try {
+            // Stop the game components
+            timerPanel.stop();
+            snakePanel.getGameLogic().setRunning(false);
+            
+            // Find the main game interface
+            Component comp = this;
+            while (comp != null && !(comp instanceof GameMainInterface)) {
+                comp = comp.getParent();
+            }
+            
+            // Show game over panel
+            if (comp instanceof GameMainInterface) {
+                GameMainInterface mainFrame = (GameMainInterface) comp;
+                GameOverPanel gameOverPanel = new GameOverPanel(mainFrame, score);
+                gameOverPanel.setVisible(true);
+            } else {
+                System.err.println("Error: Could not find GameMainInterface");
+                JOptionPane.showMessageDialog(this,
+                    "Game Over! Final Score: " + score,
+                    "Game Over",
+                    JOptionPane.INFORMATION_MESSAGE);
+            }
+        } catch (Exception e) {
+            System.err.println("Error showing game over screen: " + e.getMessage());
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                "Game Over! Final Score: " + score,
+                "Game Over",
+                JOptionPane.INFORMATION_MESSAGE);
         }
     }
 

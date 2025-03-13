@@ -28,7 +28,8 @@ public class ImageLoader {
     public static ImageIcon loadImage(String path, int width, int height) {
         ImageIcon icon = new ImageIcon(path);
         if (icon.getIconWidth() <= 0) {
-            return null;
+            System.out.println("Error: Image not found -> " + path);
+            return null; // Prevents crashes if image is missing
         }
         Image img = icon.getImage().getScaledInstance(width, height, Image.SCALE_DEFAULT);
         return new ImageIcon(img);

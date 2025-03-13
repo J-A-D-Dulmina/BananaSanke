@@ -98,8 +98,15 @@ public class ResetPasswordController {
         try {
             String response = APIClient.clearResetToken(model.getUsername());
             JSONObject jsonResponse = new JSONObject(response);
+            
+            if (!jsonResponse.getString("status").equals("success")) {
+                System.err.println("Warning: Failed to clear reset token: " + 
+                    jsonResponse.optString("message", "Unknown error"));
+            }
         } catch (Exception e) {
-            // Silently fail for cleanup operations
+            // Log error but don't show to user since this is cleanup
+            System.err.println("Error clearing reset token: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -124,9 +131,12 @@ public class ResetPasswordController {
         }
         
         updateMessage(errorMessage, false);
+        System.err.println("Error in ResetPasswordController: " + e.getMessage());
+        e.printStackTrace();
     }
 
     private void updateMessage(String message, boolean success) {
+        // Update the message label in the view
         view.updateMessageLabel(message, success);
     }
 } 

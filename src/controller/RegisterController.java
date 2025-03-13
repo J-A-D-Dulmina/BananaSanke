@@ -16,6 +16,7 @@ public class RegisterController {
     }
 
     public void handleRegister(String username, String email, String password) {
+        // Validate input
         if (username.trim().isEmpty() || email.trim().isEmpty() || password.trim().isEmpty()) {
             registerUI.showMessage("All fields are required.", false);
             return;
@@ -35,7 +36,8 @@ public class RegisterController {
             } else {
                 registerUI.showMessage(message, false);
             }
-        } catch (Exception e) {
+        } catch (JSONException e) {
+            System.err.println("JSON parsing error: " + e.getMessage());
             registerUI.showMessage("An error occurred during registration. Please try again.", false);
         }
     }

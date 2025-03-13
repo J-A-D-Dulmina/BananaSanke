@@ -28,12 +28,19 @@ public class GameMainInterface extends JFrame {
     public GameMainInterface() {
         super("Banana Snake");
         
+        // Verify user is logged in
+        if (SessionManager.getAuthToken() == null || SessionManager.getUsername() == null) {
+            throw new IllegalStateException("User must be logged in to start game");
+        }
+        
         try {
+            // Initialize sound manager
             soundManager = SoundManager.getInstance();
             soundManager.playBackgroundMusic();
 
             setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 
+            // Add window closing listener
             addWindowListener(new WindowAdapter() {
                 @Override
                 public void windowClosing(WindowEvent evt) {
@@ -41,50 +48,67 @@ public class GameMainInterface extends JFrame {
                 }
             });
 
+            // Initialize components
             initializeComponents();
 
+            // Set window properties
             setSize(1000, 600);
             setResizable(false);
             setLocationRelativeTo(null);
+            
+            // Request focus to ensure keyboard input works
             requestFocus();
             
         } catch (Exception e) {
+            System.err.println("Error initializing game interface: " + e.getMessage());
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, 
+                "Error initializing game. Please try restarting the application.",
+                "Initialization Error",
+                JOptionPane.ERROR_MESSAGE);
             dispose();
-            throw new RuntimeException("Failed to initialize game components", e);
+            throw e;
         }
     }
 
     private void initializeComponents() {
-        // Create panels
-        snakePanel = new SnakePanel();
-        leaderboardPanel = new LeaderboardPanel(this);
+        try {
+            // Create panels
+            snakePanel = new SnakePanel();
+            leaderboardPanel = new LeaderboardPanel(this);
 
-        // Create top bar
-        JPanel topBar = createTopBar();
+            // Create top bar
+            JPanel topBar = createTopBar();
 
-        // Create game panels
-        JPanel leftPanel = new BananaPanel(this, snakePanel);
-        JPanel rightPanel = snakePanel;
+            // Create game panels
+            JPanel leftPanel = new BananaPanel(this, snakePanel);
+            JPanel rightPanel = snakePanel;
 
-        // Create split pane
-        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftPanel, rightPanel);
-        splitPane.setResizeWeight(0.5);
-        splitPane.setDividerSize(5);
-        splitPane.setEnabled(false);
-        splitPane.setDividerLocation(500);
+            // Create split pane
+            JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftPanel, rightPanel);
+            splitPane.setResizeWeight(0.5);
+            splitPane.setDividerSize(5);
+            splitPane.setEnabled(false);
+            splitPane.setDividerLocation(500);
 
-        // Add resize listener
-        addComponentListener(new ComponentAdapter() {
-            @Override
-            public void componentResized(ComponentEvent evt) {
-                splitPane.setDividerLocation(getWidth() / 2);
-            }
-        });
+            // Add resize listener
+            addComponentListener(new ComponentAdapter() {
+                @Override
+                public void componentResized(ComponentEvent evt) {
+                    splitPane.setDividerLocation(getWidth() / 2);
+                }
+            });
 
-        // Add components to frame
-        setLayout(new BorderLayout());
-        add(topBar, BorderLayout.NORTH);
-        add(splitPane, BorderLayout.CENTER);
+            // Add components to frame
+            setLayout(new BorderLayout());
+            add(topBar, BorderLayout.NORTH);
+            add(splitPane, BorderLayout.CENTER);
+            
+        } catch (Exception e) {
+            System.err.println("Error initializing game components: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Failed to initialize game components", e);
+        }
     }
 
     /**
@@ -114,8 +138,10 @@ public class GameMainInterface extends JFrame {
      * Asks for confirmation before closing the game.
      */
     private void confirmAndExit() {
+        // Play button click sound
         SoundManager.getInstance().playButtonClickSound();
         
+        // Show confirmation dialog
         int choice = CustomDialogUtils.showConfirmDialog(
             this,
             "Are you sure you want to exit?",
@@ -123,9 +149,20 @@ public class GameMainInterface extends JFrame {
         );
         
         if (choice == JOptionPane.YES_OPTION) {
-            APIClient.logoutUser();
-            dispose();
-            System.exit(0);
+            try {
+                // Attempt to logout
+                APIClient.logoutUser();
+                
+                // Close the game window
+                dispose();
+                
+                // Exit the application
+                System.exit(0);
+            } catch (Exception e) {
+                // Even if logout fails, still close the game
+                dispose();
+                System.exit(0);
+            }
         }
     }
     
