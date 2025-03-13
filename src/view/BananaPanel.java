@@ -1,8 +1,11 @@
 package view;
 
+import controller.BananaPanelController;
+import model.BananaPanelModel;
 import javax.swing.*;
 import java.awt.*;
-
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 
 /**
  * Panel that contains the button panel, API section, and bottom bar.
@@ -14,6 +17,10 @@ public class BananaPanel extends JPanel {
     private final SnakePanel snakePanel;
     private final HealthPanel healthPanel;
     private final TimerPanel timerPanel;
+    private BananaPanelController controller;
+    private int score;
+    private static final Color BANANA_COLOR = new Color(255, 225, 53);
+    private static final Color BANANA_PEEL_COLOR = new Color(255, 200, 0);
     
 
     /**
@@ -42,6 +49,15 @@ public class BananaPanel extends JPanel {
         // Bottom section: Score panel (left) and Health panel (right)
         JPanel bottomBar = createBottomBar();
         add(bottomBar, BorderLayout.SOUTH);
+
+        controller = new BananaPanelController(this);
+        
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                controller.setPanelDimensions(getWidth(), getHeight());
+            }
+        });
     }
 
     /**
@@ -101,35 +117,78 @@ public class BananaPanel extends JPanel {
      */
     public void showGameOver(int score) {
         try {
-            // Stop the game components
             timerPanel.stop();
             snakePanel.getGameLogic().setRunning(false);
             
-            // Find the main game interface
             Component comp = this;
             while (comp != null && !(comp instanceof GameMainInterface)) {
                 comp = comp.getParent();
             }
             
-            // Show game over panel
             if (comp instanceof GameMainInterface) {
                 GameMainInterface mainFrame = (GameMainInterface) comp;
                 GameOverPanel gameOverPanel = new GameOverPanel(mainFrame, score);
                 gameOverPanel.setVisible(true);
             } else {
-                System.err.println("Error: Could not find GameMainInterface");
                 JOptionPane.showMessageDialog(this,
                     "Game Over! Final Score: " + score,
                     "Game Over",
                     JOptionPane.INFORMATION_MESSAGE);
             }
         } catch (Exception e) {
-            System.err.println("Error showing game over screen: " + e.getMessage());
-            e.printStackTrace();
             JOptionPane.showMessageDialog(this,
                 "Game Over! Final Score: " + score,
                 "Game Over",
                 JOptionPane.INFORMATION_MESSAGE);
         }
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        Graphics2D g2d = (Graphics2D) g;
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+        BananaPanelModel model = controller.getModel();
+        if (model.isVisible()) {
+            Point position = model.getPosition();
+            int size = model.getBananaSize();
+            
+            // Draw banana peel
+            g2d.setColor(BANANA_PEEL_COLOR);
+            g2d.fillOval(position.x - size/2, position.y - size/2, size, size);
+            
+            // Draw banana
+            g2d.setColor(BANANA_COLOR);
+            g2d.fillOval(position.x - size/3, position.y - size/3, size*2/3, size*2/3);
+        }
+    }
+
+    public void updateScore(int newScore) {
+        this.score = newScore;
+    }
+
+    public int getScore() {
+        return score;
+    }
+
+    public void checkCollision(Point snakeHead) {
+        controller.checkCollision(snakeHead);
+    }
+
+    public void generateNewBanana() {
+        controller.generateNewBanana();
+    }
+
+    public void reset() {
+        controller.reset();
+    }
+
+    public void setBananaSize(int size) {
+        controller.setBananaSize(size);
+    }
+
+    public void dispose() {
+        controller.dispose();
     }
 }

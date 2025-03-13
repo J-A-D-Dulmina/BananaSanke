@@ -4,32 +4,40 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import model.SessionManager;
+import controller.GameOverController;
+import model.GameOverModel;
 
 public class GameOverPanel extends JDialog {
     private static final long serialVersionUID = 1L;
     private final GameMainInterface mainFrame;
-    private final int finalScore;
+    private final GameOverController controller;
+    private final GameOverModel model;
 
     public GameOverPanel(GameMainInterface mainFrame, int finalScore) {
         super(mainFrame, "Game Over", true);
         this.mainFrame = mainFrame;
-        this.finalScore = finalScore;
+        
+        // Initialize MVC components
+        this.model = new GameOverModel();
+        this.controller = new GameOverController(this);
         
         setSize(400, 300);
         setLocationRelativeTo(mainFrame);
         setResizable(false);
-        setUndecorated(true); // Remove window decorations
-        setBackground(new Color(0, 0, 0, 0)); // Make dialog background transparent
+        setUndecorated(true);
+        setBackground(new Color(0, 0, 0, 0));
         
-        // Add window closing listener to reset game when dialog is closed
-        addWindowListener(new java.awt.event.WindowAdapter() {
+        addWindowListener(new WindowAdapter() {
             @Override
-            public void windowClosing(java.awt.event.WindowEvent e) {
+            public void windowClosing(WindowEvent e) {
                 resetAndClose();
             }
         });
         
         initializeComponents();
+        
+        // Set initial game results
+        controller.setGameResults(finalScore, 0, SessionManager.getUsername());
     }
 
     private void initializeComponents() {
@@ -42,8 +50,8 @@ public class GameOverPanel extends JDialog {
                 super.paintComponent(g);
                 Graphics2D g2d = (Graphics2D) g.create();
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2d.setColor(new Color(40, 40, 40, 230)); // Semi-transparent background
-                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20); // Rounded corners
+                g2d.setColor(new Color(40, 40, 40, 230));
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20);
                 g2d.dispose();
             }
         };
@@ -69,7 +77,7 @@ public class GameOverPanel extends JDialog {
         gameOverLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         // Username
-        String username = SessionManager.getUsername();
+        String username = model.getPlayerName();
         if (username == null || username.isEmpty()) {
             username = "Guest";
         }
@@ -77,7 +85,7 @@ public class GameOverPanel extends JDialog {
         usernameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         // Score
-        JLabel scoreLabel = createStyledLabel("Final Score: " + finalScore, 24);
+        JLabel scoreLabel = createStyledLabel("Final Score: " + model.getFinalScore(), 24);
         scoreLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         // Buttons panel
@@ -115,20 +123,23 @@ public class GameOverPanel extends JDialog {
     }
 
     private void resetAndClose() {
-        // Close the dialog first
         dispose();
-        
-        // Use SwingUtilities.invokeLater to ensure proper UI update sequence
         SwingUtilities.invokeLater(() -> {
-            // Reset the game using the controller
             mainFrame.getSnakePanel().getGameController().resetGame();
-            
-            // Reset the snake panel to click-to-start state
             mainFrame.getSnakePanel().resetToStart();
-            
-            // Make sure the main frame is focused
             mainFrame.requestFocusInWindow();
         });
+    }
+
+    public void updateDisplay() {
+        // Update the display with current model data
+        repaint();
+    }
+
+    public void showMessage(String message, boolean success) {
+        JOptionPane.showMessageDialog(this, message, 
+            success ? "Success" : "Error", 
+            success ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.ERROR_MESSAGE);
     }
 
     private JLabel createStyledLabel(String text, int fontSize) {
@@ -145,7 +156,6 @@ public class GameOverPanel extends JDialog {
                 Graphics2D g2d = (Graphics2D) g.create();
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 
-                // Draw button background
                 if (getModel().isPressed()) {
                     g2d.setColor(new Color(255, 0, 0, 180));
                 } else if (getModel().isRollover()) {
@@ -155,7 +165,6 @@ public class GameOverPanel extends JDialog {
                 }
                 g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
                 
-                // Draw X symbol
                 g2d.setColor(Color.WHITE);
                 g2d.setFont(new Font("Arial", Font.BOLD, 16));
                 FontMetrics fm = g2d.getFontMetrics();
@@ -183,13 +192,13 @@ public class GameOverPanel extends JDialog {
                 Graphics2D g2d = (Graphics2D) g.create();
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 if (getModel().isPressed()) {
-                    g2d.setColor(new Color(0, 150, 0)); // Darker when pressed
+                    g2d.setColor(new Color(0, 150, 0));
                 } else if (getModel().isRollover()) {
-                    g2d.setColor(new Color(0, 220, 0)); // Brighter when hovered
+                    g2d.setColor(new Color(0, 220, 0));
                 } else {
-                    g2d.setColor(new Color(0, 200, 0)); // Normal state
+                    g2d.setColor(new Color(0, 200, 0));
                 }
-                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20); // Rounded corners
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20);
                 g2d.setColor(getForeground());
                 FontMetrics fm = g2d.getFontMetrics();
                 int x = (getWidth() - fm.stringWidth(getText())) / 2;
@@ -205,7 +214,6 @@ public class GameOverPanel extends JDialog {
         button.setBorderPainted(false);
         button.setContentAreaFilled(false);
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        button.addActionListener(e -> resetAndClose());
         return button;
     }
     
@@ -216,13 +224,13 @@ public class GameOverPanel extends JDialog {
                 Graphics2D g2d = (Graphics2D) g.create();
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 if (getModel().isPressed()) {
-                    g2d.setColor(new Color(200, 200, 0)); // Darker when pressed
+                    g2d.setColor(new Color(200, 200, 0));
                 } else if (getModel().isRollover()) {
-                    g2d.setColor(new Color(255, 255, 100)); // Brighter when hovered
+                    g2d.setColor(new Color(255, 255, 100));
                 } else {
-                    g2d.setColor(Color.YELLOW); // Normal state
+                    g2d.setColor(Color.YELLOW);
                 }
-                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20); // Rounded corners
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20);
                 g2d.setColor(getForeground());
                 FontMetrics fm = g2d.getFontMetrics();
                 int x = (getWidth() - fm.stringWidth(getText())) / 2;

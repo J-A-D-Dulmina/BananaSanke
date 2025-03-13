@@ -28,19 +28,12 @@ public class GameMainInterface extends JFrame {
     public GameMainInterface() {
         super("Banana Snake");
         
-        // Verify user is logged in
-        if (SessionManager.getAuthToken() == null || SessionManager.getUsername() == null) {
-            throw new IllegalStateException("User must be logged in to start game");
-        }
-        
         try {
-            // Initialize sound manager
             soundManager = SoundManager.getInstance();
             soundManager.playBackgroundMusic();
 
             setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 
-            // Add window closing listener
             addWindowListener(new WindowAdapter() {
                 @Override
                 public void windowClosing(WindowEvent evt) {
@@ -48,20 +41,14 @@ public class GameMainInterface extends JFrame {
                 }
             });
 
-            // Initialize components
             initializeComponents();
 
-            // Set window properties
             setSize(1000, 600);
             setResizable(false);
             setLocationRelativeTo(null);
-            
-            // Request focus to ensure keyboard input works
             requestFocus();
             
         } catch (Exception e) {
-            System.err.println("Error initializing game interface: " + e.getMessage());
-            e.printStackTrace();
             JOptionPane.showMessageDialog(null, 
                 "Error initializing game. Please try restarting the application.",
                 "Initialization Error",

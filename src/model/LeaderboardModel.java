@@ -39,11 +39,9 @@ public class LeaderboardModel {
                 throw new Exception("Failed to fetch leaderboard: " + errorMessage);
             }
 
-            // Clear existing entries in a thread-safe way
             synchronized (entries) {
                 entries.clear();
                 
-                // Parse scores array
                 JSONArray scores = jsonResponse.getJSONArray("scores");
                 for (int i = 0; i < scores.length(); i++) {
                     JSONObject score = scores.getJSONObject(i);
@@ -57,19 +55,15 @@ public class LeaderboardModel {
                     entries.add(entry);
                 }
 
-                // Update user data
                 this.userRank = jsonResponse.optInt("user_rank", 0);
                 this.userScore = jsonResponse.optInt("user_score", 0);
                 this.totalPlayers = jsonResponse.optInt("total_players", 0);
                 this.lastError = "";
 
-                // Return a copy of the list to prevent external modification
                 return new ArrayList<>(entries);
             }
         } catch (Exception e) {
             this.lastError = "Failed to fetch leaderboard: " + e.getMessage();
-            System.err.println("Error fetching leaderboard: " + e.getMessage());
-            e.printStackTrace();
             throw new Exception(this.lastError);
         }
     }

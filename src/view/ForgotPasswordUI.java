@@ -359,40 +359,19 @@ public class ForgotPasswordUI extends JDialog {
         String username = usernameField.getText().trim();
         String email = emailField.getText().trim();
 
-        // Validate input
-        if (username.isEmpty() || username.equals("Enter your username")) {
-            showMessage("Please enter your username!", false);
-            return;
-        }
-
-        if (email.isEmpty() || email.equals("Enter your email")) {
-            showMessage("Please enter your email address!", false);
-            return;
-        }
-
-        // Validate email format
-        if (!email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
-            showMessage("Please enter a valid email address!", false);
+        if (username.isEmpty() || email.isEmpty()) {
+            showMessage("Please enter both username and email", false);
             return;
         }
 
         try {
-            // Log the request details
-            System.out.println("Sending password reset request for username: " + username);
-            System.out.println("Email address: " + email);
-
-            // Send the request
             String response = APIClient.requestPasswordReset(username, email);
-            System.out.println("Server response: " + response);
-
-            // Parse the response
             JSONObject jsonResponse = new JSONObject(response);
             String status = jsonResponse.getString("status");
             String message = jsonResponse.getString("message");
 
             if (status.equals("success")) {
                 showMessage(message, true);
-                // Open ResetPasswordUI with the username and email
                 dispose();
                 SwingUtilities.invokeLater(() -> {
                     ResetPasswordUI resetUI = new ResetPasswordUI(null, username, email);
@@ -400,13 +379,10 @@ public class ForgotPasswordUI extends JDialog {
                 });
             } else {
                 showMessage(message, false);
-                System.err.println("Password reset request failed: " + message);
             }
         } catch (Exception e) {
             String errorMessage = "Error: " + e.getMessage();
             showMessage(errorMessage, false);
-            System.err.println("Exception during password reset request:");
-            e.printStackTrace();
         }
     }
 

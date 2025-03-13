@@ -4,20 +4,23 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import controller.TimerPanelController;
+import model.TimerPanelModel;
 
 public class TimerPanel extends JPanel {
     private JLabel timerLabel;
     private JLabel remainLabel;
-    private Timer timer;
-    private int seconds = 10;  // Start from 10 seconds
+    private TimerPanelController controller;
     private boolean isRunning = false;
 
     public TimerPanel() {
         setLayout(new FlowLayout(FlowLayout.LEFT, 10, 0));
-        setBackground(new Color(30, 30, 30)); 
-//        setBorder(BorderFactory.createLineBorder(Color.YELLOW, 2));  
+        setBackground(new Color(30, 30, 30));
         setPreferredSize(new Dimension(200, 60));
         setMaximumSize(new Dimension(200, 60));
+
+        // Initialize MVC components
+        this.controller = new TimerPanelController(this);
 
         // Create panel for labels
         JPanel labelPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
@@ -30,35 +33,18 @@ public class TimerPanel extends JPanel {
         labelPanel.add(remainLabel);
 
         // Create timer label with custom styling
-        timerLabel = new JLabel("10");  // Start from 10
+        timerLabel = new JLabel("00:10");  // Start from 10 seconds
         timerLabel.setFont(new Font("Arial", Font.BOLD, 24));
         timerLabel.setForeground(Color.WHITE);
         labelPanel.add(timerLabel);
 
         add(labelPanel);
-
-        // Initialize timer to count down
-        timer = new Timer(1000, new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                seconds--;
-                if (seconds <= 0) {
-                    stop();
-                    // Notify game logic that time is up
-                    BananaPanel parent = (BananaPanel) SwingUtilities.getAncestorOfClass(BananaPanel.class, TimerPanel.this);
-                    if (parent != null) {
-                        parent.getSnakePanel().getGameLogic().handleTimeUp();
-                    }
-                }
-                updateDisplay();
-            }
-        });
     }
 
-    private void updateDisplay() {
-        timerLabel.setText(String.valueOf(seconds));
+    public void updateTimeDisplay(String timeString) {
+        timerLabel.setText(timeString);
         // Change color to red when 3 or fewer seconds remain
-        if (seconds <= 3) {
+        if (controller.getTotalSeconds() <= 3) {
             timerLabel.setForeground(Color.RED);
         } else {
             timerLabel.setForeground(Color.WHITE);
@@ -68,25 +54,45 @@ public class TimerPanel extends JPanel {
     public void start() {
         if (!isRunning) {
             isRunning = true;
-            timer.start();
+            controller.startTimer();
         }
     }
 
     public void stop() {
         if (isRunning) {
             isRunning = false;
-            timer.stop();
+            controller.pauseTimer();
         }
     }
 
     public void reset() {
         stop();
-        seconds = 10;  // Reset to 10 seconds
-        timerLabel.setForeground(Color.WHITE);  // Reset color
-        updateDisplay();
+        controller.resetTimer();
+        timerLabel.setForeground(Color.WHITE);
     }
 
     public int getSeconds() {
-        return seconds;
+        return controller.getTotalSeconds();
+    }
+
+    public void dispose() {
+        controller.dispose();
+    }
+
+    public void notifyTimeUp() {
+        // Find the BananaPanel parent
+        Component parent = this;
+        while (parent != null && !(parent instanceof BananaPanel)) {
+            parent = parent.getParent();
+        }
+        
+        if (parent instanceof BananaPanel) {
+            BananaPanel bananaPanel = (BananaPanel) parent;
+            // Get the snake panel and stop the game
+            SnakePanel snakePanel = bananaPanel.getSnakePanel();
+            if (snakePanel != null) {
+                snakePanel.getGameLogic().handleTimeUp();
+            }
+        }
     }
 } 

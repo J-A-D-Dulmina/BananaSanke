@@ -47,7 +47,6 @@ public class SoundManager extends Observable {
         try {
             File soundFile = new File(path);
             if (!soundFile.exists()) {
-                System.err.println("Error: Sound effect not found at " + soundFile.getAbsolutePath());
                 return;
             }
 
@@ -57,7 +56,6 @@ public class SoundManager extends Observable {
             DataLine.Info info = new DataLine.Info(Clip.class, format);
             
             if (!AudioSystem.isLineSupported(info)) {
-                System.err.println("Error: Audio line not supported for " + name);
                 return;
             }
             
@@ -66,7 +64,7 @@ public class SoundManager extends Observable {
             soundEffects.put(name, clip);
             
         } catch (Exception e) {
-            System.err.println("Error loading sound effect " + name + ": " + e.getMessage());
+            // Silently fail for sound loading errors
         }
     }
 

@@ -53,22 +53,18 @@ public class APIClient {
             conn = setupHttpConnection(apiUrl, method, authRequired);
 
             if ("POST".equals(method) && postData != null) {
-                // Set content length for POST requests
                 byte[] postDataBytes = postData.getBytes("UTF-8");
                 conn.setRequestProperty("Content-Length", String.valueOf(postDataBytes.length));
                 
-                // Write POST data
                 try (OutputStream os = conn.getOutputStream()) {
                     os.write(postDataBytes);
                     os.flush();
                 }
             }
 
-            // Get response code and message
             int responseCode = conn.getResponseCode();
             String responseMessage = conn.getResponseMessage();
             
-            // Read the response
             InputStream inputStream = (responseCode >= 400) ? conn.getErrorStream() : conn.getInputStream();
             
             if (inputStream != null) {
@@ -80,7 +76,6 @@ public class APIClient {
                 }
             }
 
-            // If empty response, return error JSON with HTTP status info
             if (response.length() == 0) {
                 return String.format(
                     "{\"status\":\"error\", \"message\":\"Empty response from server (HTTP %d: %s)\", \"http_code\":%d}",
@@ -90,13 +85,10 @@ public class APIClient {
                 );
             }
 
-            // Try to parse the response as JSON
             try {
                 new JSONObject(response.toString());
                 return response.toString();
             } catch (JSONException e) {
-                // If response is not JSON, wrap it in a JSON error object
-                System.err.println("Non-JSON response from server: " + response.toString());
                 return String.format(
                     "{\"status\":\"error\", \"message\":\"Invalid JSON response from server (HTTP %d: %s): %s\", \"http_code\":%d}",
                     responseCode,
@@ -107,7 +99,6 @@ public class APIClient {
             }
             
         } catch (IOException e) {
-            e.printStackTrace();
             return String.format(
                 "{\"status\":\"error\", \"message\":\"Network error: %s\", \"error_type\":\"network\"}",
                 e.getMessage().replace("\"", "'")
@@ -386,24 +377,16 @@ public class APIClient {
     public static String getUserEmail() {
         try {
             String apiUrl = BASE_URL + "?action=get_user_email";
-            
-            // Log request details (remove in production)
-            System.out.println("Sending get user email request to: " + apiUrl);
-
             String response = sendAuthenticatedGetRequest(apiUrl);
-            System.out.println("Raw server response: " + response);
             
-            // Validate JSON response
             try {
                 JSONObject jsonResponse = new JSONObject(response);
                 return response;
             } catch (JSONException e) {
-                System.err.println("Invalid JSON response from server: " + response);
                 return "{\"status\":\"error\", \"message\":\"Server returned invalid response: " + 
                        response.replace("\"", "'").replace("\n", " ") + "\"}";
             }
         } catch (Exception e) {
-            e.printStackTrace();
             return "{\"status\":\"error\", \"message\":\"Error getting user email: " + 
                    e.getMessage().replace("\"", "'") + "\"}";
         }
@@ -412,24 +395,16 @@ public class APIClient {
     public static String getUsers() {
         try {
             String apiUrl = BASE_URL + "?action=get_users";
-            
-            // Log request details (remove in production)
-            System.out.println("Sending get users request to: " + apiUrl);
-
             String response = sendAuthenticatedGetRequest(apiUrl);
-            System.out.println("Raw server response: " + response);
             
-            // Validate JSON response
             try {
                 JSONObject jsonResponse = new JSONObject(response);
                 return response;
             } catch (JSONException e) {
-                System.err.println("Invalid JSON response from server: " + response);
                 return "{\"status\":\"error\", \"message\":\"Server returned invalid response: " + 
                        response.replace("\"", "'").replace("\n", " ") + "\"}";
             }
         } catch (Exception e) {
-            e.printStackTrace();
             return "{\"status\":\"error\", \"message\":\"Error getting users list: " + 
                    e.getMessage().replace("\"", "'") + "\"}";
         }
@@ -461,45 +436,26 @@ public class APIClient {
     public static String getBestScore() {
         try {
             String apiUrl = BASE_URL + "?action=get_best_score";
-            
-            // Log request details
-            System.out.println("Sending get best score request to: " + apiUrl);
-            
-            // Ensure we have an auth token
             String authToken = SessionManager.getAuthToken();
-            System.out.println("Auth token present: " + (authToken != null && !authToken.isEmpty()));
             
             if (authToken == null || authToken.isEmpty()) {
-                System.err.println("No auth token available for getBestScore request");
                 return "{\"status\":\"error\", \"message\":\"Not authenticated\"}";
             }
             
             String response = sendAuthenticatedGetRequest(apiUrl);
-            System.out.println("Raw best score response: " + response);
             
-            // Validate JSON response
             try {
                 JSONObject jsonResponse = new JSONObject(response);
                 if (jsonResponse.getString("status").equals("success")) {
-                    int bestScore = jsonResponse.getInt("best_score");
-                    System.out.println("Successfully retrieved best score: " + bestScore);
                     return response;
                 } else {
-                    String errorMessage = jsonResponse.optString("message", "Unknown error");
-                    System.err.println("Error getting best score: " + errorMessage);
-                    if (jsonResponse.has("debug")) {
-                        System.err.println("Debug info: " + jsonResponse.getJSONObject("debug").toString(2));
-                    }
                     return response;
                 }
             } catch (JSONException e) {
-                System.err.println("Invalid JSON response from server: " + response);
                 return "{\"status\":\"error\", \"message\":\"Server returned invalid response: " + 
                        response.replace("\"", "'").replace("\n", " ") + "\"}";
             }
         } catch (Exception e) {
-            System.err.println("Error in getBestScore: " + e.getMessage());
-            e.printStackTrace();
             return "{\"status\":\"error\", \"message\":\"Error fetching best score: " + 
                    e.getMessage().replace("\"", "'") + "\"}";
         }
