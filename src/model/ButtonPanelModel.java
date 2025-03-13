@@ -46,7 +46,7 @@ public class ButtonPanelModel {
     }
 
     public void pauseGame() {
-        if (isGameStarted() && !isGamePaused()) {
+        if (isGameStarted()) {
             updateGameController();
             if (gameController != null) {
                 gameController.pauseGame();

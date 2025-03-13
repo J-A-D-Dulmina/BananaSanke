@@ -33,13 +33,14 @@ public class ButtonPanelController {
             model.startGame();
             view.setPlayPauseIcon("pause");
         } else {
-            model.pauseGame();
             if (model.isGamePaused()) {
-                view.setPlayPauseIcon("play");
-                view.showPauseOverlay();
-            } else {
+                model.resumeGame();
                 view.setPlayPauseIcon("pause");
                 view.hidePauseOverlay();
+            } else {
+                model.pauseGame();
+                view.setPlayPauseIcon("play");
+                view.showPauseOverlay();
             }
         }
     }

@@ -59,11 +59,15 @@ public class SnakeGameController implements ActionListener {
     public void pauseGame() {
         if (gameState.isGameOver()) return;
         
-        gameState.setPaused(!gameState.isPaused());
-        if (gameState.isPaused()) {
+        boolean newPausedState = !gameState.isPaused();
+        gameState.setPaused(newPausedState);
+        
+        if (newPausedState) {
             gameTimer.stop();
+            gameLogic.setRunning(false);
         } else {
             gameTimer.start();
+            gameLogic.setRunning(true);
         }
     }
 
