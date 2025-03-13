@@ -15,11 +15,9 @@ public class TimerPanelModel {
     public void start() {
         if (!isRunning && !isPaused) {
             isRunning = true;
-            // Set initial time if not paused
-            if (!isPaused) {
-                minutes = START_TIME / 60;
-                seconds = START_TIME % 60;
-            }
+            isPaused = false;
+            minutes = START_TIME / 60;
+            seconds = START_TIME % 60;
         }
     }
 
@@ -49,7 +47,7 @@ public class TimerPanelModel {
     }
 
     public void increment() {
-        if (isRunning) {
+        if (isRunning && !isPaused) {
             if (seconds > 0) {
                 seconds--;
             } else if (minutes > 0) {

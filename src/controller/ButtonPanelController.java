@@ -12,6 +12,8 @@ import org.json.JSONObject;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import api.APIClient;
+import javax.swing.SwingUtilities;
+import view.BananaPanel;
 
 public class ButtonPanelController {
     private final ButtonPanelModel model;
@@ -37,10 +39,20 @@ public class ButtonPanelController {
                 model.resumeGame();
                 view.setPlayPauseIcon("pause");
                 view.hidePauseOverlay();
+                // Resume the timer
+                BananaPanel parent = (BananaPanel) SwingUtilities.getAncestorOfClass(BananaPanel.class, view);
+                if (parent != null) {
+                    parent.getTimerPanel().start();
+                }
             } else {
                 model.pauseGame();
                 view.setPlayPauseIcon("play");
                 view.showPauseOverlay();
+                // Stop the timer
+                BananaPanel parent = (BananaPanel) SwingUtilities.getAncestorOfClass(BananaPanel.class, view);
+                if (parent != null) {
+                    parent.getTimerPanel().stop();
+                }
             }
         }
     }

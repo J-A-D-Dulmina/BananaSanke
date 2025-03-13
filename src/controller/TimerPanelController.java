@@ -36,18 +36,26 @@ public class TimerPanelController {
     }
 
     public void startTimer() {
-        model.start();
-        timer.start();
+        if (!model.isRunning() && !model.isPaused()) {
+            model.start();
+            timer.start();
+        } else if (model.isPaused()) {
+            resumeTimer();
+        }
     }
 
     public void pauseTimer() {
-        model.pause();
-        timer.stop();
+        if (model.isRunning()) {
+            model.pause();
+            timer.stop();
+        }
     }
 
     public void resumeTimer() {
-        model.resume();
-        timer.start();
+        if (model.isPaused()) {
+            model.resume();
+            timer.start();
+        }
     }
 
     public void resetTimer() {
