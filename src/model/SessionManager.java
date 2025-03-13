@@ -58,12 +58,16 @@ public class SessionManager {
     }
 
     /**
-     * Clears the stored authentication token and username (used on logout).
+     * Clears all session data including authentication token, username, and email.
+     * This method is called when the user logs out or when the session expires.
      */
     public static void logout() {
+        // Clear all session data
         authToken = null;
         username = null;
         email = null;
-        emailFetchFailed = false; // Reset the flag on logout
+        emailFetchFailed = false;
+        
+        System.out.println("Session cleared - User logged out successfully");
     }
 }

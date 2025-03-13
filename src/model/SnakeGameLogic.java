@@ -168,6 +168,7 @@ public class SnakeGameLogic {
             // Spawn new food regardless of whether the answer was correct
             food.spawnFood(snake);
         } else {
+            // Remove tail only if food wasn't eaten
             snake.remove(snake.size() - 1);
         }
 
@@ -229,19 +230,20 @@ public class SnakeGameLogic {
         direction = "RIGHT";  
         score = 0;
         waitingForAnswer = false;
-        running = false;  // Make sure game is not running
+        running = true;  // Set game to running state
 
         // Reset snake to center starting position
         initializeSnake();
 
-        // Reset health and score
+        // Reset health and score in UI
         if (APISection.getInstance() != null) {
-            // Reset health
             BananaPanel parent = (BananaPanel) SwingUtilities.getAncestorOfClass(BananaPanel.class, APISection.getInstance());
             if (parent != null) {
+                // Reset health
                 parent.getHealthPanel().resetHealth();
-                // Reset timer
+                // Reset and start timer
                 parent.getTimerPanel().reset();
+                parent.getTimerPanel().start();
             }
             
             // Reset score display
@@ -259,17 +261,20 @@ public class SnakeGameLogic {
         // Reset food positions
         food.spawnFood(snake);
 
+        // Start running sound
+        if (!SoundManager.getInstance().isMuted()) {
+            SoundManager.getInstance().startRunningSound();
+        }
+
         // Notify any listeners that game state has been reset
         SwingUtilities.invokeLater(() -> {
-            // Find the parent components
             BananaPanel parent = (BananaPanel) SwingUtilities.getAncestorOfClass(BananaPanel.class, APISection.getInstance());
             if (parent != null) {
-                // Trigger a repaint of the game area
                 parent.repaint();
             }
         });
 
-        System.out.println("Game reset to starting state - Score: 0, Direction: RIGHT, Health: Full");
+        System.out.println("Game reset complete - Score: 0, Direction: RIGHT, Health: Full");
     }
 
     public boolean isWaitingForAnswer() {
@@ -277,46 +282,36 @@ public class SnakeGameLogic {
     }
 
     private void showGameOver() {
-        SwingUtilities.invokeLater(() -> {
-            // Stop running sound and play game over sound
-            SoundManager.getInstance().stopRunningSound();
-            SoundManager.getInstance().playGameOverSound();
+        try {
+            System.out.println("Game Over! Final score: " + score);
             
-            // Update high score using APIClient
-            APIClient.updateHighScore(score, new APIClient.HighScoreCallback() {
-                @Override
-                public void onNewHighScore(int newHighScore) {
-                    System.out.println("New high score achieved: " + newHighScore);
-                }
-
-                @Override
-                public void onScoreNotHigher(String message) {
-                    System.out.println("Score not higher than current high score: " + message);
-                }
-
-                @Override
-                public void onFailure(String error) {
-                    System.out.println("Failed to update high score: " + error);
+            // Stop running sound
+            SoundManager.getInstance().stopRunningSound();
+            
+            // Send final score to server
+            String response = APIClient.getInstance().updateHighScore(score);
+            System.out.println("Server response for score update: " + response);
+            
+            // Show game over panel
+            SwingUtilities.invokeLater(() -> {
+                try {
+                    BananaPanel parent = (BananaPanel) SwingUtilities.getAncestorOfClass(BananaPanel.class, APISection.getInstance());
+                    if (parent != null) {
+                        parent.getTimerPanel().stop();
+                        parent.showGameOver(score);
+                    } else {
+                        System.err.println("Error: Could not find BananaPanel");
+                        throw new RuntimeException("Could not find BananaPanel");
+                    }
+                } catch (Exception e) {
+                    System.err.println("Error showing game over screen: " + e.getMessage());
+                    e.printStackTrace();
                 }
             });
-            
-            BananaPanel parent = (BananaPanel) SwingUtilities.getAncestorOfClass(BananaPanel.class, APISection.getInstance());
-            if (parent != null) {
-                // Stop the timer
-                parent.getTimerPanel().stop();
-                
-                Component comp = parent;
-                while (comp != null && !(comp instanceof GameMainInterface)) {
-                    comp = comp.getParent();
-                }
-                
-                if (comp instanceof GameMainInterface) {
-                    GameMainInterface mainFrame = (GameMainInterface) comp;
-                    GameOverPanel gameOverPanel = new GameOverPanel(mainFrame, score);
-                    gameOverPanel.setVisible(true);
-                }
-            }
-        });
+        } catch (Exception e) {
+            System.err.println("Error in showGameOver: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     public void setRunning(boolean running) {

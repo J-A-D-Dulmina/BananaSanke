@@ -1,6 +1,6 @@
 package view;
 
-import controller.SankeGameController;
+import controller.SnakeGameController;
 import model.SnakeGameLogic;
 import model.SoundManager;
 
@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.ArrayList;
 
 public class SnakePanel extends JPanel {
-    private final SankeGameController gameController;
+    private final SnakeGameController gameController;
     private final SnakeGameLogic gameLogic;
     private boolean gameStarted = false;
     private JPanel startOverlay;
@@ -23,7 +23,7 @@ public class SnakePanel extends JPanel {
         setLayout(null); // Use null layout for absolute positioning
         setBackground(Color.BLACK);
         gameLogic = new SnakeGameLogic(480, 500, 20);
-        gameController = new SankeGameController(gameLogic, this);
+        gameController = new SnakeGameController(this, gameLogic);
         
         // Start in paused state
         gameLogic.setRunning(false);
@@ -228,33 +228,33 @@ public class SnakePanel extends JPanel {
         getActionMap().put("moveUp", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                gameController.changeDirection("UP");
+                gameController.handleKeyPress(new KeyEvent(SnakePanel.this, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_UP));
             }
         });
 
         getActionMap().put("moveDown", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                gameController.changeDirection("DOWN");
+                gameController.handleKeyPress(new KeyEvent(SnakePanel.this, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_DOWN));
             }
         });
 
         getActionMap().put("moveLeft", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                gameController.changeDirection("LEFT");
+                gameController.handleKeyPress(new KeyEvent(SnakePanel.this, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_LEFT));
             }
         });
 
         getActionMap().put("moveRight", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                gameController.changeDirection("RIGHT");
+                gameController.handleKeyPress(new KeyEvent(SnakePanel.this, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_RIGHT));
             }
         });
     }
 
-    public SankeGameController getGameController() {
+    public SnakeGameController getGameController() {
         return gameController;
     }
 

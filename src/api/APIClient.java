@@ -3,13 +3,14 @@ package api;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLEncoder;
 import org.json.JSONException;
 import org.json.JSONObject;
 import model.SessionManager; // For storing authentication tokens
 
 /**
  * APIClient handles HTTP requests for interacting with the backend API.
- * Supports authentication via session token.
+ * Supports authentication via JWT tokens.
  */
 public class APIClient {
 
@@ -28,98 +29,149 @@ public class APIClient {
     }
 
     /**
-     * Sends a GET request to the given API URL with authentication.
-     *
-     * @param apiUrl The full API URL for the GET request.
-     * @return The API response as a String.
+     * Sends a GET request with authentication.
      */
     public static String sendAuthenticatedGetRequest(String apiUrl) {
         return sendHttpRequest(apiUrl, "GET", null, true);
     }
 
     /**
-     * Sends a POST request to the given API URL with authentication.
-     *
-     * @param apiUrl   The full API URL for the POST request.
-     * @param postData The request payload as a URL-encoded string.
-     * @return The API response as a String.
+     * Sends a POST request with authentication.
      */
     public static String sendAuthenticatedPostRequest(String apiUrl, String postData) {
         return sendHttpRequest(apiUrl, "POST", postData, true);
     }
 
     /**
-     * Handles the core HTTP request logic for both GET and POST methods.
-     *
-     * @param apiUrl       The API endpoint URL.
-     * @param method       The HTTP method (GET or POST).
-     * @param postData     The request body for POST requests.
-     * @param authRequired Whether authentication is required.
-     * @return The response from the API as a String.
+     * Sends an HTTP request.
      */
     private static String sendHttpRequest(String apiUrl, String method, String postData, boolean authRequired) {
         StringBuilder response = new StringBuilder();
+        HttpURLConnection conn = null;
 
         try {
-            HttpURLConnection conn = setupHttpConnection(apiUrl, method, authRequired);
+            conn = setupHttpConnection(apiUrl, method, authRequired);
 
             if ("POST".equals(method) && postData != null) {
-                // Only add auth token if it's not already in the postData
-                if (authRequired && !postData.contains("auth_token=")) {
-                    String authToken = SessionManager.getAuthToken();
-                    if (authToken != null && !authToken.isEmpty()) {
-                        String encodedToken = java.net.URLEncoder.encode(authToken, "UTF-8");
-                        postData += (postData.isEmpty() ? "" : "&") + "auth_token=" + encodedToken;
-                    }
+                // Set content length for POST requests
+                byte[] postDataBytes = postData.getBytes("UTF-8");
+                conn.setRequestProperty("Content-Length", String.valueOf(postDataBytes.length));
+                
+                // Write POST data
+                try (OutputStream os = conn.getOutputStream()) {
+                    os.write(postDataBytes);
+                    os.flush();
                 }
-                writePostData(conn, postData);
             }
 
-            response.append(readResponse(conn));
+            // Get response code and message
+            int responseCode = conn.getResponseCode();
+            String responseMessage = conn.getResponseMessage();
+            
+            // Read the response
+            InputStream inputStream = (responseCode >= 400) ? conn.getErrorStream() : conn.getInputStream();
+            
+            if (inputStream != null) {
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, "UTF-8"))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        response.append(line);
+                    }
+                }
+            }
+
+            // If empty response, return error JSON with HTTP status info
+            if (response.length() == 0) {
+                return String.format(
+                    "{\"status\":\"error\", \"message\":\"Empty response from server (HTTP %d: %s)\", \"http_code\":%d}",
+                    responseCode,
+                    responseMessage,
+                    responseCode
+                );
+            }
+
+            // Try to parse the response as JSON
+            try {
+                new JSONObject(response.toString());
+                return response.toString();
+            } catch (JSONException e) {
+                // If response is not JSON, wrap it in a JSON error object
+                System.err.println("Non-JSON response from server: " + response.toString());
+                return String.format(
+                    "{\"status\":\"error\", \"message\":\"Invalid JSON response from server (HTTP %d: %s): %s\", \"http_code\":%d}",
+                    responseCode,
+                    responseMessage,
+                    response.toString().replace("\"", "'").replace("\n", " "),
+                    responseCode
+                );
+            }
+            
         } catch (IOException e) {
             e.printStackTrace();
-            return "{\"status\":\"error\", \"message\":\"Network error occurred\"}";
+            return String.format(
+                "{\"status\":\"error\", \"message\":\"Network error: %s\", \"error_type\":\"network\"}",
+                e.getMessage().replace("\"", "'")
+            );
+        } finally {
+            if (conn != null) {
+                conn.disconnect();
+            }
         }
-
-        return response.toString();
     }
 
     /**
-     * Sets up an HttpURLConnection object with necessary headers.
-     *
-     * @param apiUrl       The API endpoint URL.
-     * @param method       The HTTP method (GET or POST).
-     * @param authRequired Whether authentication is required.
-     * @return Configured HttpURLConnection instance.
-     * @throws IOException If an I/O error occurs.
+     * Sets up an HTTP connection.
      */
     private static HttpURLConnection setupHttpConnection(String apiUrl, String method, boolean authRequired) throws IOException {
         URL url = new URL(apiUrl);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        
+        // Basic setup
         conn.setRequestMethod(method);
+        conn.setDoInput(true);
+        conn.setUseCaches(false);
+        
+        // Set headers
         conn.setRequestProperty("Accept", ACCEPT_TYPE);
+        conn.setRequestProperty("User-Agent", "BananaSnake-Game/1.0");
+        conn.setRequestProperty("Accept-Charset", "UTF-8");
+        conn.setRequestProperty("Connection", "Keep-Alive");
 
+        // Set timeouts
+        conn.setConnectTimeout(15000); // 15 seconds
+        conn.setReadTimeout(15000);    // 15 seconds
+
+        // Handle authentication if required
         if (authRequired) {
             String authToken = SessionManager.getAuthToken();
+            System.out.println("Auth token from SessionManager: " + (authToken != null ? "present" : "null"));
+            
             if (authToken != null && !authToken.isEmpty()) {
-                conn.setRequestProperty("Authorization", "Bearer " + authToken);
+                String authHeader = "Bearer " + authToken;
+                conn.setRequestProperty("Authorization", authHeader);
+                System.out.println("Setting Authorization header: " + authHeader);
+            } else {
+                System.err.println("Warning: No auth token available for authenticated request to: " + apiUrl);
             }
         }
 
+        // Setup for POST requests
         if ("POST".equals(method)) {
             conn.setDoOutput(true);
             conn.setRequestProperty("Content-Type", CONTENT_TYPE);
         }
 
+        // Log all headers for debugging
+        System.out.println("Request headers for " + apiUrl + ":");
+        conn.getRequestProperties().forEach((key, value) -> 
+            System.out.println(key + ": " + value)
+        );
+
         return conn;
     }
 
     /**
-     * Writes POST request data to the connection output stream.
-     *
-     * @param conn     The HttpURLConnection instance.
-     * @param postData The request body as a URL-encoded string.
-     * @throws IOException If an I/O error occurs.
+     * Writes POST data.
      */
     private static void writePostData(HttpURLConnection conn, String postData) throws IOException {
         try (DataOutputStream out = new DataOutputStream(conn.getOutputStream())) {
@@ -128,329 +180,375 @@ public class APIClient {
         }
     }
 
-    /**
-     * Reads the API response from the connection input stream.
-     *
-     * @param conn The HttpURLConnection instance.
-     * @return The response as a String.
-     * @throws IOException If an I/O error occurs.
-     */
-    private static String readResponse(HttpURLConnection conn) throws IOException {
-        StringBuilder response = new StringBuilder();
-        
-        int responseCode = conn.getResponseCode();
-        System.out.println("Response Code: " + responseCode);
+    // ==============================
+    // User Management API Calls
+    // ==============================
 
-        InputStream inputStream;
-        if (responseCode >= 400) {
-            inputStream = conn.getErrorStream();
-        } else {
-            inputStream = conn.getInputStream();
-        }
-
-        if (inputStream != null) {
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    response.append(line);
-                }
-            }
-        }
-
-        if (responseCode != HttpURLConnection.HTTP_OK) {
-            System.out.println("Request failed. Response: " + response.toString());
-        }
-
-        return response.toString();
-    }
-
-    /**
-     * Registers a new user.
-     *
-     * @param username The desired username.
-     * @param email    The user's email.
-     * @param password The user's password.
-     * @return The API response message.
-     */
     public static String registerUser(String username, String email, String password) {
         try {
+            // Client-side validation
+            if (username == null || username.trim().isEmpty()) {
+                return "{\"status\":\"error\", \"message\":\"Username is required\"}";
+            }
+            if (username.length() < 3 || username.length() > 50) {
+                return "{\"status\":\"error\", \"message\":\"Username must be between 3 and 50 characters\"}";
+            }
+            if (email == null || email.trim().isEmpty()) {
+                return "{\"status\":\"error\", \"message\":\"Email is required\"}";
+            }
+            if (!email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+                return "{\"status\":\"error\", \"message\":\"Invalid email format\"}";
+            }
+            if (password == null || password.trim().isEmpty()) {
+                return "{\"status\":\"error\", \"message\":\"Password is required\"}";
+            }
+            if (password.length() < 6) {
+                return "{\"status\":\"error\", \"message\":\"Password must be at least 6 characters long\"}";
+            }
+
             String apiUrl = BASE_URL + "?action=register_user";
-            String postData = String.format("username=%s&email=%s&password=%s",
-                java.net.URLEncoder.encode(username, "UTF-8"),
-                java.net.URLEncoder.encode(email, "UTF-8"),
-                java.net.URLEncoder.encode(password, "UTF-8"));
+            
+            // Build POST data with proper encoding
+            StringBuilder postData = new StringBuilder();
+            postData.append("username=").append(URLEncoder.encode(username.trim(), "UTF-8"));
+            postData.append("&email=").append(URLEncoder.encode(email.trim(), "UTF-8"));
+            postData.append("&password=").append(URLEncoder.encode(password, "UTF-8"));
 
-            String response = sendHttpRequest(apiUrl, "POST", postData, false);
-            System.out.println("Server Response: " + response);
+            // Log request details (remove in production)
+            System.out.println("Sending registration request to: " + apiUrl);
+            System.out.println("POST data (encoded): " + postData.toString());
 
+            String response = sendHttpRequest(apiUrl, "POST", postData.toString(), false);
+            System.out.println("Raw server response: " + response);
+            
+            // Validate JSON response
             try {
                 JSONObject jsonResponse = new JSONObject(response);
-                return jsonResponse.optString("message", "Unexpected error occurred");
+                System.out.println("Response status: " + jsonResponse.optString("status"));
+                
+                // Log debug information if available
+                if (jsonResponse.has("debug")) {
+                    System.out.println("Debug info: " + jsonResponse.getJSONObject("debug").toString(2));
+                }
+                
+                return response;
             } catch (JSONException e) {
-                return "Error processing registration request";
+                System.err.println("Invalid JSON response from server: " + response);
+                return "{\"status\":\"error\", \"message\":\"Server returned invalid response: " + 
+                       response.replace("\"", "'").replace("\n", " ") + "\"}";
             }
-        } catch (UnsupportedEncodingException e) {
+        } catch (Exception e) {
             e.printStackTrace();
-            return "Error encoding request parameters";
+            return "{\"status\":\"error\", \"message\":\"Error processing registration request: " + 
+                   e.getMessage().replace("\"", "'") + "\"}";
         }
     }
 
-    /**
-     * Logs in a user and stores authentication token.
-     *
-     * @param email    The user's email.
-     * @param password The user's password.
-     * @return The full API response as JSON.
-     */
     public static String loginUser(String email, String password) {
         try {
             String apiUrl = BASE_URL + "?action=login_user";
-            String postData = String.format("email=%s&password=%s",
-                java.net.URLEncoder.encode(email, "UTF-8"),
-                java.net.URLEncoder.encode(password, "UTF-8"));
+            
+            // Build POST data with proper encoding
+            StringBuilder postData = new StringBuilder();
+            postData.append("email=").append(URLEncoder.encode(email, "UTF-8"));
+            postData.append("&password=").append(URLEncoder.encode(password, "UTF-8"));
 
-            String response = sendHttpRequest(apiUrl, "POST", postData, false);
-            System.out.println("Server Response: " + response);
+            // Log request details
+            System.out.println("Sending login request to: " + apiUrl);
+            System.out.println("POST data (encoded): " + postData.toString());
 
+            String response = sendHttpRequest(apiUrl, "POST", postData.toString(), false);
+            System.out.println("Raw server response: " + response);
+            
+            // Validate JSON response
             try {
                 JSONObject jsonResponse = new JSONObject(response);
+                System.out.println("Login response status: " + jsonResponse.optString("status"));
+                
                 if (jsonResponse.optString("status").equals("success")) {
                     String authToken = jsonResponse.optString("auth_token");
+                    if (authToken == null || authToken.isEmpty()) {
+                        System.err.println("Error: No auth_token in successful response");
+                        return "{\"status\":\"error\", \"message\":\"Server did not provide authentication token\"}";
+                    }
+                    
+                    // Store the auth token
                     SessionManager.setAuthToken(authToken);
+                    System.out.println("Auth token stored successfully");
+                    
+                    // Verify the token was stored
+                    String storedToken = SessionManager.getAuthToken();
+                    if (storedToken == null || storedToken.isEmpty()) {
+                        System.err.println("Error: Failed to store auth token");
+                        return "{\"status\":\"error\", \"message\":\"Failed to store authentication token\"}";
+                    }
+                    
+                    System.out.println("Login successful - Username: " + jsonResponse.optString("username"));
+                } else if (jsonResponse.optString("status").equals("error") && 
+                          jsonResponse.optString("message").contains("already logged in")) {
+                    // Handle case where user is already logged in
+                    return "{\"status\":\"error\", \"message\":\"You are already logged in on another device. Please logout first.\"}";
                 }
+                
+                return response;
             } catch (JSONException e) {
-                return "{\"status\":\"error\", \"message\":\"Error processing login request\"}";
+                System.err.println("Invalid JSON response from server: " + response);
+                System.err.println("JSON parse error: " + e.getMessage());
+                return "{\"status\":\"error\", \"message\":\"Server returned invalid response: " + 
+                       response.replace("\"", "'").replace("\n", " ") + "\"}";
             }
-
-            return response;
-        } catch (UnsupportedEncodingException e) {
+        } catch (Exception e) {
+            System.err.println("Login error: " + e.getMessage());
             e.printStackTrace();
-            return "{\"status\":\"error\", \"message\":\"Error encoding request parameters\"}";
+            return "{\"status\":\"error\", \"message\":\"Error processing login request: " + 
+                   e.getMessage().replace("\"", "'") + "\"}";
         }
     }
 
-    /**
-     * Logs out a user and clears authentication token.
-     *
-     * @return The API response message.
-     */
     public static String logoutUser() {
-        String apiUrl = BASE_URL + "?action=logout_user";
-        String authToken = SessionManager.getAuthToken();
-
-        if (authToken == null) {
-            return "{\"status\":\"error\", \"message\":\"No active session\"}";
+        try {
+            String apiUrl = BASE_URL + "?action=logout_user";
+            
+            // Get the current auth token before clearing the session
+            String authToken = SessionManager.getAuthToken();
+            if (authToken == null || authToken.isEmpty()) {
+                // If no token exists, just clear local session and return success
+                SessionManager.logout();
+                return "{\"status\":\"success\",\"message\":\"Logged out successfully\"}";
+            }
+            
+            // Send the logout request with the current token
+            String response = sendHttpRequest(apiUrl, "GET", null, true);
+            
+            // Extract JSON part from response if it contains PHP warnings
+            String jsonResponse = response;
+            int jsonStart = response.indexOf("{");
+            int jsonEnd = response.lastIndexOf("}") + 1;
+            
+            if (jsonStart >= 0 && jsonEnd > jsonStart) {
+                jsonResponse = response.substring(jsonStart, jsonEnd);
+            }
+            
+            // Try to parse the response
+            try {
+                JSONObject jsonObj = new JSONObject(jsonResponse);
+                if (jsonObj.optString("status").equals("success")) {
+                    // Only clear local session if server confirms success
+                    SessionManager.logout();
+                    return jsonResponse;
+                } else {
+                    // If server reports error, log it but still clear local session
+                    System.err.println("Server reported logout error: " + jsonObj.optString("message"));
+                    SessionManager.logout();
+                    return "{\"status\":\"success\",\"message\":\"Logged out successfully\"}";
+                }
+            } catch (JSONException e) {
+                // If response is not valid JSON, log it but still clear local session
+                System.err.println("Invalid JSON response from server: " + jsonResponse);
+                SessionManager.logout();
+                return "{\"status\":\"success\",\"message\":\"Logged out successfully\"}";
+            }
+        } catch (Exception e) {
+            // Log the error but still clear local session
+            System.err.println("Error during logout: " + e.getMessage());
+            e.printStackTrace();
+            SessionManager.logout();
+            return "{\"status\":\"success\",\"message\":\"Logged out successfully\"}";
         }
+    }
 
-        String postData = "auth_token=" + authToken;
-        String response = sendHttpRequest(apiUrl, "POST", postData, true);
-        System.out.println("API Response (Logout): " + response);
+    public static String resetPassword(String email, String newPassword) {
+        try {
+            String apiUrl = BASE_URL + "?action=reset_password";
+            
+            // Build POST data with proper encoding
+            StringBuilder postData = new StringBuilder();
+            postData.append("email=").append(URLEncoder.encode(email, "UTF-8"));
+            postData.append("&new_password=").append(URLEncoder.encode(newPassword, "UTF-8"));
 
-        SessionManager.logout(); // Fixed: Now using the correct method
+            // Log request details (remove in production)
+            System.out.println("Sending password reset request to: " + apiUrl);
+            System.out.println("POST data (encoded): " + postData.toString());
+
+            String response = sendHttpRequest(apiUrl, "POST", postData.toString(), false);
+            System.out.println("Raw server response: " + response);
+            
+            // Validate JSON response
+            try {
+                JSONObject jsonResponse = new JSONObject(response);
         return response;
-    }
-
-    /**
-     * Updates the user's high score if the new score is higher than the current one.
-     *
-     * @param newScore The new score to potentially update as high score
-     * @param callback The callback to handle the response
-     */
-    public static void updateHighScore(int newScore, HighScoreCallback callback) {
-        new Thread(() -> {
-            try {
-                String token = SessionManager.getAuthToken();
-                if (token == null || token.isEmpty()) {
-                    callback.onFailure("User not authenticated");
-                    return;
-                }
-
-                String apiUrl = BASE_URL + "?action=update_high_score";
-                String postData = String.format("score=%s&auth_token=%s",
-                    java.net.URLEncoder.encode(String.valueOf(newScore), "UTF-8"),
-                    java.net.URLEncoder.encode(token, "UTF-8"));
-                
-                String response = sendHttpRequest(apiUrl, "POST", postData, true);
-                System.out.println("Server Response: " + response);
-                
-                if (response.contains("<br")) {
-                    response = response.replaceAll("^<br[^>]*>.*?<br[^>]*>", "").trim();
-                }
-                
-                JSONObject jsonResponse = new JSONObject(response);
-                String status = jsonResponse.optString("status");
-                String message = jsonResponse.optString("message", "Unknown error occurred");
-                
-                if ("success".equals(status)) {
-                    int highScore = jsonResponse.optInt("new_high_score", newScore);
-                    callback.onNewHighScore(highScore);
-                } else if ("not_higher".equals(status)) {
-                    callback.onScoreNotHigher(message);
-                } else {
-                    callback.onFailure(message);
-                }
             } catch (JSONException e) {
-                e.printStackTrace();
-                callback.onFailure("Error processing server response: " + e.getMessage());
-            } catch (Exception e) {
-                e.printStackTrace();
-                callback.onFailure("Error updating high score: " + e.getMessage());
+                System.err.println("Invalid JSON response from server: " + response);
+                return "{\"status\":\"error\", \"message\":\"Server returned invalid response: " + 
+                       response.replace("\"", "'").replace("\n", " ") + "\"}";
             }
-        }).start();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "{\"status\":\"error\", \"message\":\"Error resetting password: " + 
+                   e.getMessage().replace("\"", "'") + "\"}";
+        }
     }
 
-    /**
-     * Gets the current user's high score.
-     * 
-     * @param callback The callback to handle the response
-     */
-    public static void getCurrentHighScore(HighScoreCallback callback) {
-        new Thread(() -> {
-            try {
-                String token = SessionManager.getAuthToken();
-                if (token == null || token.isEmpty()) {
-                    callback.onFailure("User not authenticated");
-                    return;
-                }
+    public static String updateUsername(String newUsername) {
+        try {
+            String apiUrl = BASE_URL + "?action=update_username";
+            
+            // Build POST data with proper encoding
+            StringBuilder postData = new StringBuilder();
+            postData.append("new_username=").append(URLEncoder.encode(newUsername, "UTF-8"));
 
-                String apiUrl = BASE_URL + "?action=get_high_score";
-                String response = sendAuthenticatedGetRequest(apiUrl);
-                System.out.println("Server Response: " + response);
-                
-                if (response.contains("<br")) {
-                    response = response.replaceAll("^<br[^>]*>.*?<br[^>]*>", "").trim();
-                }
-                
-                JSONObject jsonResponse = new JSONObject(response);
-                String status = jsonResponse.optString("status");
-                
-                if ("success".equals(status)) {
-                    int highScore = jsonResponse.optInt("high_score", 0);
-                    callback.onNewHighScore(highScore);
-                } else {
-                    String message = jsonResponse.optString("message", "Unknown error occurred");
-                    callback.onFailure(message);
-                }
-            } catch (JSONException e) {
-                e.printStackTrace();
-                callback.onFailure("Error processing server response: " + e.getMessage());
-            } catch (Exception e) {
-                e.printStackTrace();
-                callback.onFailure("Error getting high score: " + e.getMessage());
-            }
-        }).start();
+            return sendAuthenticatedPostRequest(apiUrl, postData.toString());
+        } catch (Exception e) {
+            return "{\"status\":\"error\", \"message\":\"Error updating username: " + 
+                   e.getMessage().replace("\"", "'") + "\"}";
+        }
     }
 
-    /**
-     * Gets the user's email from the server.
-     *
-     * @return The API response containing the user's email.
-     */
+    public static String updatePassword(String oldPassword, String newPassword) {
+        try {
+            String apiUrl = BASE_URL + "?action=update_password";
+            
+            // Build POST data with proper encoding
+            StringBuilder postData = new StringBuilder();
+            postData.append("old_password=").append(URLEncoder.encode(oldPassword, "UTF-8"));
+            postData.append("&new_password=").append(URLEncoder.encode(newPassword, "UTF-8"));
+
+            return sendAuthenticatedPostRequest(apiUrl, postData.toString());
+        } catch (Exception e) {
+            return "{\"status\":\"error\", \"message\":\"Error updating password: " + 
+                   e.getMessage().replace("\"", "'") + "\"}";
+        }
+    }
+
     public static String getUserEmail() {
         try {
             String apiUrl = BASE_URL + "?action=get_user_email";
+            
+            // Log request details (remove in production)
+            System.out.println("Sending get user email request to: " + apiUrl);
+
             String response = sendAuthenticatedGetRequest(apiUrl);
+            System.out.println("Raw server response: " + response);
             
-            // Check if response is empty or not JSON
-            if (response == null || response.isEmpty() || !response.trim().startsWith("{")) {
-                System.err.println("Invalid response format from server: " + response);
-                return null;
-            }
-            
-            JSONObject jsonResponse = new JSONObject(response);
-            if (jsonResponse.getString("status").equals("success")) {
-                String email = jsonResponse.getString("email");
-                SessionManager.setEmail(email); // Cache the email
-                return email;
-            } else {
-                System.err.println("Failed to get email: " + jsonResponse.optString("message"));
-                return null;
+            // Validate JSON response
+            try {
+                JSONObject jsonResponse = new JSONObject(response);
+                return response;
+            } catch (JSONException e) {
+                System.err.println("Invalid JSON response from server: " + response);
+                return "{\"status\":\"error\", \"message\":\"Server returned invalid response: " + 
+                       response.replace("\"", "'").replace("\n", " ") + "\"}";
             }
         } catch (Exception e) {
-            System.err.println("Error getting user email: " + e.getMessage());
             e.printStackTrace();
-            return null;
+            return "{\"status\":\"error\", \"message\":\"Error getting user email: " + 
+                   e.getMessage().replace("\"", "'") + "\"}";
         }
     }
 
-    /**
-     * Updates the user's username.
-     *
-     * @param newUsername The new username to set
-     * @return The API response as a JSONObject
-     */
-    public static JSONObject updateUsername(String newUsername) {
+    public static String getUsers() {
         try {
-            String apiUrl = BASE_URL + "?action=update_username";
-            String postData = String.format("new_username=%s",
-                java.net.URLEncoder.encode(newUsername, "UTF-8"));
+            String apiUrl = BASE_URL + "?action=get_users";
+            
+            // Log request details (remove in production)
+            System.out.println("Sending get users request to: " + apiUrl);
 
-            String response = sendAuthenticatedPostRequest(apiUrl, postData);
+            String response = sendAuthenticatedGetRequest(apiUrl);
+            System.out.println("Raw server response: " + response);
             
-            // Handle HTML error responses
-            if (response.contains("<br") || response.contains("<html")) {
-                String errorMessage = response.replaceAll("<[^>]*>", "")
-                    .replaceAll("\\s+", " ")
-                    .trim();
-                JSONObject errorResponse = new JSONObject();
-                errorResponse.put("status", "error");
-                errorResponse.put("message", "Server Error: " + errorMessage);
-                return errorResponse;
+            // Validate JSON response
+            try {
+                JSONObject jsonResponse = new JSONObject(response);
+                return response;
+            } catch (JSONException e) {
+                System.err.println("Invalid JSON response from server: " + response);
+                return "{\"status\":\"error\", \"message\":\"Server returned invalid response: " + 
+                       response.replace("\"", "'").replace("\n", " ") + "\"}";
             }
-            
-            // Parse and return JSON response
-            return new JSONObject(response);
         } catch (Exception e) {
             e.printStackTrace();
-            JSONObject errorResponse = new JSONObject();
-            errorResponse.put("status", "error");
-            errorResponse.put("message", "Failed to update username: " + e.getMessage());
-            return errorResponse;
+            return "{\"status\":\"error\", \"message\":\"Error getting users list: " + 
+                   e.getMessage().replace("\"", "'") + "\"}";
         }
     }
 
-    /**
-     * Updates the user's password.
-     *
-     * @param oldPassword The user's current password
-     * @param newPassword The new password to set
-     * @return The API response as a JSONObject
-     */
-    public static JSONObject updatePassword(String oldPassword, String newPassword) {
+    public static String updateHighScore(int score) {
         try {
-            String apiUrl = BASE_URL + "?action=update_password";
-            String postData = String.format("old_password=%s&new_password=%s",
-                java.net.URLEncoder.encode(oldPassword, "UTF-8"),
-                java.net.URLEncoder.encode(newPassword, "UTF-8"));
+            String apiUrl = BASE_URL + "?action=update_score";
+            
+            // Build POST data with proper encoding
+            StringBuilder postData = new StringBuilder();
+            postData.append("score=").append(URLEncoder.encode(String.valueOf(score), "UTF-8"));
 
-            String response = sendAuthenticatedPostRequest(apiUrl, postData);
+            // Log request details
+            System.out.println("Sending score update request to: " + apiUrl);
+            System.out.println("Score being sent: " + score);
+
+            String response = sendHttpRequest(apiUrl, "POST", postData.toString(), true);
+            System.out.println("Score update response: " + response);
             
-            // Handle HTML error responses
-            if (response.contains("<br") || response.contains("<html")) {
-                String errorMessage = response.replaceAll("<[^>]*>", "")
-                    .replaceAll("\\s+", " ")
-                    .trim();
-                JSONObject errorResponse = new JSONObject();
-                errorResponse.put("status", "error");
-                errorResponse.put("message", "Server Error: " + errorMessage);
-                return errorResponse;
-            }
-            
-            // Parse and return JSON response
-            return new JSONObject(response);
+            return response;
         } catch (Exception e) {
             e.printStackTrace();
-            JSONObject errorResponse = new JSONObject();
-            errorResponse.put("status", "error");
-            errorResponse.put("message", "Failed to update password: " + e.getMessage());
-            return errorResponse;
+            return "{\"status\":\"error\", \"message\":\"Error updating score: " + 
+                   e.getMessage().replace("\"", "'") + "\"}";
         }
     }
 
-    public interface HighScoreCallback {
-        void onNewHighScore(int newHighScore);
-        void onScoreNotHigher(String message);
-        void onFailure(String error);
+    public static String getBestScore() {
+        try {
+            String apiUrl = BASE_URL + "?action=get_best_score";
+            
+            // Log request details
+            System.out.println("Sending get best score request to: " + apiUrl);
+            
+            // Ensure we have an auth token
+            String authToken = SessionManager.getAuthToken();
+            System.out.println("Auth token present: " + (authToken != null && !authToken.isEmpty()));
+            
+            if (authToken == null || authToken.isEmpty()) {
+                System.err.println("No auth token available for getBestScore request");
+                return "{\"status\":\"error\", \"message\":\"Not authenticated\"}";
+            }
+            
+            String response = sendAuthenticatedGetRequest(apiUrl);
+            System.out.println("Raw best score response: " + response);
+            
+            // Validate JSON response
+            try {
+                JSONObject jsonResponse = new JSONObject(response);
+                if (jsonResponse.getString("status").equals("success")) {
+                    int bestScore = jsonResponse.getInt("best_score");
+                    System.out.println("Successfully retrieved best score: " + bestScore);
+                    return response;
+                } else {
+                    String errorMessage = jsonResponse.optString("message", "Unknown error");
+                    System.err.println("Error getting best score: " + errorMessage);
+                    if (jsonResponse.has("debug")) {
+                        System.err.println("Debug info: " + jsonResponse.getJSONObject("debug").toString(2));
+                    }
+                    return response;
+                }
+            } catch (JSONException e) {
+                System.err.println("Invalid JSON response from server: " + response);
+                return "{\"status\":\"error\", \"message\":\"Server returned invalid response: " + 
+                       response.replace("\"", "'").replace("\n", " ") + "\"}";
+            }
+        } catch (Exception e) {
+            System.err.println("Error in getBestScore: " + e.getMessage());
+            e.printStackTrace();
+            return "{\"status\":\"error\", \"message\":\"Error fetching best score: " + 
+                   e.getMessage().replace("\"", "'") + "\"}";
+        }
     }
 
+    public static String getLeaderboard() {
+        try {
+            String apiUrl = BASE_URL + "?action=get_leaderboard";
+            return sendAuthenticatedGetRequest(apiUrl);
+        } catch (Exception e) {
+            return "{\"status\":\"error\", \"message\":\"Error fetching leaderboard: " + 
+                   e.getMessage().replace("\"", "'") + "\"}";
+        }
+    }
 }

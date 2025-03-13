@@ -213,6 +213,20 @@ public class SoundManager extends Observable {
         }
     }
 
+    public void stopBackgroundMusic() {
+        if (backgroundMusic != null) {
+            try {
+                backgroundMusic.stop();
+                backgroundMusic.setFramePosition(0);
+                isPlaying = false;
+                setChanged();
+                notifyObservers();
+            } catch (Exception e) {
+                System.err.println("Error stopping background music: " + e.getMessage());
+            }
+        }
+    }
+
     public void startRunningSound() {
         synchronized (runningSoundLock) {
             if (!isMuted && soundEffects.containsKey("snake_running")) {

@@ -13,6 +13,8 @@ import controller.LeaderboardController;
 import controller.LeaderboardController.LeaderboardEntry;
 import org.json.JSONObject;
 import utils.CustomDialogUtils;
+import controller.AccountController;
+import model.AccountModel;
 
 public class AccountPanel extends JDialog {
     private static final long serialVersionUID = 1L;
@@ -25,14 +27,30 @@ public class AccountPanel extends JDialog {
     private JLabel usernameLabel;
     private JLabel editIconLabel;
     private JPanel usernamePanel;
+    private JPanel editPanel;
+    private JPanel labelPanel;
     private boolean isEditingUsername = false;
     private final GameMainInterface mainFrame;
     private Image backgroundImage;
+    private AccountController controller;
+    private AccountModel accountModel;
 
     public AccountPanel(GameMainInterface mainFrame) {
         super(mainFrame, "Account Settings", true);
         this.mainFrame = mainFrame;
         
+        // Initialize MVC components first
+        this.accountModel = new AccountModel();
+        this.controller = new AccountController(accountModel, this, mainFrame);
+        
+        // Initialize UI
+        initializeUI();
+        
+        // Initialize view data after UI components are created
+        controller.initializeView();
+    }
+
+    private void initializeUI() {
         // Load background image
         backgroundImage = new ImageIcon("resources/background_account.jpg").getImage();
         
@@ -50,6 +68,11 @@ public class AccountPanel extends JDialog {
         setResizable(false);
         setUndecorated(true);
         setShape(new RoundRectangle2D.Double(0, 0, 400, 550, 20, 20));
+        
+        // Initialize username components first
+        usernameLabel = new JLabel(SessionManager.getUsername());
+        usernameLabel.setForeground(Color.WHITE);
+        usernameLabel.setFont(new Font("Arial", Font.BOLD, 16));
         
         // Create main panel
         JPanel mainPanel = new JPanel(new BorderLayout()) {
@@ -130,38 +153,34 @@ public class AccountPanel extends JDialog {
 
         // Best Score section
         JPanel scorePanel = new JPanel();
+        scorePanel.setLayout(new BoxLayout(scorePanel, BoxLayout.X_AXIS));
         scorePanel.setOpaque(false);
         scorePanel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        JLabel scoreLabel = new JLabel("Best Score: ");
+        scorePanel.setMaximumSize(new Dimension(250, 40));
+        
+        JPanel labelWrapper = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        labelWrapper.setOpaque(false);
+        JLabel scoreLabel = new JLabel("Best Score:");
         scoreLabel.setForeground(Color.WHITE);
         scoreLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        labelWrapper.add(scoreLabel);
+        
+        JPanel scoreWrapper = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        scoreWrapper.setOpaque(false);
         bestScoreLabel = new JLabel("Loading...");
         bestScoreLabel.setForeground(Color.GREEN);
         bestScoreLabel.setFont(new Font("Arial", Font.BOLD, 24));
-        scorePanel.add(scoreLabel);
-        scorePanel.add(bestScoreLabel);
+        scoreWrapper.add(bestScoreLabel);
+        
+        scorePanel.add(labelWrapper);
+        scorePanel.add(Box.createHorizontalStrut(5));
+        scorePanel.add(scoreWrapper);
+        
         topPanel.add(scorePanel);
         topPanel.add(Box.createVerticalStrut(15));
 
-        // Fetch and display best score
-        LeaderboardController.getInstance().fetchTopScores(new LeaderboardController.LeaderboardCallback() {
-            @Override
-            public void onSuccess(List<LeaderboardEntry> scores) {
-                SwingUtilities.invokeLater(() -> {
-                    String username = SessionManager.getUsername();
-                    int bestScore = LeaderboardController.getInstance().getUserBestScore(username);
-                    bestScoreLabel.setText(String.valueOf(bestScore));
-                });
-            }
-
-            @Override
-            public void onFailure(String error) {
-                SwingUtilities.invokeLater(() -> {
-                    bestScoreLabel.setText("0");
-                    System.err.println("Failed to fetch best score: " + error);
-                });
-            }
-        });
+        // Immediately fetch and display best score
+        updateBestScore();
 
         contentPanel.add(topPanel);
 
@@ -267,7 +286,13 @@ public class AccountPanel extends JDialog {
         contentPanel.add(buttonPanel);
 
         // Add action listeners
-        updatePasswordBtn.addActionListener(e -> updatePassword());
+        updatePasswordBtn.addActionListener(e -> {
+            String oldPassword = new String(oldPasswordField.getPassword());
+            String newPassword = new String(newPasswordField.getPassword());
+            String confirmPassword = new String(confirmPasswordField.getPassword());
+            controller.handlePasswordUpdate(oldPassword, newPassword, confirmPassword);
+        });
+
         logoutBtn.addActionListener(e -> {
             int confirm = CustomDialogUtils.showConfirmDialog(
                 this,
@@ -276,10 +301,7 @@ public class AccountPanel extends JDialog {
             );
 
             if (confirm == JOptionPane.YES_OPTION) {
-                APIClient.logoutUser();
-                mainFrame.dispose();
-                LoginUI loginUI = new LoginUI();
-                loginUI.setVisible(true);
+                controller.handleLogout();
             }
         });
 
@@ -292,7 +314,7 @@ public class AccountPanel extends JDialog {
         usernamePanel.setBackground(new Color(40, 40, 40, 0));
 
         // Create username label panel
-        JPanel labelPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 0));
+        labelPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 0));
         labelPanel.setBackground(new Color(40, 40, 40, 0));
 
         usernameLabel = new JLabel(SessionManager.getUsername());
@@ -313,7 +335,7 @@ public class AccountPanel extends JDialog {
         usernameField = createStyledTextField(SessionManager.getUsername());
         
         // Create edit panel with fixed width
-        JPanel editPanel = new JPanel();
+        editPanel = new JPanel();
         editPanel.setLayout(new BoxLayout(editPanel, BoxLayout.X_AXIS));
         editPanel.setBackground(new Color(40, 40, 40, 0));
         editPanel.setPreferredSize(new Dimension(250, 35));
@@ -343,7 +365,7 @@ public class AccountPanel extends JDialog {
             @Override
             public void mouseClicked(MouseEvent e) {
                 SoundManager.getInstance().playButtonClickSound();
-                cancelEditing(labelPanel, editPanel);
+                cancelEditing();
             }
         });
         
@@ -361,14 +383,18 @@ public class AccountPanel extends JDialog {
             @Override
             public void mouseClicked(MouseEvent e) {
                 SoundManager.getInstance().playButtonClickSound();
-                if (!isEditingUsername) {
-                    isEditingUsername = true;
-                    usernameField.setText(SessionManager.getUsername());
-                    labelPanel.setVisible(false);
-                    editPanel.setVisible(true);
-                    usernameField.requestFocus();
-                    usernamePanel.revalidate();
-                    usernamePanel.repaint();
+                startEditing();
+            }
+        });
+
+        // Add key listeners to username field
+        usernameField.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                    submitUsernameChange();
+                } else if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
+                    cancelEditing();
                 }
             }
         });
@@ -381,36 +407,41 @@ public class AccountPanel extends JDialog {
                 SwingUtilities.invokeLater(() -> {
                     Component focusOwner = KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
                     if (focusOwner != closeEditButton) {
-                        cancelEditing(labelPanel, editPanel);
+                        submitUsernameChange();
                     }
                 });
             }
         });
-
-        // Add key listener to handle Enter key
-        usernameField.addKeyListener(new KeyAdapter() {
-            @Override
-            public void keyPressed(KeyEvent e) {
-                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-                    String newUsername = usernameField.getText().trim();
-                    if (!newUsername.isEmpty() && !newUsername.equals(SessionManager.getUsername())) {
-                        updateUsername(newUsername);
-                    }
-                    cancelEditing(labelPanel, editPanel);
-                } else if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
-                    cancelEditing(labelPanel, editPanel);
-                }
-            }
-        });
     }
 
-    private void cancelEditing(JPanel labelPanel, JPanel editPanel) {
+    private void startEditing() {
+        if (!isEditingUsername) {
+            isEditingUsername = true;
+            usernameField.setText(usernameLabel.getText());
+            labelPanel.setVisible(false);
+            editPanel.setVisible(true);
+            usernameField.requestFocus();
+            usernamePanel.revalidate();
+            usernamePanel.repaint();
+        }
+    }
+
+    private void submitUsernameChange() {
+        if (isEditingUsername) {
+            String newUsername = usernameField.getText().trim();
+            if (!newUsername.isEmpty() && !newUsername.equals(usernameLabel.getText())) {
+                controller.handleUsernameUpdate(newUsername);
+            }
+            cancelEditing();
+        }
+    }
+
+    private void cancelEditing() {
         if (isEditingUsername) {
             isEditingUsername = false;
-            usernameField.setText(SessionManager.getUsername());
-            editPanel.setVisible(false);
-            usernameLabel.setText(SessionManager.getUsername());
+            usernameField.setText(usernameLabel.getText());
             labelPanel.setVisible(true);
+            editPanel.setVisible(false);
             usernamePanel.revalidate();
             usernamePanel.repaint();
         }
@@ -548,107 +579,63 @@ public class AccountPanel extends JDialog {
         return button;
     }
 
-    private void updateUsername(String newUsername) {
-        if (newUsername.isEmpty()) {
-            errorLabel.setText("Username cannot be empty");
-            return;
-        }
-
-        try {
-            JSONObject response = APIClient.updateUsername(newUsername);
-            
-            if (response.getString("status").equals("success")) {
-                // Update the session and UI
-                SessionManager.setUsername(newUsername);
-                usernameLabel.setText(newUsername);
-                usernameField.setText(newUsername);
-                errorLabel.setText("Username updated successfully!");
-                errorLabel.setForeground(new Color(0, 200, 0));
-                
-                // Update the main frame title and any other components that display the username
-                mainFrame.setTitle("Banana Snake - " + newUsername);
-                mainFrame.updateUsernameDisplay(newUsername);
-                
-                // Play success sound
-                SoundManager.getInstance().playButtonClickSound();
-            } else {
-                String errorMessage = response.getString("message");
-                errorLabel.setText(errorMessage);
-                errorLabel.setForeground(Color.RED);
-            }
-            
-            // Schedule the error message to disappear after 2 seconds
-            Timer timer = new Timer(2000, e -> {
-                errorLabel.setText("");
-                errorLabel.setForeground(Color.RED); // Reset to red for future errors
-            });
-            timer.setRepeats(false);
-            timer.start();
-        } catch (Exception e) {
-            errorLabel.setText("Error updating username: " + e.getMessage());
-            errorLabel.setForeground(Color.RED);
-            e.printStackTrace();
-        }
+    // Public methods for controller to update UI
+    public void setUsername(String username) {
+        usernameLabel.setText(username);
+        usernameField.setText(username);
     }
 
-    private void updatePassword() {
-        String oldPassword = new String(oldPasswordField.getPassword());
-        String newPassword = new String(newPasswordField.getPassword());
-        String confirmPassword = new String(confirmPasswordField.getPassword());
-        
-        // Validate input fields
-        if (oldPassword.isEmpty() || newPassword.isEmpty() || confirmPassword.isEmpty()) {
-            errorLabel.setText("Please fill in all password fields");
-            errorLabel.setForeground(Color.RED);
-            return;
-        }
-        
-        if (!newPassword.equals(confirmPassword)) {
-            errorLabel.setText("New passwords do not match");
-            errorLabel.setForeground(Color.RED);
-            return;
-        }
+    public void setEmail(String email) {
+        // Update email display
+        // ... (implementation depends on your UI)
+    }
 
-        if (newPassword.length() < 6) {
-            errorLabel.setText("New password must be at least 6 characters long");
-            errorLabel.setForeground(Color.RED);
-            return;
-        }
+    public void setBestScore(int score) {
+        SwingUtilities.invokeLater(() -> {
+            bestScoreLabel.setText(String.valueOf(score));
+        });
+    }
 
-        try {
-            // Send update request to API
-            JSONObject response = APIClient.updatePassword(oldPassword, newPassword);
-            
-            if (response.getString("status").equals("success")) {
-                // Clear password fields
-                oldPasswordField.setText("");
-                newPasswordField.setText("");
-                confirmPasswordField.setText("");
-                
-                // Show success message
-                errorLabel.setText("Password updated successfully!");
-                errorLabel.setForeground(new Color(0, 200, 0));
-                
-                // Play success sound
-                SoundManager.getInstance().playButtonClickSound();
-            } else {
-                // Show error message from server
-                String errorMessage = response.getString("message");
-                errorLabel.setText(errorMessage);
-                errorLabel.setForeground(Color.RED);
-            }
-        } catch (Exception e) {
-            errorLabel.setText("Failed to update password: " + e.getMessage());
-            errorLabel.setForeground(Color.RED);
-            e.printStackTrace();
-        }
-        
-        // Schedule the message to disappear after 2 seconds
+    public void showSuccessMessage(String message) {
+        errorLabel.setText(message);
+        errorLabel.setForeground(new Color(0, 200, 0));
+        startMessageTimer();
+    }
+
+    public void showErrorMessage(String message) {
+        errorLabel.setText(message);
+        errorLabel.setForeground(Color.RED);
+        startMessageTimer();
+    }
+
+    public void clearPasswordFields() {
+        oldPasswordField.setText("");
+        newPasswordField.setText("");
+        confirmPasswordField.setText("");
+    }
+
+    private void startMessageTimer() {
         Timer timer = new Timer(2000, e -> {
             errorLabel.setText("");
-            errorLabel.setForeground(Color.RED); // Reset to red for future errors
+            errorLabel.setForeground(Color.RED);
         });
         timer.setRepeats(false);
         timer.start();
+    }
+
+    private void updateBestScore() {
+        try {
+            JSONObject response = accountModel.fetchBestScore();
+            if (response.getString("status").equals("success")) {
+                int bestScore = response.getInt("best_score");
+                SwingUtilities.invokeLater(() -> {
+                    bestScoreLabel.setText(String.valueOf(bestScore));
+                });
+            } else {
+                bestScoreLabel.setText("N/A");
+            }
+        } catch (Exception e) {
+            bestScoreLabel.setText("Error");
+        }
     }
 } 

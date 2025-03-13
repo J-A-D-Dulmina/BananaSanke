@@ -7,6 +7,11 @@ import model.SessionManager;
 import api.APIClient;
 import model.SoundManager;
 import utils.CustomDialogUtils;
+import org.json.JSONObject;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 
 /**
  * Main game interface that contains the Banana Snake game layout.
@@ -22,65 +27,90 @@ public class GameMainInterface extends JFrame {
      */
     public GameMainInterface() {
         super("Banana Snake");
-        soundManager = SoundManager.getInstance();
         
-        // Start playing background music
-        soundManager.playBackgroundMusic();
-
-        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-
-        // Add window closing listener
-        addWindowListener(new java.awt.event.WindowAdapter() {
-            @Override
-            public void windowClosing(java.awt.event.WindowEvent evt) {
-                confirmAndExit();
-            }
-        });
-
-        // Initialize components
-        initializeComponents();
-
-        // Set window properties
-        setSize(1000, 600);
-        setResizable(false);
+        // Verify user is logged in
+        if (SessionManager.getAuthToken() == null || SessionManager.getUsername() == null) {
+            throw new IllegalStateException("User must be logged in to start game");
+        }
         
-        // Center the window on screen
-        setLocationRelativeTo(null);
-        
-        // Request focus to ensure keyboard input works
-        requestFocus();
+        try {
+            // Initialize sound manager
+            soundManager = SoundManager.getInstance();
+            soundManager.playBackgroundMusic();
+
+            setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+
+            // Add window closing listener
+            addWindowListener(new WindowAdapter() {
+                @Override
+                public void windowClosing(WindowEvent evt) {
+                    confirmAndExit();
+                }
+            });
+
+            // Initialize components
+            initializeComponents();
+
+            // Set window properties
+            setSize(1000, 600);
+            setResizable(false);
+            setLocationRelativeTo(null);
+            
+            // Request focus to ensure keyboard input works
+            requestFocus();
+            
+            System.out.println("Game interface initialized successfully for user: " + SessionManager.getUsername());
+        } catch (Exception e) {
+            System.err.println("Error initializing game interface: " + e.getMessage());
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, 
+                "Error initializing game. Please try restarting the application.",
+                "Initialization Error",
+                JOptionPane.ERROR_MESSAGE);
+            dispose();
+            throw e;
+        }
     }
 
     private void initializeComponents() {
-        // Create panels
-        snakePanel = new SnakePanel();
-        leaderboardPanel = new LeaderboardPanel(this);
+        try {
+            // Create panels
+            snakePanel = new SnakePanel();
+            leaderboardPanel = new LeaderboardPanel(this);
 
-        // Create top bar
-        JPanel topBar = createTopBar();
+            // Create top bar
+            JPanel topBar = createTopBar();
 
-        // Create game panels
-        JPanel leftPanel = new BananaPanel(this, snakePanel);
-        JPanel rightPanel = snakePanel;
+            // Create game panels
+            JPanel leftPanel = new BananaPanel(this, snakePanel);
+            JPanel rightPanel = snakePanel;
 
-        // Create split pane
-        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftPanel, rightPanel);
-        splitPane.setResizeWeight(0.5);
-        splitPane.setDividerSize(5);
-        splitPane.setEnabled(false);
-        splitPane.setDividerLocation(500);
+            // Create split pane
+            JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftPanel, rightPanel);
+            splitPane.setResizeWeight(0.5);
+            splitPane.setDividerSize(5);
+            splitPane.setEnabled(false);
+            splitPane.setDividerLocation(500);
 
-        // Add resize listener
-        addComponentListener(new java.awt.event.ComponentAdapter() {
-            public void componentResized(java.awt.event.ComponentEvent evt) {
-                splitPane.setDividerLocation(getWidth() / 2);
-            }
-        });
+            // Add resize listener
+            addComponentListener(new ComponentAdapter() {
+                @Override
+                public void componentResized(ComponentEvent evt) {
+                    splitPane.setDividerLocation(getWidth() / 2);
+                }
+            });
 
-        // Add components to frame
-        setLayout(new BorderLayout());
-        add(topBar, BorderLayout.NORTH);
-        add(splitPane, BorderLayout.CENTER);
+            // Add components to frame
+            setLayout(new BorderLayout());
+            add(topBar, BorderLayout.NORTH);
+            add(splitPane, BorderLayout.CENTER);
+            
+            System.out.println("Game components initialized successfully");
+        } catch (Exception e) {
+            System.err.println("Error initializing game components: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Failed to initialize game components", e);
+        }
     }
 
     /**
@@ -110,20 +140,31 @@ public class GameMainInterface extends JFrame {
      * Asks for confirmation before closing the game.
      */
     private void confirmAndExit() {
-        int confirm = CustomDialogUtils.showConfirmDialog(
+        // Play button click sound
+        SoundManager.getInstance().playButtonClickSound();
+        
+        // Show confirmation dialog
+        int choice = CustomDialogUtils.showConfirmDialog(
             this,
-            "Are you sure you want to exit the game?",
-            "Exit Game"
+            "Are you sure you want to exit?",
+            "Confirm Exit"
         );
-
-        if (confirm == JOptionPane.YES_OPTION) {
-            // Destroy auth token and logout user
-            APIClient.logoutUser();
-            SessionManager.logout();
-            
-            // Close the game window and exit the application
-            dispose();
-            System.exit(0);
+        
+        if (choice == JOptionPane.YES_OPTION) {
+            try {
+                // Attempt to logout
+                APIClient.logoutUser();
+                
+                // Close the game window
+                dispose();
+                
+                // Exit the application
+                System.exit(0);
+            } catch (Exception e) {
+                // Even if logout fails, still close the game
+                dispose();
+                System.exit(0);
+            }
         }
     }
     
@@ -158,7 +199,7 @@ public class GameMainInterface extends JFrame {
                         for (Component bananaComponent : bananaComponents) {
                             if (bananaComponent instanceof ButtonPanel) {
                                 ButtonPanel buttonPanel = (ButtonPanel) bananaComponent;
-                                buttonPanel.updateUsername(newUsername);
+                                buttonPanel.updateUsernameDisplay(newUsername);
                                 break;
                             }
                         }

@@ -120,8 +120,8 @@ public class GameOverPanel extends JDialog {
         
         // Use SwingUtilities.invokeLater to ensure proper UI update sequence
         SwingUtilities.invokeLater(() -> {
-            // Reset the game to starting state
-            mainFrame.getSnakeGameLogic().reset();
+            // Reset the game using the controller
+            mainFrame.getSnakePanel().getGameController().resetGame();
             
             // Reset the snake panel to click-to-start state
             mainFrame.getSnakePanel().resetToStart();

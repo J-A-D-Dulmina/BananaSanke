@@ -7,37 +7,171 @@ import java.util.ArrayList;
 import java.util.List;
 import model.SessionManager;
 import java.util.Collections;
-import java.util.Comparator;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.text.SimpleDateFormat;
-import java.util.Date;
+import model.LeaderboardModel;
+import view.LeaderboardPanel;
+import javax.swing.SwingUtilities;
+import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  * Controls the leaderboard by managing score retrieval and UI updates.
  */
 public class LeaderboardController {
-    private static LeaderboardController instance;
-    private static final String LEADERBOARD_ACTION = "get_top_scores";
-    private static final int MAX_SCORES = 20;
-    private static final String API_URL = "https://deshandulmina.info/api.php";
-    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-    private List<LeaderboardEntry> currentScores;
+    private static final int REFRESH_INTERVAL = 30000; // 30 seconds
+    private final LeaderboardModel model;
+    private final LeaderboardPanel view;
+    private Timer refreshTimer;
+    private final AtomicBoolean isUpdating;
+    private volatile boolean isInitialized;
     
-    private LeaderboardController() {
-        currentScores = new ArrayList<>();
-    }
-    
-    public static LeaderboardController getInstance() {
-        if (instance == null) {
-            instance = new LeaderboardController();
+    public LeaderboardController(LeaderboardModel model, LeaderboardPanel view) {
+        if (model == null || view == null) {
+            throw new IllegalArgumentException("Model and view cannot be null");
         }
-        return instance;
+        this.model = model;
+        this.view = view;
+        this.isUpdating = new AtomicBoolean(false);
+        this.isInitialized = false;
+        
+        // Initialize the view and start updates
+        if (SwingUtilities.isEventDispatchThread()) {
+            initializeAndStart();
+        } else {
+            SwingUtilities.invokeLater(this::initializeAndStart);
+        }
     }
 
-    public interface LeaderboardCallback {
-        void onSuccess(List<LeaderboardEntry> scores);
-        void onFailure(String error);
+    private void initializeAndStart() {
+        try {
+            // Initialize view first
+            initializeView();
+            // Then start auto-refresh if initialization was successful
+            if (isInitialized) {
+                startAutoRefresh();
+            }
+        } catch (Exception e) {
+            System.err.println("Error during initialization: " + e.getMessage());
+            e.printStackTrace();
+            // Show error to user
+            view.showError("Failed to load leaderboard: " + e.getMessage());
+        }
+    }
+
+    private void initializeView() {
+        if (!isInitialized) {
+            try {
+                // Initial update of the leaderboard
+                model.fetchLeaderboard();
+                List<LeaderboardEntry> entries = model.getEntries();
+                view.updateLeaderboard(entries);
+                updateUserStats(entries);
+                isInitialized = true;
+            } catch (Exception e) {
+                System.err.println("Error initializing view: " + e.getMessage());
+                e.printStackTrace();
+                view.showError("Failed to initialize leaderboard: " + e.getMessage());
+                // Don't rethrow - handle the error gracefully
+                isInitialized = false;
+            }
+        }
+    }
+
+    public void updateLeaderboard() {
+        // Prevent concurrent updates
+        if (!isUpdating.compareAndSet(false, true)) {
+            return;
+        }
+
+        try {
+            view.showLoading(true);
+            model.fetchLeaderboard();
+            SwingUtilities.invokeLater(() -> {
+                try {
+                    List<LeaderboardEntry> entries = model.getEntries();
+                    view.updateLeaderboard(entries);
+                    updateUserStats(entries);
+                } catch (Exception e) {
+                    System.err.println("Error updating leaderboard view: " + e.getMessage());
+                    e.printStackTrace();
+                    view.showError("Failed to update leaderboard: " + e.getMessage());
+                } finally {
+                    view.showLoading(false);
+                    isUpdating.set(false);
+                }
+            });
+        } catch (Exception e) {
+            System.err.println("Error in updateLeaderboard: " + e.getMessage());
+            e.printStackTrace();
+            view.showError("Failed to fetch leaderboard data: " + e.getMessage());
+            view.showLoading(false);
+            isUpdating.set(false);
+        }
+    }
+
+    private void updateUserStats(List<LeaderboardEntry> entries) {
+        String currentUsername = SessionManager.getUsername();
+        if (currentUsername == null || entries.isEmpty()) {
+            view.updateUserRank(0, 0);
+            view.updateBestScore(0);
+            return;
+        }
+
+        int userScore = 0;
+        boolean found = false;
+
+        for (LeaderboardEntry entry : entries) {
+            if (currentUsername.equals(entry.getUsername())) {
+                found = true;
+                userScore = entry.getScore();
+                view.updateBestScore(userScore);
+                break;
+            }
+        }
+
+        // Use server-provided rank if available
+        int userRank = model.getUserRank();
+        if (userRank > 0) {
+            view.updateUserRank(userRank, model.getTotalPlayers());
+        } else if (found) {
+            // Fallback to calculating rank locally if server didn't provide it
+            int rank = 1;
+            for (LeaderboardEntry entry : entries) {
+                if (currentUsername.equals(entry.getUsername())) {
+                    view.updateUserRank(rank, model.getTotalPlayers());
+                    break;
+                }
+                rank++;
+            }
+        } else {
+            view.updateUserRank(0, model.getTotalPlayers());
+            view.updateBestScore(0);
+        }
+    }
+
+    private void startAutoRefresh() {
+        stopAutoRefresh(); // Ensure any existing timer is cancelled
+        refreshTimer = new Timer("LeaderboardRefresh", true);
+        refreshTimer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                if (!isUpdating.get()) {
+                    updateLeaderboard();
+                }
+            }
+        }, REFRESH_INTERVAL, REFRESH_INTERVAL);
+    }
+
+    private void stopAutoRefresh() {
+        if (refreshTimer != null) {
+            refreshTimer.cancel();
+            refreshTimer = null;
+        }
+    }
+
+    public void onClose() {
+        stopAutoRefresh();
     }
 
     public static class LeaderboardEntry implements Comparable<LeaderboardEntry> {
@@ -49,10 +183,10 @@ public class LeaderboardController {
 
         public LeaderboardEntry(int id, String username, int userId, int score, String createdAt) {
             this.id = id;
-            this.username = username;
+            this.username = username != null ? username : "";
             this.userId = userId;
             this.score = score;
-            this.createdAt = createdAt;
+            this.createdAt = createdAt != null ? createdAt : "";
         }
 
         public int getId() { return id; }
@@ -60,12 +194,10 @@ public class LeaderboardController {
         public int getUserId() { return userId; }
         public int getScore() { return score; }
         public String getCreatedAt() { return createdAt; }
-        
-        // For backward compatibility
-        public String getDateAchieved() { return createdAt; }
 
         @Override
         public int compareTo(LeaderboardEntry other) {
+            if (other == null) return 1;
             // First compare by score (descending)
             int scoreCompare = Integer.compare(other.score, this.score);
             if (scoreCompare != 0) {
@@ -81,161 +213,34 @@ public class LeaderboardController {
         }
     }
 
-    public interface RankCallback {
-        void onSuccess(int rank, int totalPlayers);
+    public interface LeaderboardCallback {
+        void onSuccess(List<LeaderboardEntry> entries);
         void onFailure(String error);
     }
 
-    public void fetchTopScores(LeaderboardCallback callback) {
-        String authToken = SessionManager.getAuthToken();
-        if (authToken == null || authToken.isEmpty()) {
-            callback.onFailure("Not authenticated");
-            return;
-        }
-
-        try {
-            // Build the URL with proper encoding
-            String url = String.format("%s?action=%s&limit=%d",
-                API_URL,
-                URLEncoder.encode(LEADERBOARD_ACTION, StandardCharsets.UTF_8.toString()),
-                MAX_SCORES
-            );
-            
-            String response = APIClient.sendAuthenticatedGetRequest(url);
-            System.out.println("Leaderboard Request URL: " + url); // Debug log
-            System.out.println("API Response: " + response); // Debug log
-
-            // Handle empty response
-            if (response == null || response.isEmpty()) {
-                callback.onFailure("Empty response from server");
-                return;
-            }
-
-            // Handle HTML error responses
-            if (response.contains("<br") || response.contains("<html") || response.contains("Fatal error")) {
-                String errorMessage = response.replaceAll("<[^>]*>", "")
-                    .replaceAll("\\s+", " ")
-                    .trim();
-                System.err.println("Server Error: " + errorMessage);
-                callback.onFailure("Server Error: " + errorMessage);
-                return;
-            }
-
-            // Parse JSON response
-            try {
-                JSONObject jsonResponse = new JSONObject(response);
-                String status = jsonResponse.optString("status", "error");
-                
-                if ("success".equals(status)) {
-                    JSONArray scoresArray = jsonResponse.getJSONArray("scores");
-                    currentScores.clear();
-                    
-                    for (int i = 0; i < scoresArray.length(); i++) {
-                        JSONObject scoreObj = scoresArray.getJSONObject(i);
-                        currentScores.add(new LeaderboardEntry(
-                            scoreObj.getInt("id"),
-                            scoreObj.getString("username"),
-                            scoreObj.getInt("user_id"),
-                            scoreObj.getInt("score"),
-                            scoreObj.getString("created_at")
-                        ));
-                    }
-                    
-                    // Sort scores in descending order
-                    Collections.sort(currentScores);
-                    callback.onSuccess(currentScores);
-                } else {
-                    String message = jsonResponse.optString("message", "Unknown error occurred");
-                    callback.onFailure(message);
-                }
-            } catch (org.json.JSONException e) {
-                System.err.println("JSON parsing error: " + e.getMessage());
-                System.err.println("Raw response: " + response);
-                callback.onFailure("Error parsing server response: " + e.getMessage());
-            }
-        } catch (Exception e) {
-            System.err.println("Error fetching leaderboard: " + e.getMessage());
-            e.printStackTrace();
-            callback.onFailure("Error fetching leaderboard: " + e.getMessage());
-        }
-    }
-
-    public void getCurrentUserRank(RankCallback callback) {
-        String currentUsername = SessionManager.getUsername();
-        if (currentUsername == null || currentUsername.isEmpty()) {
-            callback.onFailure("User not logged in");
-            return;
-        }
-
-        if (currentScores.isEmpty()) {
-            callback.onFailure("No scores available");
-            return;
-        }
-
-        // Find current user's rank
-        int rank = 1;
-        boolean found = false;
-        
-        for (LeaderboardEntry entry : currentScores) {
-            if (entry.getUsername().equals(currentUsername)) {
-                found = true;
-                callback.onSuccess(rank, currentScores.size());
-                break;
-            }
-            rank++;
-        }
-
-        // If user not found in current scores
-        if (!found) {
-            callback.onSuccess(currentScores.size() + 1, currentScores.size() + 1);
-        }
-    }
-
-    public void refreshLeaderboard(LeaderboardCallback callback) {
-        fetchTopScores(callback);
-    }
-
-    /**
-     * Gets the current list of scores without making a new API call
-     * @return List of current leaderboard entries
-     */
-    public List<LeaderboardEntry> getCurrentScores() {
-        return new ArrayList<>(currentScores);
-    }
-
-    /**
-     * Gets the total number of players in the current leaderboard
-     * @return Number of players
-     */
-    public int getTotalPlayers() {
-        return currentScores.size();
-    }
-
-    /**
-     * Gets the highest score in the current leaderboard
-     * @return Highest score, or 0 if no scores available
-     */
-    public int getHighestScore() {
-        if (currentScores.isEmpty()) {
-            return 0;
-        }
-        return currentScores.get(0).getScore();
-    }
-
-    /**
-     * Gets a user's best score from the current leaderboard
-     * @param username The username to look for
-     * @return The user's best score, or 0 if not found
-     */
     public int getUserBestScore(String username) {
-        if (username == null || username.isEmpty()) {
+        if (model == null || username == null || username.isEmpty()) {
             return 0;
         }
         
-        return currentScores.stream()
-            .filter(entry -> username.equals(entry.getUsername()))
-            .mapToInt(LeaderboardEntry::getScore)
-            .max()
+        return model.getEntryByUsername(username)
+            .map(LeaderboardEntry::getScore)
             .orElse(0);
+    }
+
+    public List<LeaderboardEntry> getCurrentScores() {
+        return model != null ? model.getScores() : new ArrayList<>();
+    }
+
+    public int getTotalPlayers() {
+        return model != null ? model.getTotalPlayers() : 0;
+    }
+
+    public int getHighestScore() {
+        return model != null ? model.getHighestScore() : 0;
+    }
+
+    public boolean isInitialized() {
+        return isInitialized;
     }
 }

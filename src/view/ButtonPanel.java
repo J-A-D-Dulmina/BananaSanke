@@ -3,8 +3,8 @@ package view;
 import javax.swing.*;
 import java.awt.*;
 import model.SnakeGameLogic;
-import api.APIClient;
-import model.SessionManager;
+import model.ButtonPanelModel;
+import controller.ButtonPanelController;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import model.SoundManager;
@@ -15,14 +15,17 @@ public class ButtonPanel extends JPanel {
     private JButton leaderboardBtn, playPauseBtn, resetBtn, logoutBtn, settingsBtn, accountBtn;
     private ImageIcon leaderboardIcon, pauseIcon, resetIcon, logoutIcon, settingsIcon, accountIcon;
     private GameMainInterface gameMainInterface;
-    private SnakeGameLogic gameLogic; 
     private SnakePanel snakePanel;
     private JPanel namePanel;
+    private ButtonPanelController controller;
 
-    public ButtonPanel(GameMainInterface gameMainInterface, SnakeGameLogic gameLogic, SnakePanel snakePanel) { 
+    public ButtonPanel(GameMainInterface gameMainInterface, SnakeGameLogic gameLogic, SnakePanel snakePanel) {
         this.gameMainInterface = gameMainInterface;
-        this.gameLogic = gameLogic; 
         this.snakePanel = snakePanel;
+
+        // Initialize MVC components
+        ButtonPanelModel model = new ButtonPanelModel(gameLogic, snakePanel);
+        this.controller = new ButtonPanelController(model, this, gameMainInterface);
 
         setLayout(new GridBagLayout());
         setPreferredSize(new Dimension(600, 65));
@@ -65,129 +68,50 @@ public class ButtonPanel extends JPanel {
         // Play/Pause button
         playPauseBtn.addActionListener(e -> {
             SoundManager.getInstance().playButtonClickSound();
-            if (!snakePanel.isGameStarted()) {
-                // If game hasn't started, start it
-                snakePanel.startGame();
-                playPauseBtn.setIcon(pauseIcon);
-            } else {
-                // If game has started, toggle pause state
-                boolean isCurrentlyRunning = gameLogic.isRunning();
-                gameLogic.setRunning(!isCurrentlyRunning);
-                
-                if (!isCurrentlyRunning) {
-                    playPauseBtn.setIcon(pauseIcon);
-                    snakePanel.hidePauseOverlay();
-                } else {
-                    playPauseBtn.setIcon(resizeIcon(new ImageIcon("resources/play_icon.png")));
-                    snakePanel.showPauseOverlay();
-                }
-            }
+            controller.handlePlayPause();
         });
 
         // Settings button
         settingsBtn.addActionListener(e -> {
             SoundManager.getInstance().playButtonClickSound();
-            // Pause the game if it's running
-            boolean wasRunning = gameLogic.isRunning();
-            if (wasRunning) {
-                gameLogic.setRunning(false);
-                playPauseBtn.setIcon(resizeIcon(new ImageIcon("resources/play_icon.png")));
-                snakePanel.showPauseOverlay();
-            }
-            SettingsPanel settingsPanel = new SettingsPanel(gameMainInterface);
-            settingsPanel.addWindowListener(new java.awt.event.WindowAdapter() {
-                @Override
-                public void windowClosed(java.awt.event.WindowEvent windowEvent) {
-                    snakePanel.requestFocusInWindow();
-                }
-            });
-            settingsPanel.setVisible(true);
+            controller.handleSettings();
         });
 
         // Account button
         accountBtn.addActionListener(e -> {
             SoundManager.getInstance().playButtonClickSound();
-            // Pause the game if it's running
-            boolean wasRunning = gameLogic.isRunning();
-            if (wasRunning) {
-                gameLogic.setRunning(false);
-                playPauseBtn.setIcon(resizeIcon(new ImageIcon("resources/play_icon.png")));
-                snakePanel.showPauseOverlay();
-            }
-            AccountPanel accountPanel = new AccountPanel(gameMainInterface);
-            accountPanel.addWindowListener(new java.awt.event.WindowAdapter() {
-                @Override
-                public void windowClosed(java.awt.event.WindowEvent windowEvent) {
-                    snakePanel.requestFocusInWindow();
-                }
-            });
-            accountPanel.setVisible(true);
+            controller.handleAccount();
         });
 
         // Leaderboard button
         leaderboardBtn.addActionListener(e -> {
             SoundManager.getInstance().playButtonClickSound();
-            // Pause the game if it's running
-            boolean wasRunning = gameLogic.isRunning();
-            if (wasRunning) {
-                gameLogic.setRunning(false);
-                playPauseBtn.setIcon(resizeIcon(new ImageIcon("resources/play_icon.png")));
-                snakePanel.showPauseOverlay();
-            }
-            gameMainInterface.showLeaderboard();
-            snakePanel.requestFocusInWindow();
+            controller.handleLeaderboard();
         });
 
         // Reset button
         resetBtn.addActionListener(e -> {
             SoundManager.getInstance().playButtonClickSound();
-            int confirm = CustomDialogUtils.showConfirmDialog(
-                this,
-                "Are you sure you want to reset the game?",
-                "Confirm Reset"
-            );
-
-            if (confirm == JOptionPane.YES_OPTION) {
-                gameLogic.reset();  
-                snakePanel.resetToStart();
-                snakePanel.requestFocusInWindow();
-            }
+            controller.handleReset();
         });
 
         // Logout button
         logoutBtn.addActionListener(e -> {
             SoundManager.getInstance().playButtonClickSound();
-            int confirm = CustomDialogUtils.showConfirmDialog(
-                gameMainInterface,
-                "Are you sure you want to logout?",
-                "Confirm Logout"
-            );
-
-            if (confirm == JOptionPane.YES_OPTION) {
-                APIClient.logoutUser();
-                gameMainInterface.dispose();  
-                LoginUI loginUI = new LoginUI();
-                loginUI.setVisible(true);
-            }
+            controller.handleLogout();
         });
 
         // Pause overlay click listener
         snakePanel.addPauseOverlayClickListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                if (!gameLogic.isRunning()) {
-                    SoundManager.getInstance().playButtonClickSound();
-                    gameLogic.setRunning(true);
-                    playPauseBtn.setIcon(pauseIcon);
-                    snakePanel.hidePauseOverlay();
-                    snakePanel.requestFocusInWindow();
-                }
+                controller.handlePauseOverlayClick();
             }
         });
     }
 
     private void setupUsernameDisplay() {
-        String loggedInUsername = SessionManager.getUsername();
+        String loggedInUsername = controller.getModel().getUsername();
         if (loggedInUsername == null || loggedInUsername.isEmpty()) {
             loggedInUsername = "Guest"; 
         }
@@ -285,7 +209,23 @@ public class ButtonPanel extends JPanel {
         }
     }
 
-    public void updateUsername(String newUsername) {
+    public void setPlayPauseIcon(String state) {
+        if (state.equals("pause")) {
+            playPauseBtn.setIcon(pauseIcon);
+        } else {
+            playPauseBtn.setIcon(resizeIcon(new ImageIcon("resources/play_icon.png")));
+        }
+    }
+
+    public void showPauseOverlay() {
+        snakePanel.showPauseOverlay();
+    }
+
+    public void hidePauseOverlay() {
+        snakePanel.hidePauseOverlay();
+    }
+
+    public void updateUsernameDisplay(String newUsername) {
         if (namePanel != null) {
             Component[] components = namePanel.getComponents();
             for (Component component : components) {

@@ -1,6 +1,6 @@
 /api/
-/controller/
 /model/
 /view/
-/service/
+/controller/
+/server/
 /utils/

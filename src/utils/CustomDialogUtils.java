@@ -150,4 +150,76 @@ public class CustomDialogUtils {
         }
         return JOptionPane.CLOSED_OPTION;
     }
+
+    public static void showErrorDialog(Component parentComponent, String message, String title) {
+        // Create message label with custom font
+        JLabel messageLabel = new JLabel(message);
+        messageLabel.setFont(new Font("Arial", Font.PLAIN, 14));
+        messageLabel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        // Create OK button with custom styling
+        JButton okButton = new JButton("OK") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                
+                if (getModel().isPressed()) {
+                    g2.setColor(new Color(180, 0, 0));
+                } else if (getModel().isRollover()) {
+                    g2.setColor(new Color(220, 0, 0));
+                } else {
+                    g2.setColor(new Color(200, 0, 0));
+                }
+                
+                g2.fill(new RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), 10, 10));
+                g2.dispose();
+                
+                super.paintComponent(g);
+            }
+        };
+        okButton.setForeground(Color.WHITE);
+        okButton.setBorder(BorderFactory.createEmptyBorder(8, 20, 8, 20));
+        okButton.setFocusPainted(false);
+        okButton.setContentAreaFilled(false);
+        okButton.setFont(new Font("Arial", Font.BOLD, 14));
+
+        // Create button panel with spacing
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
+        buttonPanel.setBackground(Color.WHITE);
+        buttonPanel.add(okButton);
+
+        // Create the JOptionPane with custom styling
+        JOptionPane optionPane = new JOptionPane(
+            messageLabel,
+            JOptionPane.ERROR_MESSAGE,
+            JOptionPane.DEFAULT_OPTION,
+            null,
+            new Object[]{buttonPanel},
+            null
+        );
+        optionPane.setBackground(Color.WHITE);
+
+        // Create and configure the dialog
+        JDialog dialog = optionPane.createDialog(parentComponent, title);
+        dialog.setBackground(Color.WHITE);
+        
+        // Apply white background to all components recursively
+        applyWhiteBackground(dialog);
+
+        // Add action listener to OK button
+        okButton.addActionListener(e -> dialog.dispose());
+        
+        // Center the dialog on the parent component
+        if (parentComponent != null) {
+            Point parentLocation = parentComponent.getLocationOnScreen();
+            Dimension parentSize = parentComponent.getSize();
+            Dimension dialogSize = dialog.getSize();
+            int x = parentLocation.x + (parentSize.width - dialogSize.width) / 2;
+            int y = parentLocation.y + (parentSize.height - dialogSize.height) / 2;
+            dialog.setLocation(x, y);
+        }
+        
+        dialog.setVisible(true);
+    }
 } 
