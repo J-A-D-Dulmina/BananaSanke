@@ -545,4 +545,18 @@ public class APIClient {
                    e.getMessage().replace("\"", "'") + "\"}";
         }
     }
+
+    public static String clearResetToken(String username) {
+        try {
+            String apiUrl = BASE_URL + "?action=clear_reset_token";
+            
+            StringBuilder postData = new StringBuilder();
+            postData.append("username=").append(URLEncoder.encode(username, "UTF-8"));
+
+            return sendHttpRequest(apiUrl, "POST", postData.toString(), false);
+        } catch (Exception e) {
+            return "{\"status\":\"error\", \"message\":\"Error clearing reset token: " + 
+                   e.getMessage().replace("\"", "'") + "\"}";
+        }
+    }
 }

@@ -633,17 +633,12 @@ try {
                 $email = trim($postData['email']);
 
                 // Check if user exists and email matches
-                $stmt = $db->prepare('SELECT id, last_token_sent FROM users WHERE username = ? AND email = ?');
+                $stmt = $db->prepare('SELECT id FROM users WHERE username = ? AND email = ?');
                 $stmt->execute([$username, $email]);
                 $user = $stmt->fetch(PDO::FETCH_ASSOC);
                 
                 if (!$user) {
                     throw new Exception('Invalid username or email combination');
-                }
-
-                // Check if last token was sent less than 1 minute ago
-                if ($user['last_token_sent'] && strtotime($user['last_token_sent']) > strtotime('-1 minute')) {
-                    throw new Exception('Please wait 1 minute before requesting another token');
                 }
 
                 // Generate reset token
@@ -654,8 +649,7 @@ try {
                 $stmt = $db->prepare('
                     UPDATE users 
                     SET reset_token = ?, 
-                        reset_token_expiry = ?,
-                        last_token_sent = NOW()
+                        reset_token_expiry = ?
                     WHERE username = ?
                 ');
                 $stmt->execute([$resetToken, $expiryTime, $username]);
@@ -717,8 +711,7 @@ try {
                     UPDATE users 
                     SET password = ?,
                         reset_token = NULL,
-                        reset_token_expiry = NULL,
-                        last_token_sent = NULL
+                        reset_token_expiry = NULL
                     WHERE username = ?
                 ');
                 $stmt->execute([$hashedPassword, $username]);
@@ -726,6 +719,32 @@ try {
                 echo json_encode([
                     'status' => 'success',
                     'message' => 'Password reset successful'
+                ]);
+            } catch (Exception $e) {
+                http_response_code(400);
+                echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+            }
+            break;
+
+        case 'clear_reset_token':
+            try {
+                if (!isset($postData['username'])) {
+                    throw new Exception('Username is required');
+                }
+
+                $username = trim($postData['username']);
+
+                // Clear the last_token_sent timestamp
+                $stmt = $db->prepare('
+                    UPDATE users 
+                    SET last_token_sent = NULL
+                    WHERE username = ?
+                ');
+                $stmt->execute([$username]);
+
+                echo json_encode([
+                    'status' => 'success',
+                    'message' => 'Reset token cleared'
                 ]);
             } catch (Exception $e) {
                 http_response_code(400);

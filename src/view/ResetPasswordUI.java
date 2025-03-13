@@ -19,7 +19,8 @@ public class ResetPasswordUI extends JDialog {
     private String username;
     private String email;
     private Timer cooldownTimer;
-    private int cooldownSeconds = 60;
+    private int cooldownSeconds = 30;
+    private boolean isResendTokenEnabled = false;
 
     public ResetPasswordUI(JFrame parent, String username, String email) {
         super(parent, "Reset Password", true);
@@ -32,6 +33,7 @@ public class ResetPasswordUI extends JDialog {
         
         initializeComponents();
         setupCooldownTimer();
+        cooldownTimer.start();
     }
 
     private void setupCooldownTimer() {
@@ -39,15 +41,17 @@ public class ResetPasswordUI extends JDialog {
             if (cooldownSeconds > 0) {
                 cooldownSeconds--;
                 resendTokenButton.setText("Resend Token (" + cooldownSeconds + "s)");
-                resendTokenButton.setEnabled(false);
+                isResendTokenEnabled = false;
                 resendTokenButton.setForeground(Color.WHITE);
             } else {
                 resendTokenButton.setText("Resend Token");
-                resendTokenButton.setEnabled(true);
+                isResendTokenEnabled = true;
                 resendTokenButton.setForeground(Color.RED);
                 cooldownTimer.stop();
             }
         });
+        cooldownTimer.setRepeats(true);
+        cooldownTimer.setInitialDelay(0);
     }
 
     private void initializeComponents() {
@@ -132,15 +136,32 @@ public class ResetPasswordUI extends JDialog {
         mainPanel.add(resetButton, gbc);
 
         // Resend Token link
-        resendTokenButton = new JLabel("Resend Token");
+        resendTokenButton = new JLabel("Resend Token (30s)");
         resendTokenButton.setForeground(Color.WHITE);
         resendTokenButton.setFont(new Font("Arial", Font.BOLD, 14));
-        resendTokenButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        resendTokenButton.setEnabled(false);
+        resendTokenButton.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+        isResendTokenEnabled = false;
         resendTokenButton.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
             public void mouseClicked(java.awt.event.MouseEvent evt) {
-                if (resendTokenButton.isEnabled()) {
+                if (isResendTokenEnabled) {
+                    System.out.println("Resend token button clicked"); // Debug log
                     resendToken();
+                }
+            }
+            
+            @Override
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                if (isResendTokenEnabled) {
+                    resendTokenButton.setForeground(Color.RED.brighter());
+                    resendTokenButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+                }
+            }
+            
+            @Override
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                if (isResendTokenEnabled) {
+                    resendTokenButton.setForeground(Color.RED);
                 }
             }
         });
@@ -305,16 +326,21 @@ public class ResetPasswordUI extends JDialog {
 
     private void resendToken() {
         try {
+            System.out.println("Resending token for user: " + username); // Debug log
             String response = APIClient.requestPasswordReset(username, email);
+            System.out.println("Server response: " + response); // Debug log
             JSONObject jsonResponse = new JSONObject(response);
 
             if (jsonResponse.getString("status").equals("success")) {
                 showMessage("New reset token sent to your email!", true);
-                // Start cooldown timer
-                cooldownSeconds = 60;
+                cooldownSeconds = 30;
                 resendTokenButton.setText("Resend Token (" + cooldownSeconds + "s)");
-                resendTokenButton.setEnabled(false);
+                isResendTokenEnabled = false;
                 resendTokenButton.setForeground(Color.WHITE);
+                resendTokenButton.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+                if (cooldownTimer != null) {
+                    cooldownTimer.stop();
+                }
                 cooldownTimer.start();
             } else {
                 showMessage(jsonResponse.getString("message"), false);
@@ -532,7 +558,18 @@ public class ResetPasswordUI extends JDialog {
     public void dispose() {
         if (cooldownTimer != null) {
             cooldownTimer.stop();
+            cooldownTimer = null;
         }
+        cooldownSeconds = 30;
+        isResendTokenEnabled = false;
+        
+        // Clear the reset token on the server
+        try {
+            APIClient.clearResetToken(username);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        
         super.dispose();
     }
 } 
