@@ -98,10 +98,6 @@ public class ResetPasswordController {
         try {
             String response = APIClient.clearResetToken(model.getUsername());
             JSONObject jsonResponse = new JSONObject(response);
-            
-            if (!jsonResponse.getString("status").equals("success")) {
-                // Silently fail for cleanup operations
-            }
         } catch (Exception e) {
             // Silently fail for cleanup operations
         }

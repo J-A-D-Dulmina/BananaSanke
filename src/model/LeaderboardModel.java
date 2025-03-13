@@ -14,14 +14,12 @@ public class LeaderboardModel {
     private volatile int userRank;
     private volatile int userScore;
     private volatile int totalPlayers;
-    private volatile String lastError;
 
     public LeaderboardModel() {
         this.entries = Collections.synchronizedList(new ArrayList<>());
         this.userRank = 0;
         this.userScore = 0;
         this.totalPlayers = 0;
-        this.lastError = "";
     }
 
     public synchronized List<LeaderboardEntry> fetchLeaderboard() throws Exception {
@@ -33,9 +31,7 @@ public class LeaderboardModel {
         JSONObject jsonResponse = new JSONObject(response);
         
         if (!"success".equals(jsonResponse.optString("status"))) {
-            String errorMessage = jsonResponse.optString("message", "Unknown error occurred");
-            this.lastError = errorMessage;
-            throw new Exception("Failed to fetch leaderboard: " + errorMessage);
+            throw new Exception("Failed to fetch leaderboard: " + jsonResponse.optString("message", "Unknown error occurred"));
         }
 
         synchronized (entries) {
@@ -57,7 +53,6 @@ public class LeaderboardModel {
             this.userRank = jsonResponse.optInt("user_rank", 0);
             this.userScore = jsonResponse.optInt("user_score", 0);
             this.totalPlayers = jsonResponse.optInt("total_players", 0);
-            this.lastError = "";
 
             return new ArrayList<>(entries);
         }
@@ -73,10 +68,6 @@ public class LeaderboardModel {
 
     public synchronized int getTotalPlayers() {
         return totalPlayers;
-    }
-
-    public synchronized String getLastError() {
-        return lastError;
     }
 
     public synchronized List<LeaderboardEntry> getEntries() {

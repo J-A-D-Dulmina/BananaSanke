@@ -41,7 +41,6 @@ public class GameEngine {
             currentGame = bananaAPI.getRandomGame();
             return currentGame.getLocation();
         } catch (MalformedURLException e) {
-            System.err.println("Error retrieving the game image: " + e.getMessage());
             return null;
         }
     }

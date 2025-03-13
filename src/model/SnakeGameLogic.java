@@ -289,6 +289,45 @@ public class SnakeGameLogic {
         }
     }
 
+    public void resetGame() {
+        SoundManager.getInstance().stopRunningSound();
+        direction = "RIGHT";  
+        score = 0;
+        waitingForAnswer = false;
+        running = true;
+
+        initializeSnake();
+
+        if (APISection.getInstance() != null) {
+            BananaPanel parent = (BananaPanel) SwingUtilities.getAncestorOfClass(BananaPanel.class, APISection.getInstance());
+            if (parent != null) {
+                parent.getHealthPanel().resetHealth();
+                parent.getTimerPanel().reset();
+                parent.getTimerPanel().start();
+            }
+            
+            APISection.getInstance().updateScore(0);
+            APISection.getInstance().loadNextQuestion();
+            Game newGame = APISection.getInstance().getCurrentGame();
+            if (newGame != null) {
+                food.setCurrentGame(newGame);
+            }
+        }
+
+        food.spawnFood(snake);
+
+        if (!SoundManager.getInstance().isMuted()) {
+            SoundManager.getInstance().startRunningSound();
+        }
+
+        SwingUtilities.invokeLater(() -> {
+            BananaPanel parent = (BananaPanel) SwingUtilities.getAncestorOfClass(BananaPanel.class, APISection.getInstance());
+            if (parent != null) {
+                parent.repaint();
+            }
+        });
+    }
+
     public void pauseGame() {
         if (running) {
             running = false;
