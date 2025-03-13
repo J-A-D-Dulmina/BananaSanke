@@ -14,21 +14,38 @@ public class ResetPasswordUI extends JDialog {
     private static final long serialVersionUID = 1L;
     private JTextField tokenField;
     private JPasswordField newPasswordField, confirmPasswordField;
-    private JButton resetButton;
+    private JButton resetButton, resendTokenButton;
     private JLabel messageLabel, backgroundLabel, backToLoginLabel;
     private String username;
     private String email;
+    private Timer cooldownTimer;
+    private int cooldownSeconds = 60;
 
     public ResetPasswordUI(JFrame parent, String username, String email) {
         super(parent, "Reset Password", true);
         this.username = username;
         this.email = email;
-        setSize(500, 450);
+        setSize(450, 550);
         setResizable(false);
         setLocationRelativeTo(parent);
         setLayout(new BorderLayout());
-
+        
         initializeComponents();
+        setupCooldownTimer();
+    }
+
+    private void setupCooldownTimer() {
+        cooldownTimer = new Timer(1000, e -> {
+            if (cooldownSeconds > 0) {
+                cooldownSeconds--;
+                resendTokenButton.setText("Resend Token (" + cooldownSeconds + "s)");
+                resendTokenButton.setEnabled(false);
+            } else {
+                resendTokenButton.setText("Resend Token");
+                resendTokenButton.setEnabled(true);
+                cooldownTimer.stop();
+            }
+        });
     }
 
     private void initializeComponents() {
@@ -52,16 +69,23 @@ public class ResetPasswordUI extends JDialog {
         JPanel tokenPanel = new JPanel();
         tokenPanel.setLayout(new BoxLayout(tokenPanel, BoxLayout.Y_AXIS));
         tokenPanel.setOpaque(false);
-        tokenPanel.setMaximumSize(new Dimension(220, 80));
+        tokenPanel.setMaximumSize(new Dimension(220, 120));
 
         JLabel tokenLabel = createLabel("Reset Token", Color.WHITE, new Font("Arial", Font.BOLD, 14));
         tokenLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         tokenField = createPlaceholderField("Enter reset token from email");
         tokenField.setAlignmentX(Component.LEFT_ALIGNMENT);
         
+        // Add resend token button
+        resendTokenButton = createButton("Resend Token", Color.BLUE, Color.WHITE, e -> resendToken());
+        resendTokenButton.setAlignmentX(Component.LEFT_ALIGNMENT);
+        resendTokenButton.setEnabled(false); // Initially disabled
+        
         tokenPanel.add(tokenLabel);
         tokenPanel.add(Box.createVerticalStrut(5));
         tokenPanel.add(tokenField);
+        tokenPanel.add(Box.createVerticalStrut(5));
+        tokenPanel.add(resendTokenButton);
         
         gbc.gridy = 1;
         gbc.insets = new Insets(20, 140, 5, 140);
@@ -266,10 +290,31 @@ public class ResetPasswordUI extends JDialog {
         }
     }
 
+    private void resendToken() {
+        try {
+            String response = APIClient.requestPasswordReset(username, email);
+            JSONObject jsonResponse = new JSONObject(response);
+
+            if (jsonResponse.getString("status").equals("success")) {
+                showMessage("New reset token sent to your email!", true);
+                // Start cooldown timer
+                cooldownSeconds = 60;
+                resendTokenButton.setText("Resend Token (" + cooldownSeconds + "s)");
+                resendTokenButton.setEnabled(false);
+                cooldownTimer.start();
+            } else {
+                showMessage(jsonResponse.getString("message"), false);
+            }
+        } catch (Exception e) {
+            showMessage("Error: " + e.getMessage(), false);
+            e.printStackTrace();
+        }
+    }
+
     // Reuse the same UI component creation methods from ForgotPasswordUI
     private JLabel createBackgroundLabel(String imagePath) {
         ImageIcon backgroundImage = new ImageIcon(imagePath);
-        Image scaledImage = backgroundImage.getImage().getScaledInstance(500, 400, Image.SCALE_SMOOTH);
+        Image scaledImage = backgroundImage.getImage().getScaledInstance(450, 550, Image.SCALE_SMOOTH);
         JLabel label = new JLabel(new ImageIcon(scaledImage));
         label.setLayout(new GridBagLayout());
         return label;
@@ -467,5 +512,13 @@ public class ResetPasswordUI extends JDialog {
         public Insets getBorderInsets(Component c) {
             return new Insets(4, 8, 4, 8);
         }
+    }
+
+    @Override
+    public void dispose() {
+        if (cooldownTimer != null) {
+            cooldownTimer.stop();
+        }
+        super.dispose();
     }
 } 

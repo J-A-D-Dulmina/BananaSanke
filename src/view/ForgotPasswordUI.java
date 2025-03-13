@@ -356,37 +356,56 @@ public class ForgotPasswordUI extends JDialog {
      * Handles the reset email sending logic.
      */
     private void sendResetEmail() {
-        String email = emailField.getText().trim();
         String username = usernameField.getText().trim();
-        
+        String email = emailField.getText().trim();
+
+        // Validate input
         if (username.isEmpty() || username.equals("Enter your username")) {
-            showMessage("Enter a valid username!", false);
+            showMessage("Please enter your username!", false);
             return;
         }
-        
-        if (email.isEmpty() || email.equals("Enter your email") || !email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
-            showMessage("Enter a valid email!", false);
+
+        if (email.isEmpty() || email.equals("Enter your email")) {
+            showMessage("Please enter your email address!", false);
+            return;
+        }
+
+        // Validate email format
+        if (!email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+            showMessage("Please enter a valid email address!", false);
             return;
         }
 
         try {
-            String response = APIClient.requestPasswordReset(username, email);
-            JSONObject jsonResponse = new JSONObject(response);
+            // Log the request details
+            System.out.println("Sending password reset request for username: " + username);
+            System.out.println("Email address: " + email);
 
-            if (jsonResponse.getString("status").equals("success")) {
-                showMessage("Password reset instructions sent to your email!", true);
-                
-                // Open reset password dialog
+            // Send the request
+            String response = APIClient.requestPasswordReset(username, email);
+            System.out.println("Server response: " + response);
+
+            // Parse the response
+            JSONObject jsonResponse = new JSONObject(response);
+            String status = jsonResponse.getString("status");
+            String message = jsonResponse.getString("message");
+
+            if (status.equals("success")) {
+                showMessage(message, true);
+                // Open ResetPasswordUI with the username and email
                 dispose();
                 SwingUtilities.invokeLater(() -> {
-                    ResetPasswordUI resetPasswordUI = new ResetPasswordUI(null, username, email);
-                    resetPasswordUI.setVisible(true);
+                    ResetPasswordUI resetUI = new ResetPasswordUI(null, username, email);
+                    resetUI.setVisible(true);
                 });
             } else {
-                showMessage(jsonResponse.getString("message"), false);
+                showMessage(message, false);
+                System.err.println("Password reset request failed: " + message);
             }
         } catch (Exception e) {
-            showMessage("Error: " + e.getMessage(), false);
+            String errorMessage = "Error: " + e.getMessage();
+            showMessage(errorMessage, false);
+            System.err.println("Exception during password reset request:");
             e.printStackTrace();
         }
     }

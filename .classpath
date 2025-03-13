@@ -8,7 +8,5 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="lib" path="E:/UOB Final Year/My Game/BananaSnake/libraries/json-20250107.jar"/>
 	<classpathentry kind="lib" path="E:/UOB Final Year/My Game/BananaSnake/libraries/mysql-connector-j-8.3.0.jar"/>
-	<classpathentry kind="lib" path="E:/UOB Final Year/My Game/BananaSnake/libraries/activation-1.1.jar"/>
-	<classpathentry kind="lib" path="E:/UOB Final Year/My Game/BananaSnake/libraries/javax.mail-1.6.2-javadoc.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
