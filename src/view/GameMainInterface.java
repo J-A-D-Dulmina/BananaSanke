@@ -49,53 +49,42 @@ public class GameMainInterface extends JFrame {
             requestFocus();
             
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, 
-                "Error initializing game. Please try restarting the application.",
-                "Initialization Error",
-                JOptionPane.ERROR_MESSAGE);
             dispose();
-            throw e;
+            throw new RuntimeException("Failed to initialize game components", e);
         }
     }
 
     private void initializeComponents() {
-        try {
-            // Create panels
-            snakePanel = new SnakePanel();
-            leaderboardPanel = new LeaderboardPanel(this);
+        // Create panels
+        snakePanel = new SnakePanel();
+        leaderboardPanel = new LeaderboardPanel(this);
 
-            // Create top bar
-            JPanel topBar = createTopBar();
+        // Create top bar
+        JPanel topBar = createTopBar();
 
-            // Create game panels
-            JPanel leftPanel = new BananaPanel(this, snakePanel);
-            JPanel rightPanel = snakePanel;
+        // Create game panels
+        JPanel leftPanel = new BananaPanel(this, snakePanel);
+        JPanel rightPanel = snakePanel;
 
-            // Create split pane
-            JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftPanel, rightPanel);
-            splitPane.setResizeWeight(0.5);
-            splitPane.setDividerSize(5);
-            splitPane.setEnabled(false);
-            splitPane.setDividerLocation(500);
+        // Create split pane
+        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftPanel, rightPanel);
+        splitPane.setResizeWeight(0.5);
+        splitPane.setDividerSize(5);
+        splitPane.setEnabled(false);
+        splitPane.setDividerLocation(500);
 
-            // Add resize listener
-            addComponentListener(new ComponentAdapter() {
-                @Override
-                public void componentResized(ComponentEvent evt) {
-                    splitPane.setDividerLocation(getWidth() / 2);
-                }
-            });
+        // Add resize listener
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent evt) {
+                splitPane.setDividerLocation(getWidth() / 2);
+            }
+        });
 
-            // Add components to frame
-            setLayout(new BorderLayout());
-            add(topBar, BorderLayout.NORTH);
-            add(splitPane, BorderLayout.CENTER);
-            
-        } catch (Exception e) {
-            System.err.println("Error initializing game components: " + e.getMessage());
-            e.printStackTrace();
-            throw new RuntimeException("Failed to initialize game components", e);
-        }
+        // Add components to frame
+        setLayout(new BorderLayout());
+        add(topBar, BorderLayout.NORTH);
+        add(splitPane, BorderLayout.CENTER);
     }
 
     /**
@@ -125,10 +114,8 @@ public class GameMainInterface extends JFrame {
      * Asks for confirmation before closing the game.
      */
     private void confirmAndExit() {
-        // Play button click sound
         SoundManager.getInstance().playButtonClickSound();
         
-        // Show confirmation dialog
         int choice = CustomDialogUtils.showConfirmDialog(
             this,
             "Are you sure you want to exit?",
@@ -136,20 +123,9 @@ public class GameMainInterface extends JFrame {
         );
         
         if (choice == JOptionPane.YES_OPTION) {
-            try {
-                // Attempt to logout
-                APIClient.logoutUser();
-                
-                // Close the game window
-                dispose();
-                
-                // Exit the application
-                System.exit(0);
-            } catch (Exception e) {
-                // Even if logout fails, still close the game
-                dispose();
-                System.exit(0);
-            }
+            APIClient.logoutUser();
+            dispose();
+            System.exit(0);
         }
     }
     

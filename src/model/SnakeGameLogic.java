@@ -242,20 +242,20 @@ public class SnakeGameLogic {
             String response = APIClient.getInstance().updateHighScore(score);
             
             SwingUtilities.invokeLater(() -> {
-                try {
-                    BananaPanel parent = (BananaPanel) SwingUtilities.getAncestorOfClass(BananaPanel.class, APISection.getInstance());
-                    if (parent != null) {
-                        parent.getTimerPanel().stop();
-                        parent.showGameOver(score);
-                    }
-                } catch (Exception e) {
-                    System.err.println("Error showing game over screen: " + e.getMessage());
-                    e.printStackTrace();
+                BananaPanel parent = (BananaPanel) SwingUtilities.getAncestorOfClass(BananaPanel.class, APISection.getInstance());
+                if (parent != null) {
+                    parent.getTimerPanel().stop();
+                    parent.showGameOver(score);
                 }
             });
         } catch (Exception e) {
-            System.err.println("Error in showGameOver: " + e.getMessage());
-            e.printStackTrace();
+            SwingUtilities.invokeLater(() -> {
+                BananaPanel parent = (BananaPanel) SwingUtilities.getAncestorOfClass(BananaPanel.class, APISection.getInstance());
+                if (parent != null) {
+                    parent.getTimerPanel().stop();
+                    parent.showGameOver(score);
+                }
+            });
         }
     }
 
@@ -286,6 +286,72 @@ public class SnakeGameLogic {
                     }
                 }
             }
+        }
+    }
+
+    public void pauseGame() {
+        if (running) {
+            running = false;
+            SoundManager.getInstance().stopRunningSound();
+            BananaPanel parent = (BananaPanel) SwingUtilities.getAncestorOfClass(BananaPanel.class, APISection.getInstance());
+            if (parent != null) {
+                parent.getTimerPanel().stop();
+            }
+        }
+    }
+
+    public void resumeGame() {
+        if (!running) {
+            running = true;
+            if (!SoundManager.getInstance().isMuted()) {
+                SoundManager.getInstance().startRunningSound();
+            }
+            BananaPanel parent = (BananaPanel) SwingUtilities.getAncestorOfClass(BananaPanel.class, APISection.getInstance());
+            if (parent != null) {
+                parent.getTimerPanel().start();
+            }
+        }
+    }
+
+    public boolean isPaused() {
+        return !running;
+    }
+
+    public int getTileSize() {
+        return tileSize;
+    }
+
+    public int getPanelWidth() {
+        return panelWidth;
+    }
+
+    public int getPanelHeight() {
+        return panelHeight;
+    }
+
+    public Point getStartingPosition() {
+        return new Point(STARTING_POSITION);
+    }
+
+    public void setFood(Food food) {
+        this.food = food;
+    }
+
+    public Food getFood() {
+        return food;
+    }
+
+    public void setScore(int score) {
+        this.score = score;
+    }
+
+    public void setWaitingForAnswer(boolean waiting) {
+        this.waitingForAnswer = waiting;
+    }
+
+    public void setDirection(String direction) {
+        if (!isOppositeDirection(direction)) {
+            this.direction = direction;
         }
     }
 }

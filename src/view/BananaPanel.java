@@ -116,30 +116,18 @@ public class BananaPanel extends JPanel {
      * Shows the game over screen with the final score.
      */
     public void showGameOver(int score) {
-        try {
-            timerPanel.stop();
-            snakePanel.getGameLogic().setRunning(false);
-            
-            Component comp = this;
-            while (comp != null && !(comp instanceof GameMainInterface)) {
-                comp = comp.getParent();
-            }
-            
-            if (comp instanceof GameMainInterface) {
-                GameMainInterface mainFrame = (GameMainInterface) comp;
-                GameOverPanel gameOverPanel = new GameOverPanel(mainFrame, score);
-                gameOverPanel.setVisible(true);
-            } else {
-                JOptionPane.showMessageDialog(this,
-                    "Game Over! Final Score: " + score,
-                    "Game Over",
-                    JOptionPane.INFORMATION_MESSAGE);
-            }
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this,
-                "Game Over! Final Score: " + score,
-                "Game Over",
-                JOptionPane.INFORMATION_MESSAGE);
+        timerPanel.stop();
+        snakePanel.getGameLogic().setRunning(false);
+        
+        Component comp = this;
+        while (comp != null && !(comp instanceof GameMainInterface)) {
+            comp = comp.getParent();
+        }
+        
+        if (comp instanceof GameMainInterface) {
+            GameMainInterface mainFrame = (GameMainInterface) comp;
+            GameOverPanel gameOverPanel = new GameOverPanel(mainFrame, score);
+            gameOverPanel.setVisible(true);
         }
     }
 

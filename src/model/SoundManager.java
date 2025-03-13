@@ -72,7 +72,6 @@ public class SoundManager extends Observable {
         try {
             File musicFile = new File("resources/Sound Effect/background_music.wav");
             if (!musicFile.exists()) {
-                System.err.println("Error: Audio file not found at " + musicFile.getAbsolutePath());
                 return;
             }
 
@@ -82,7 +81,6 @@ public class SoundManager extends Observable {
             DataLine.Info info = new DataLine.Info(Clip.class, format);
             
             if (!AudioSystem.isLineSupported(info)) {
-                System.err.println("Error: Audio line not supported");
                 return;
             }
             
@@ -102,7 +100,7 @@ public class SoundManager extends Observable {
             updateVolume();
             
         } catch (Exception e) {
-            System.err.println("Error loading background music: " + e.getMessage());
+            // Silently fail for background music loading errors
         }
     }
 
@@ -156,7 +154,7 @@ public class SoundManager extends Observable {
                 }
             }
         } catch (Exception e) {
-            System.err.println("Error checking game running state: " + e.getMessage());
+            // Silently fail for game state check errors
         }
         return false;
     }
@@ -178,7 +176,7 @@ public class SoundManager extends Observable {
                     clip.start();
                 }
             } catch (Exception e) {
-                System.err.println("Error playing sound " + name + ": " + e.getMessage());
+                // Silently fail for sound playing errors
             }
         }
     }
@@ -193,7 +191,7 @@ public class SoundManager extends Observable {
                 setChanged();
                 notifyObservers();
             } catch (Exception e) {
-                System.err.println("Error playing background music: " + e.getMessage());
+                // Silently fail for background music playing errors
             }
         }
     }
@@ -206,7 +204,7 @@ public class SoundManager extends Observable {
                 setChanged();
                 notifyObservers();
             } catch (Exception e) {
-                System.err.println("Error pausing background music: " + e.getMessage());
+                // Silently fail for background music pausing errors
             }
         }
     }
@@ -220,7 +218,7 @@ public class SoundManager extends Observable {
                 setChanged();
                 notifyObservers();
             } catch (Exception e) {
-                System.err.println("Error stopping background music: " + e.getMessage());
+                // Silently fail for background music stopping errors
             }
         }
     }
@@ -238,7 +236,7 @@ public class SoundManager extends Observable {
                         runningSound.loop(Clip.LOOP_CONTINUOUSLY);
                     }
                 } catch (Exception e) {
-                    System.err.println("Error playing running sound: " + e.getMessage());
+                    // Silently fail for running sound errors
                 }
             }
         }
@@ -250,7 +248,7 @@ public class SoundManager extends Observable {
                 try {
                     runningSound.stop();
                 } catch (Exception e) {
-                    System.err.println("Error stopping running sound: " + e.getMessage());
+                    // Silently fail for running sound stopping errors
                 }
             }
         }
@@ -307,7 +305,7 @@ public class SoundManager extends Observable {
                 gainControl.setValue(gain);
             }
         } catch (Exception e) {
-            System.err.println("Error updating volume: " + e.getMessage());
+            // Silently fail for volume update errors
         }
     }
 

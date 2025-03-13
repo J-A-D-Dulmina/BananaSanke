@@ -25,46 +25,41 @@ public class LeaderboardModel {
     }
 
     public synchronized List<LeaderboardEntry> fetchLeaderboard() throws Exception {
-        try {
-            String response = APIClient.getLeaderboard();
-            if (response == null || response.trim().isEmpty()) {
-                throw new Exception("Empty response from server");
-            }
+        String response = APIClient.getLeaderboard();
+        if (response == null || response.trim().isEmpty()) {
+            throw new Exception("Empty response from server");
+        }
 
-            JSONObject jsonResponse = new JSONObject(response);
+        JSONObject jsonResponse = new JSONObject(response);
+        
+        if (!"success".equals(jsonResponse.optString("status"))) {
+            String errorMessage = jsonResponse.optString("message", "Unknown error occurred");
+            this.lastError = errorMessage;
+            throw new Exception("Failed to fetch leaderboard: " + errorMessage);
+        }
+
+        synchronized (entries) {
+            entries.clear();
             
-            if (!"success".equals(jsonResponse.optString("status"))) {
-                String errorMessage = jsonResponse.optString("message", "Unknown error occurred");
-                this.lastError = errorMessage;
-                throw new Exception("Failed to fetch leaderboard: " + errorMessage);
+            JSONArray scores = jsonResponse.getJSONArray("scores");
+            for (int i = 0; i < scores.length(); i++) {
+                JSONObject score = scores.getJSONObject(i);
+                LeaderboardEntry entry = new LeaderboardEntry(
+                    score.optInt("id", 0),
+                    score.optString("username", "Unknown"),
+                    score.optInt("id", 0),
+                    score.optInt("score", 0),
+                    score.optString("created_at", "")
+                );
+                entries.add(entry);
             }
 
-            synchronized (entries) {
-                entries.clear();
-                
-                JSONArray scores = jsonResponse.getJSONArray("scores");
-                for (int i = 0; i < scores.length(); i++) {
-                    JSONObject score = scores.getJSONObject(i);
-                    LeaderboardEntry entry = new LeaderboardEntry(
-                        score.optInt("id", 0),
-                        score.optString("username", "Unknown"),
-                        score.optInt("id", 0),
-                        score.optInt("score", 0),
-                        score.optString("created_at", "")
-                    );
-                    entries.add(entry);
-                }
+            this.userRank = jsonResponse.optInt("user_rank", 0);
+            this.userScore = jsonResponse.optInt("user_score", 0);
+            this.totalPlayers = jsonResponse.optInt("total_players", 0);
+            this.lastError = "";
 
-                this.userRank = jsonResponse.optInt("user_rank", 0);
-                this.userScore = jsonResponse.optInt("user_score", 0);
-                this.totalPlayers = jsonResponse.optInt("total_players", 0);
-                this.lastError = "";
-
-                return new ArrayList<>(entries);
-            }
-        } catch (Exception e) {
-            this.lastError = "Failed to fetch leaderboard: " + e.getMessage();
-            throw new Exception(this.lastError);
+            return new ArrayList<>(entries);
         }
     }
 
