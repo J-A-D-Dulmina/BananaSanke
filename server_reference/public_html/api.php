@@ -734,10 +734,11 @@ try {
 
                 $username = trim($postData['username']);
 
-                // Clear the last_token_sent timestamp
+                // Clear the reset token and expiry
                 $stmt = $db->prepare('
                     UPDATE users 
-                    SET last_token_sent = NULL
+                    SET reset_token = NULL,
+                        reset_token_expiry = NULL
                     WHERE username = ?
                 ');
                 $stmt->execute([$username]);

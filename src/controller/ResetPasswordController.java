@@ -72,6 +72,9 @@ public class ResetPasswordController {
                 return;
             }
 
+            // Clear any existing token first
+            clearResetToken();
+
             String response = APIClient.requestPasswordReset(
                 model.getUsername(), 
                 model.getEmail()

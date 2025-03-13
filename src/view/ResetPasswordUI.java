@@ -297,6 +297,10 @@ public class ResetPasswordUI extends JDialog {
     private void resendToken() {
         if (model.isResendEnabled()) {
             controller.resendToken();
+            // Update UI to show cooldown
+            resendTokenButton.setText("Resend Token (" + model.getCooldownSeconds() + "s)");
+            resendTokenButton.setForeground(Color.WHITE);
+            cooldownTimer.start();
         }
     }
 
