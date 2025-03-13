@@ -4,63 +4,57 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.RoundRectangle2D;
 
-
 public class CustomDialogUtils {
+    
+    private static class StyledButton extends JButton {
+        private final Color normalColor;
+        private final Color hoverColor;
+        private final Color pressedColor;
+
+        public StyledButton(String text, Color normalColor, Color hoverColor, Color pressedColor) {
+            super(text);
+            this.normalColor = normalColor;
+            this.hoverColor = hoverColor;
+            this.pressedColor = pressedColor;
+            
+            setForeground(Color.WHITE);
+            setBorder(BorderFactory.createEmptyBorder(8, 20, 8, 20));
+            setFocusPainted(false);
+            setContentAreaFilled(false);
+            setFont(new Font("Arial", Font.BOLD, 14));
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            
+            if (getModel().isPressed()) {
+                g2.setColor(pressedColor);
+            } else if (getModel().isRollover()) {
+                g2.setColor(hoverColor);
+            } else {
+                g2.setColor(normalColor);
+            }
+            
+            g2.fill(new RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), 10, 10));
+            g2.dispose();
+            
+            super.paintComponent(g);
+        }
+    }
     
     public static JOptionPane showCustomConfirmDialog(Component parentComponent, String message, String title) {
         // Create custom buttons with curved edges
-    	
-        JButton yesButton = new JButton("YES") {
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                
-                if (getModel().isPressed()) {
-                    g2.setColor(new Color(180, 0, 0));
-                } else if (getModel().isRollover()) {
-                    g2.setColor(new Color(220, 0, 0));
-                } else {
-                    g2.setColor(new Color(200, 0, 0));
-                }
-                
-                g2.fill(new RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), 10, 10));
-                g2.dispose();
-                
-                super.paintComponent(g);
-            }
-        };
-        yesButton.setForeground(Color.WHITE);
-        yesButton.setBorder(BorderFactory.createEmptyBorder(8, 20, 8, 20));
-        yesButton.setFocusPainted(false);
-        yesButton.setContentAreaFilled(false);
-        yesButton.setFont(new Font("Arial", Font.BOLD, 14));
+        JButton yesButton = new StyledButton("YES", 
+            new Color(200, 0, 0),
+            new Color(220, 0, 0),
+            new Color(180, 0, 0));
         
-        JButton noButton = new JButton("NO") {
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                
-                if (getModel().isPressed()) {
-                    g2.setColor(new Color(0, 140, 0));
-                } else if (getModel().isRollover()) {
-                    g2.setColor(new Color(0, 180, 0));
-                } else {
-                    g2.setColor(new Color(0, 160, 0));
-                }
-                
-                g2.fill(new RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), 10, 10));
-                g2.dispose();
-                
-                super.paintComponent(g);
-            }
-        };
-        noButton.setForeground(Color.WHITE);
-        noButton.setBorder(BorderFactory.createEmptyBorder(8, 20, 8, 20));
-        noButton.setFocusPainted(false);
-        noButton.setContentAreaFilled(false);
-        noButton.setFont(new Font("Arial", Font.BOLD, 14));
+        JButton noButton = new StyledButton("NO",
+            new Color(0, 160, 0),
+            new Color(0, 180, 0),
+            new Color(0, 140, 0));
 
         // Create message label with custom font
         JLabel messageLabel = new JLabel(message);
@@ -158,31 +152,10 @@ public class CustomDialogUtils {
         messageLabel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         // Create OK button with custom styling
-        JButton okButton = new JButton("OK") {
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                
-                if (getModel().isPressed()) {
-                    g2.setColor(new Color(180, 0, 0));
-                } else if (getModel().isRollover()) {
-                    g2.setColor(new Color(220, 0, 0));
-                } else {
-                    g2.setColor(new Color(200, 0, 0));
-                }
-                
-                g2.fill(new RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), 10, 10));
-                g2.dispose();
-                
-                super.paintComponent(g);
-            }
-        };
-        okButton.setForeground(Color.WHITE);
-        okButton.setBorder(BorderFactory.createEmptyBorder(8, 20, 8, 20));
-        okButton.setFocusPainted(false);
-        okButton.setContentAreaFilled(false);
-        okButton.setFont(new Font("Arial", Font.BOLD, 14));
+        JButton okButton = new StyledButton("OK",
+            new Color(200, 0, 0),
+            new Color(220, 0, 0),
+            new Color(180, 0, 0));
 
         // Create button panel with spacing
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));

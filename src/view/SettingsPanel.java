@@ -8,6 +8,7 @@ import java.awt.geom.RoundRectangle2D;
 import model.SoundManager;
 import java.util.Observer;
 import java.util.Observable;
+import controller.SettingsController;
 
 public class SettingsPanel extends JDialog implements Observer {
     private static final long serialVersionUID = 1L;
@@ -18,13 +19,16 @@ public class SettingsPanel extends JDialog implements Observer {
     private ImageIcon muteIcon;
     private ImageIcon audioIcon;
     private final SoundManager soundManager;
+    private final SettingsController controller;
 
     public SettingsPanel(GameMainInterface mainFrame) {
         super(mainFrame, true);
         this.mainFrame = mainFrame;
         this.soundManager = SoundManager.getInstance();
         soundManager.addObserver(this);
-        setUndecorated(true); // Remove window decorations
+        this.controller = new SettingsController(this);
+        
+        setUndecorated(true);
         setSize(400, 300);
         setResizable(false);
         setLocationRelativeTo(mainFrame);
@@ -61,7 +65,7 @@ public class SettingsPanel extends JDialog implements Observer {
         // Header panel with close button
         JPanel headerPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 10));
         headerPanel.setOpaque(false);
-        headerPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 15)); // Add right padding
+        headerPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 15));
         
         JLabel closeButton = new JLabel("×");
         closeButton.setFont(new Font("Arial", Font.BOLD, 24));
@@ -70,8 +74,7 @@ public class SettingsPanel extends JDialog implements Observer {
         closeButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                SoundManager.getInstance().playButtonClickSound();
-                dispose();
+                controller.handleClose();
             }
             public void mouseEntered(MouseEvent e) {
                 closeButton.setForeground(new Color(255, 0, 0));
@@ -162,8 +165,6 @@ public class SettingsPanel extends JDialog implements Observer {
         // Mute button with icon
         muteButton = createStyledToggleButton("", new Color(60, 60, 60), Color.WHITE);
         muteButton.setIcon(audioIcon);
-        muteButton.setSelected(soundManager.isMuted());
-        muteButton.setIcon(soundManager.isMuted() ? muteIcon : audioIcon);
         muteButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         volumePanel.add(muteButton);
 
@@ -176,41 +177,50 @@ public class SettingsPanel extends JDialog implements Observer {
         // Add window drag functionality
         addWindowDragListener();
 
-        // Update initial values from SoundManager
-        volumeSlider.setValue((int)(soundManager.getVolume() * 100));
-        volumeNumberLabel.setText((int)(soundManager.getVolume() * 100) + "%");
-        muteButton.setSelected(soundManager.isMuted());
-        muteButton.setIcon(soundManager.isMuted() ? muteIcon : audioIcon);
-        volumeSlider.setEnabled(!soundManager.isMuted());
+        // Set up listeners
+        setupListeners();
 
-        // Update volume slider listener
+        // Initialize view state
+        controller.updateView();
+    }
+
+    private void setupListeners() {
+        // Volume slider listener
         volumeSlider.addChangeListener(e -> {
-            float volume = volumeSlider.getValue() / 100f;
-            soundManager.setVolume(volume);
-            volumeNumberLabel.setText(volumeSlider.getValue() + "%");
+            controller.handleVolumeChange(volumeSlider.getValue());
         });
 
-        // Update mute button listener
+        // Mute button listener
         muteButton.addActionListener(e -> {
-            SoundManager.getInstance().playButtonClickSound();
-            boolean newMuteState = !soundManager.isMuted();
-            soundManager.setMuted(newMuteState);
-            updateMuteButtonIcon();
+            controller.handleMuteToggle();
         });
     }
 
     @Override
     public void update(Observable o, Object arg) {
         if (o instanceof SoundManager) {
-            SoundManager manager = (SoundManager) o;
             SwingUtilities.invokeLater(() -> {
-                volumeSlider.setValue((int)(manager.getVolume() * 100));
-                volumeNumberLabel.setText((int)(manager.getVolume() * 100) + "%");
-                muteButton.setSelected(manager.isMuted());
-                muteButton.setIcon(manager.isMuted() ? muteIcon : audioIcon);
-                volumeSlider.setEnabled(!manager.isMuted());
+                controller.updateView();
             });
         }
+    }
+
+    // View update methods for controller
+    public void updateVolumeSlider(int value) {
+        volumeSlider.setValue(value);
+    }
+
+    public void updateVolumeLabel(int value) {
+        volumeNumberLabel.setText(value + "%");
+    }
+
+    public void updateMuteButton(boolean isMuted) {
+        muteButton.setSelected(isMuted);
+        muteButton.setIcon(isMuted ? muteIcon : audioIcon);
+    }
+
+    public void setVolumeSliderEnabled(boolean enabled) {
+        volumeSlider.setEnabled(enabled);
     }
 
     private JToggleButton createStyledToggleButton(String text, Color bgColor, Color textColor) {
@@ -285,10 +295,5 @@ public class SettingsPanel extends JDialog implements Observer {
                 }
             }
         });
-    }
-
-    private void updateMuteButtonIcon() {
-        muteButton.setIcon(soundManager.isMuted() ? muteIcon : audioIcon);
-        volumeSlider.setEnabled(!soundManager.isMuted());
     }
 } 

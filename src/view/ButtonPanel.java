@@ -27,14 +27,9 @@ public class ButtonPanel extends JPanel {
         ButtonPanelModel model = new ButtonPanelModel(gameLogic, snakePanel);
         this.controller = new ButtonPanelController(model, this, gameMainInterface);
 
-        setLayout(new GridBagLayout());
+        setLayout(new BorderLayout());
         setPreferredSize(new Dimension(600, 65));
         setBackground(new Color(40, 40, 40));
-
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5, 5, 5, 5);
-        gbc.anchor = GridBagConstraints.CENTER;
-        gbc.fill = GridBagConstraints.VERTICAL;
 
         // Load all icons
         leaderboardIcon = resizeIcon(new ImageIcon("resources/leaderboard_icon.png"));
@@ -58,10 +53,15 @@ public class ButtonPanel extends JPanel {
         // Create and setup username display
         setupUsernameDisplay();
 
-        // Add components to panel
-        addComponentsToPanel(gbc);
+        // Create the three main panels
+        JPanel leftPanel = createLeftPanel();
+        JPanel centerPanel = createCenterPanel();
+        JPanel rightPanel = createRightPanel();
 
-        setVerticalAlignment();
+        // Add the panels to the main panel
+        add(leftPanel, BorderLayout.WEST);
+        add(centerPanel, BorderLayout.CENTER);
+        add(rightPanel, BorderLayout.EAST);
     }
 
     private void setupButtonListeners() {
@@ -119,48 +119,60 @@ public class ButtonPanel extends JPanel {
         JLabel nameLabel = new JLabel(loggedInUsername, SwingConstants.CENTER);
         nameLabel.setFont(new Font("Arial", Font.BOLD, 20));
         nameLabel.setForeground(Color.WHITE);
+        nameLabel.setVerticalAlignment(SwingConstants.CENTER);
+        nameLabel.setAlignmentY(Component.CENTER_ALIGNMENT);
 
-        namePanel = new JPanel(new BorderLayout());
+        namePanel = new JPanel();
         namePanel.setOpaque(false);
-        namePanel.setBorder(BorderFactory.createEmptyBorder(0, 50, 0, 50));
-        namePanel.add(nameLabel, BorderLayout.CENTER);
+        namePanel.setLayout(new BoxLayout(namePanel, BoxLayout.Y_AXIS));
+        namePanel.setAlignmentY(Component.CENTER_ALIGNMENT);
+        namePanel.add(Box.createVerticalGlue());
+        namePanel.add(nameLabel);
+        namePanel.add(Box.createVerticalGlue());
     }
 
-    private void addComponentsToPanel(GridBagConstraints gbc) {
-        // Left side buttons (logout, leaderboard, account)
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        gbc.gridwidth = 1;
-        gbc.anchor = GridBagConstraints.WEST;
-        gbc.insets = new Insets(5, 10, 5, 5);
-        add(logoutBtn, gbc);
+    private JPanel createLeftPanel() {
+        JPanel panel = new JPanel();
+        panel.setBackground(new Color(40, 40, 40));
+        panel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
+        panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
+        panel.setAlignmentY(Component.CENTER_ALIGNMENT);
+        panel.add(Box.createHorizontalStrut(5));
+        panel.add(logoutBtn);
+        panel.add(Box.createHorizontalStrut(10));
+        panel.add(leaderboardBtn);
+        panel.add(Box.createHorizontalStrut(10));
+        panel.add(accountBtn);
+        panel.add(Box.createHorizontalGlue());
+        return panel;
+    }
 
-        gbc.gridx = 1;
-        gbc.insets = new Insets(5, 5, 5, 5);
-        add(leaderboardBtn, gbc);
+    private JPanel createCenterPanel() {
+        JPanel panel = new JPanel();
+        panel.setBackground(new Color(40, 40, 40));
+        panel.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 20));
+        panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
+        panel.setAlignmentY(Component.CENTER_ALIGNMENT);
+        panel.add(Box.createHorizontalGlue());
+        panel.add(namePanel);
+        panel.add(Box.createHorizontalGlue());
+        return panel;
+    }
 
-        gbc.gridx = 2;
-        add(accountBtn, gbc);
-
-        // Center username
-        gbc.gridx = 3;
-        gbc.gridwidth = 2;
-        gbc.insets = new Insets(5, 20, 5, 20);
-        add(namePanel, gbc);
-
-        // Right side buttons (settings, reset, play/pause)
-        gbc.gridx = 5;
-        gbc.gridwidth = 1;
-        gbc.anchor = GridBagConstraints.EAST;
-        gbc.insets = new Insets(5, 5, 5, 5);
-        add(settingsBtn, gbc);
-        
-        gbc.gridx = 6;
-        add(resetBtn, gbc);
-        
-        gbc.gridx = 7;
-        gbc.insets = new Insets(5, 5, 5, 10);
-        add(playPauseBtn, gbc);
+    private JPanel createRightPanel() {
+        JPanel panel = new JPanel();
+        panel.setBackground(new Color(40, 40, 40));
+        panel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 10));
+        panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
+        panel.setAlignmentY(Component.CENTER_ALIGNMENT);
+        panel.add(Box.createHorizontalGlue());
+        panel.add(settingsBtn);
+        panel.add(Box.createHorizontalStrut(10));
+        panel.add(resetBtn);
+        panel.add(Box.createHorizontalStrut(10));
+        panel.add(playPauseBtn);
+        panel.add(Box.createHorizontalStrut(5));
+        return panel;
     }
 
     private JButton createStyledButton(ImageIcon icon) {
@@ -171,6 +183,7 @@ public class ButtonPanel extends JPanel {
         button.setContentAreaFilled(false);
         button.setBorderPainted(false);
         button.setFocusPainted(false);
+        button.setAlignmentY(Component.CENTER_ALIGNMENT);
         return button;
     }
 
@@ -182,6 +195,7 @@ public class ButtonPanel extends JPanel {
         button.setContentAreaFilled(false);
         button.setBorderPainted(false);
         button.setFocusPainted(false);
+        button.setAlignmentY(Component.CENTER_ALIGNMENT);
         return button;
     }
 
@@ -193,20 +207,13 @@ public class ButtonPanel extends JPanel {
         button.setContentAreaFilled(false);
         button.setBorderPainted(false);
         button.setFocusPainted(false);
+        button.setAlignmentY(Component.CENTER_ALIGNMENT);
         return button;
     }
 
     private ImageIcon resizeIcon(ImageIcon icon) {
         Image img = icon.getImage().getScaledInstance(30, 30, Image.SCALE_SMOOTH);
         return new ImageIcon(img);
-    }
-
-    private void setVerticalAlignment() {
-        Component[] components = getComponents();
-        for (Component comp : components) {
-            GridBagConstraints gbc = ((GridBagLayout) getLayout()).getConstraints(comp);
-            gbc.anchor = GridBagConstraints.CENTER;
-        }
     }
 
     public void setPlayPauseIcon(String state) {

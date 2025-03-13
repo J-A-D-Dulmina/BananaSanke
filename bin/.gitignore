@@ -1,6 +1,4 @@
-/api/
-/model/
-/view/
 /controller/
-/server/
+/view/
+/model/
 /utils/
