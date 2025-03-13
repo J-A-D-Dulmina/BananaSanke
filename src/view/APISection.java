@@ -72,16 +72,32 @@ public class APISection extends JPanel {
      * Loads the question image from the API and retrieves the correct answer.
      */
     private void loadQuestionImage() {
-        URL questionImageUrl = gameController.getNextGame();
+        try {
+            URL questionImageUrl = gameController.getNextGame();
 
-        if (questionImageUrl != null) {
-            currentGame = gameController.getCurrentGame();
-            ImageIcon imageIcon = new ImageIcon(questionImageUrl);
-            Image resizedImage = imageIcon.getImage().getScaledInstance(480, 250, Image.SCALE_SMOOTH);
-            questArea.setIcon(new ImageIcon(resizedImage));
-        } else {
-            questArea.setText("API Error: Unable to load image.");
-            System.err.println("Failed to load new puzzle image");
+            if (questionImageUrl != null) {
+                currentGame = gameController.getCurrentGame();
+                if (currentGame != null) {
+                    ImageIcon imageIcon = new ImageIcon(questionImageUrl);
+                    if (imageIcon.getImageLoadStatus() == MediaTracker.COMPLETE) {
+                        Image resizedImage = imageIcon.getImage().getScaledInstance(480, 250, Image.SCALE_SMOOTH);
+                        questArea.setIcon(new ImageIcon(resizedImage));
+                    } else {
+                        System.err.println("Failed to load image from URL: " + questionImageUrl);
+                        questArea.setText("Error: Unable to load image");
+                    }
+                } else {
+                    System.err.println("Failed to get current game from controller");
+                    questArea.setText("Error: Unable to load game");
+                }
+            } else {
+                System.err.println("Failed to get next game from controller");
+                questArea.setText("Error: Unable to load game");
+            }
+        } catch (Exception e) {
+            System.err.println("Error loading question image: " + e.getMessage());
+            e.printStackTrace();
+            questArea.setText("Error: Unable to load game");
         }
     }
 
@@ -152,7 +168,26 @@ public class APISection extends JPanel {
      */
     public void updateScore(int score) {
         if (scorePanel != null) {
-            scorePanel.setScore(score);
+            SwingUtilities.invokeLater(() -> {
+                try {
+                    // Get the current score
+                    int currentScore = scorePanel.getScore();
+                    
+                    // If the new score is higher than the current score, increment it
+                    if (score > currentScore) {
+                        scorePanel.incrementScore();
+                    } else if (score < currentScore) {
+                        // If the new score is lower, reset and increment to the desired score
+                        scorePanel.resetScore();
+                        for (int i = 0; i < score; i++) {
+                            scorePanel.incrementScore();
+                        }
+                    }
+                } catch (Exception e) {
+                    System.err.println("Error updating score: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            });
         }
     }
 
