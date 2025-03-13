@@ -514,4 +514,35 @@ public class APIClient {
                    e.getMessage().replace("\"", "'") + "\"}";
         }
     }
+
+    public static String requestPasswordReset(String username, String email) {
+        try {
+            String apiUrl = BASE_URL + "?action=request_password_reset";
+            
+            StringBuilder postData = new StringBuilder();
+            postData.append("username=").append(URLEncoder.encode(username, "UTF-8"));
+            postData.append("&email=").append(URLEncoder.encode(email, "UTF-8"));
+
+            return sendHttpRequest(apiUrl, "POST", postData.toString(), false);
+        } catch (Exception e) {
+            return "{\"status\":\"error\", \"message\":\"Error requesting password reset: " + 
+                   e.getMessage().replace("\"", "'") + "\"}";
+        }
+    }
+
+    public static String verifyResetToken(String username, String token, String newPassword) {
+        try {
+            String apiUrl = BASE_URL + "?action=verify_reset_token";
+            
+            StringBuilder postData = new StringBuilder();
+            postData.append("username=").append(URLEncoder.encode(username, "UTF-8"));
+            postData.append("&token=").append(URLEncoder.encode(token, "UTF-8"));
+            postData.append("&new_password=").append(URLEncoder.encode(newPassword, "UTF-8"));
+
+            return sendHttpRequest(apiUrl, "POST", postData.toString(), false);
+        } catch (Exception e) {
+            return "{\"status\":\"error\", \"message\":\"Error verifying reset token: " + 
+                   e.getMessage().replace("\"", "'") + "\"}";
+        }
+    }
 }

@@ -623,6 +623,95 @@ try {
             }
             break;
 
+        case 'request_password_reset':
+            try {
+                if (!isset($postData['username']) || !isset($postData['email'])) {
+                    throw new Exception('Username and email are required');
+                }
+
+                $username = trim($postData['username']);
+                $email = trim($postData['email']);
+
+                // Check if user exists and email matches
+                $stmt = $db->prepare('SELECT id FROM users WHERE username = ? AND email = ?');
+                $stmt->execute([$username, $email]);
+                if (!$stmt->fetch()) {
+                    throw new Exception('Invalid username or email combination');
+                }
+
+                // Generate reset token
+                $resetToken = bin2hex(random_bytes(32));
+                $expiryTime = date('Y-m-d H:i:s', strtotime('+1 hour'));
+
+                // Store token in database
+                $stmt = $db->prepare('
+                    UPDATE users 
+                    SET reset_token = ?, 
+                        reset_token_expiry = ? 
+                    WHERE username = ?
+                ');
+                $stmt->execute([$resetToken, $expiryTime, $username]);
+
+                // Send email
+                require_once __DIR__ . '/utils/EmailUtils.php';  // Use absolute path
+                if (EmailUtils::sendPasswordResetEmail($email, $username, $resetToken)) {
+                    echo json_encode([
+                        'status' => 'success',
+                        'message' => 'Password reset instructions sent to your email'
+                    ]);
+                } else {
+                    throw new Exception('Failed to send reset email');
+                }
+            } catch (Exception $e) {
+                http_response_code(400);
+                echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+            }
+            break;
+
+        case 'verify_reset_token':
+            try {
+                if (!isset($postData['username']) || !isset($postData['token']) || !isset($postData['new_password'])) {
+                    throw new Exception('Username, token and new password are required');
+                }
+
+                $username = trim($postData['username']);
+                $token = trim($postData['token']);
+                $newPassword = trim($postData['new_password']);
+
+                // Verify token
+                $stmt = $db->prepare('
+                    SELECT id 
+                    FROM users 
+                    WHERE username = ? 
+                    AND reset_token = ? 
+                    AND reset_token_expiry > NOW()
+                ');
+                $stmt->execute([$username, $token]);
+                if (!$stmt->fetch()) {
+                    throw new Exception('Invalid or expired reset token');
+                }
+
+                // Update password and clear token
+                $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+                $stmt = $db->prepare('
+                    UPDATE users 
+                    SET password = ?,
+                        reset_token = NULL,
+                        reset_token_expiry = NULL
+                    WHERE username = ?
+                ');
+                $stmt->execute([$hashedPassword, $username]);
+
+                echo json_encode([
+                    'status' => 'success',
+                    'message' => 'Password has been reset successfully'
+                ]);
+            } catch (Exception $e) {
+                http_response_code(400);
+                echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+            }
+            break;
+
         default:
             http_response_code(400);
             echo json_encode(['status' => 'error', 'message' => 'Invalid action']);

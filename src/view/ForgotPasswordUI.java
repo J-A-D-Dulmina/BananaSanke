@@ -7,6 +7,8 @@ import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.geom.RoundRectangle2D;
 import javax.swing.border.AbstractBorder;
+import api.APIClient;
+import org.json.JSONObject;
 
 /**
  * Forgot Password UI dialog allowing users to reset their password via email.
@@ -366,8 +368,27 @@ public class ForgotPasswordUI extends JDialog {
             showMessage("Enter a valid email!", false);
             return;
         }
-        
-        showMessage("Password reset email sent!", true);
+
+        try {
+            String response = APIClient.requestPasswordReset(username, email);
+            JSONObject jsonResponse = new JSONObject(response);
+
+            if (jsonResponse.getString("status").equals("success")) {
+                showMessage("Password reset instructions sent to your email!", true);
+                
+                // Open reset password dialog
+                dispose();
+                SwingUtilities.invokeLater(() -> {
+                    ResetPasswordUI resetPasswordUI = new ResetPasswordUI(null, username, email);
+                    resetPasswordUI.setVisible(true);
+                });
+            } else {
+                showMessage(jsonResponse.getString("message"), false);
+            }
+        } catch (Exception e) {
+            showMessage("Error: " + e.getMessage(), false);
+            e.printStackTrace();
+        }
     }
 
     /**
