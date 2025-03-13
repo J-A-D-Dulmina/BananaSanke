@@ -10,6 +10,7 @@ import javax.swing.border.AbstractBorder;
 import controller.ResetPasswordController;
 import model.ResetPasswordModel;
 import org.json.JSONObject;
+import java.awt.event.WindowAdapter;
 
 public class ResetPasswordUI extends JDialog {
     private static final long serialVersionUID = 1L;
@@ -25,13 +26,25 @@ public class ResetPasswordUI extends JDialog {
         super(parent, "Reset Password", true);
         this.model = new ResetPasswordModel(username, email);
         this.controller = new ResetPasswordController(this, username, email);
-        setSize(450, 550);
-        setResizable(false);
+        
+        setSize(400, 500);
         setLocationRelativeTo(parent);
-        setLayout(new BorderLayout());
+        setResizable(false);
+        setUndecorated(true);
+        setBackground(new Color(0, 0, 0, 0));
+        
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(java.awt.event.WindowEvent e) {
+                dispose();
+            }
+        });
         
         initializeComponents();
         setupCooldownTimer();
+        
+        // Start the cooldown timer immediately when UI is opened
+        cooldownTimer.start();
     }
 
     private void setupCooldownTimer() {
