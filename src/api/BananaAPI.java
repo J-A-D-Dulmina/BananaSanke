@@ -20,11 +20,12 @@ public class BananaAPI {
      */
     public Game getRandomGame() throws MalformedURLException {
         String dataRaw = readUrl(API_URL);
-        System.out.println("Banana API Response: " + dataRaw);
 
         if (dataRaw == null || dataRaw.isEmpty()) {
             throw new MalformedURLException("API response is empty or null.");
         }
+
+        System.out.println("Banana API Response: " + dataRaw);
 
         String[] data = dataRaw.split(",");
         if (data.length < 2) {
@@ -34,9 +35,7 @@ public class BananaAPI {
         try {
             URL questionImageUrl = new URL(data[0].trim());
             int solution = Integer.parseInt(data[1].trim());
-            System.out.println("Parsed API Data:");
-            System.out.println("Image URL: " + questionImageUrl);
-            System.out.println("Solution: " + solution);
+            System.out.println("Parsed API Data - Image URL: " + questionImageUrl + ", Solution: " + solution);
             return new Game(questionImageUrl, solution);
         } catch (Exception e) {
             throw new MalformedURLException("Error parsing API response: " + e.getMessage());

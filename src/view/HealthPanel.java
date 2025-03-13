@@ -3,6 +3,8 @@ package view;
 import utils.ImageLoader;
 import javax.swing.*;
 import java.awt.*;
+import model.HealthPanelModel;
+import controller.HealthPanelController;
 
 /**
  * Panel displaying the player's health with heart icons.
@@ -14,20 +16,22 @@ public class HealthPanel extends JPanel {
 	private static final long serialVersionUID = 3077270849243182659L;
 	private JLabel healthLabel;
     private JLabel[] hearts = new JLabel[3];
-    private int currentHealth = 3;
-    private int wrongAttempts = 0;
-    private static final int MAX_ATTEMPTS = 4;
+    private final HealthPanelController controller;
 
     /**
      * Constructs the health panel with health text and heart icons.
      */
     public HealthPanel() {
-        setPreferredSize(new Dimension(180, 60)); // Set height for balance
-        setLayout(new GridBagLayout()); // Align elements properly
+        // Initialize MVC components
+        HealthPanelModel model = new HealthPanelModel();
+        this.controller = new HealthPanelController(model, this);
+
+        setPreferredSize(new Dimension(180, 60));
+        setLayout(new GridBagLayout());
         setOpaque(false);
 
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5, 5, 5, 5); // Add spacing between elements
+        gbc.insets = new Insets(5, 5, 5, 5);
 
         // Health text label
         healthLabel = new JLabel("Health: ");
@@ -42,12 +46,10 @@ public class HealthPanel extends JPanel {
         heartPanel.setOpaque(false);
 
         for (int i = 0; i < 3; i++) {
-            // Load heart GIF image
             ImageIcon heartGif = ImageLoader.loadImage("resources/heart_icon.gif", 18, 18);
             if (heartGif != null) {
                 hearts[i] = new JLabel(heartGif);
             } else {
-                // Fallback: Static heart symbol if GIF is missing
                 hearts[i] = new JLabel("♥");
                 hearts[i].setFont(new Font("Arial", Font.BOLD, 18));
                 hearts[i].setForeground(Color.RED);
@@ -56,53 +58,62 @@ public class HealthPanel extends JPanel {
         }
 
         gbc.gridx = 1;
-        add(heartPanel, gbc); // Align hearts properly
+        add(heartPanel, gbc);
     }
 
     /**
-     * Reduces health by one heart and updates the UI.
-     * @return true if still alive, false if game over
+     * Updates the health display based on current health.
      */
-    public boolean loseHealth() {
-        wrongAttempts++;
-        
-        if (wrongAttempts <= 3) {
-            currentHealth--;
-            updateHealthDisplay();
-            
-            if (wrongAttempts == 3) {
-                healthLabel.setText("FINAL CHANCE!");
-                healthLabel.setForeground(Color.RED);
-            }
-            
-            return true;
-        } else if (wrongAttempts == 4) {
-            currentHealth = 0;
-            updateHealthDisplay();
-            return false;
-        }
-        
-        return false;
-    }
-
-    /**
-     * Updates the heart display based on current health.
-     */
-    private void updateHealthDisplay() {
+    public void updateHealthDisplay(int currentHealth) {
         for (int i = 0; i < hearts.length; i++) {
             hearts[i].setVisible(i < currentHealth);
         }
     }
 
     /**
+     * Updates the health label text.
+     */
+    public void updateHealthLabel(String text) {
+        healthLabel.setText(text);
+        healthLabel.setForeground(Color.RED);
+    }
+
+    /**
+     * Resets the health display to initial state.
+     */
+    public void resetHealthDisplay() {
+        healthLabel.setText("Health: ");
+        healthLabel.setForeground(Color.WHITE);
+        for (int i = 0; i < hearts.length; i++) {
+            hearts[i].setVisible(true);
+        }
+    }
+
+    /**
+     * Handles game over state.
+     */
+    public void handleGameOver() {
+        // This will be handled by the parent panel
+        BananaPanel parent = (BananaPanel) SwingUtilities.getAncestorOfClass(BananaPanel.class, this);
+        if (parent != null) {
+            parent.showGameOver(0); // Score will be handled by the game logic
+        }
+    }
+
+    /**
+     * Reduces health when eating wrong answer.
+     * @return true if still alive, false if game over
+     */
+    public boolean loseHealth() {
+        controller.handleHealthLoss();
+        return !controller.isGameOver();
+    }
+
+    /**
      * Resets health to full (3 hearts).
      */
     public void resetHealth() {
-        currentHealth = 3;
-        wrongAttempts = 0;
-        healthLabel.setText("Health: ");
-        healthLabel.setForeground(Color.WHITE);
-        updateHealthDisplay();
+        controller.handleReset();
     }
 
     /**
@@ -110,14 +121,6 @@ public class HealthPanel extends JPanel {
      * @return Current health count
      */
     public int getCurrentHealth() {
-        return currentHealth;
-    }
-
-    public int getWrongAttempts() {
-        return wrongAttempts;
-    }
-
-    public boolean isLastAttempt() {
-        return wrongAttempts == 3;
+        return controller.getCurrentHealth();
     }
 }

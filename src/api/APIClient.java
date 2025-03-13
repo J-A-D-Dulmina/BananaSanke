@@ -125,47 +125,25 @@ public class APIClient {
     private static HttpURLConnection setupHttpConnection(String apiUrl, String method, boolean authRequired) throws IOException {
         URL url = new URL(apiUrl);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        
-        // Basic setup
         conn.setRequestMethod(method);
-        conn.setDoInput(true);
-        conn.setUseCaches(false);
-        
-        // Set headers
+        conn.setRequestProperty("Content-Type", CONTENT_TYPE);
         conn.setRequestProperty("Accept", ACCEPT_TYPE);
-        conn.setRequestProperty("User-Agent", "BananaSnake-Game/1.0");
         conn.setRequestProperty("Accept-Charset", "UTF-8");
-        conn.setRequestProperty("Connection", "Keep-Alive");
+        conn.setRequestProperty("User-Agent", "BananaSnake-Game/1.0");
 
-        // Set timeouts
-        conn.setConnectTimeout(15000); // 15 seconds
-        conn.setReadTimeout(15000);    // 15 seconds
-
-        // Handle authentication if required
-        if (authRequired) {
-            String authToken = SessionManager.getAuthToken();
-            System.out.println("Auth token from SessionManager: " + (authToken != null ? "present" : "null"));
-            
-            if (authToken != null && !authToken.isEmpty()) {
-                String authHeader = "Bearer " + authToken;
-                conn.setRequestProperty("Authorization", authHeader);
-                System.out.println("Setting Authorization header: " + authHeader);
-            } else {
-                System.err.println("Warning: No auth token available for authenticated request to: " + apiUrl);
-            }
-        }
-
-        // Setup for POST requests
+        // Configure connection for POST requests
         if ("POST".equals(method)) {
             conn.setDoOutput(true);
-            conn.setRequestProperty("Content-Type", CONTENT_TYPE);
+            conn.setDoInput(true);
+            conn.setUseCaches(false);
         }
 
-        // Log all headers for debugging
-        System.out.println("Request headers for " + apiUrl + ":");
-        conn.getRequestProperties().forEach((key, value) -> 
-            System.out.println(key + ": " + value)
-        );
+        if (authRequired) {
+            String authToken = SessionManager.getAuthToken();
+            if (authToken != null && !authToken.isEmpty()) {
+                conn.setRequestProperty("Authorization", "Bearer " + authToken);
+            }
+        }
 
         return conn;
     }
@@ -253,37 +231,26 @@ public class APIClient {
             postData.append("email=").append(URLEncoder.encode(email, "UTF-8"));
             postData.append("&password=").append(URLEncoder.encode(password, "UTF-8"));
 
-            // Log request details
-            System.out.println("Sending login request to: " + apiUrl);
-            System.out.println("POST data (encoded): " + postData.toString());
-
             String response = sendHttpRequest(apiUrl, "POST", postData.toString(), false);
-            System.out.println("Raw server response: " + response);
             
             // Validate JSON response
             try {
                 JSONObject jsonResponse = new JSONObject(response);
-                System.out.println("Login response status: " + jsonResponse.optString("status"));
                 
                 if (jsonResponse.optString("status").equals("success")) {
                     String authToken = jsonResponse.optString("auth_token");
                     if (authToken == null || authToken.isEmpty()) {
-                        System.err.println("Error: No auth_token in successful response");
                         return "{\"status\":\"error\", \"message\":\"Server did not provide authentication token\"}";
                     }
                     
                     // Store the auth token
                     SessionManager.setAuthToken(authToken);
-                    System.out.println("Auth token stored successfully");
                     
                     // Verify the token was stored
                     String storedToken = SessionManager.getAuthToken();
                     if (storedToken == null || storedToken.isEmpty()) {
-                        System.err.println("Error: Failed to store auth token");
                         return "{\"status\":\"error\", \"message\":\"Failed to store authentication token\"}";
                     }
-                    
-                    System.out.println("Login successful - Username: " + jsonResponse.optString("username"));
                 } else if (jsonResponse.optString("status").equals("error") && 
                           jsonResponse.optString("message").contains("already logged in")) {
                     // Handle case where user is already logged in
@@ -292,14 +259,10 @@ public class APIClient {
                 
                 return response;
             } catch (JSONException e) {
-                System.err.println("Invalid JSON response from server: " + response);
-                System.err.println("JSON parse error: " + e.getMessage());
                 return "{\"status\":\"error\", \"message\":\"Server returned invalid response: " + 
                        response.replace("\"", "'").replace("\n", " ") + "\"}";
             }
         } catch (Exception e) {
-            System.err.println("Login error: " + e.getMessage());
-            e.printStackTrace();
             return "{\"status\":\"error\", \"message\":\"Error processing login request: " + 
                    e.getMessage().replace("\"", "'") + "\"}";
         }

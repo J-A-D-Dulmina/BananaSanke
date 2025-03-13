@@ -443,30 +443,12 @@ public class LeaderboardPanel extends JDialog {
     private void loadBackgroundImage() {
         try {
             File file = new File("resources/leaderboard_background.png");
-            System.out.println("Attempting to load background image from: " + file.getAbsolutePath());
             
             if (file.exists()) {
                 backgroundImage = ImageIO.read(file);
-                if (backgroundImage != null) {
-                    System.out.println("Successfully loaded background image. Size: " + 
-                        backgroundImage.getWidth() + "x" + backgroundImage.getHeight());
-                } else {
-                    System.err.println("Failed to read image data from file");
-                }
-            } else {
-                System.err.println("Background image file not found at: " + file.getAbsolutePath());
-                // Try to list contents of resources directory
-                File resourceDir = new File("resources");
-                if (resourceDir.exists() && resourceDir.isDirectory()) {
-                    System.out.println("Contents of resources directory:");
-                    for (File f : resourceDir.listFiles()) {
-                        System.out.println("  - " + f.getName());
-                    }
-                }
             }
         } catch (Exception e) {
-            System.err.println("Error loading background image: " + e.getMessage());
-            e.printStackTrace();
+            // Silently handle any errors
         }
     }
 
