@@ -15,7 +15,7 @@ public class ResetPasswordModel {
         this.username = username;
         this.email = email;
         this.cooldownSeconds = 30;
-        this.isResendEnabled = true;
+        this.isResendEnabled = false;
     }
 
     public String getUsername() {
@@ -87,7 +87,6 @@ public class ResetPasswordModel {
             cooldownSeconds--;
             isResendEnabled = false;
         } else {
-            cooldownSeconds = 0;
             isResendEnabled = true;
         }
     }

@@ -10,40 +10,31 @@ import javax.swing.border.AbstractBorder;
 import controller.ResetPasswordController;
 import model.ResetPasswordModel;
 import org.json.JSONObject;
-import java.awt.event.WindowAdapter;
 
 public class ResetPasswordUI extends JDialog {
     private static final long serialVersionUID = 1L;
     private JTextField tokenField;
     private JPasswordField newPasswordField, confirmPasswordField;
     private JButton resetButton;
-    private JLabel resendTokenButton, messageLabel, backgroundLabel, backToLoginLabel;
+    private JLabel resendTokenButton;
+    private JLabel messageLabel;
+    private JLabel backgroundLabel;
+    private JLabel backToLoginLabel;
     private ResetPasswordController controller;
     private ResetPasswordModel model;
     private Timer cooldownTimer;
 
     public ResetPasswordUI(JFrame parent, String username, String email) {
         super(parent, "Reset Password", true);
-        this.model = new ResetPasswordModel(username, email);
         this.controller = new ResetPasswordController(this, username, email);
-        
-        setSize(400, 500);
-        setLocationRelativeTo(parent);
+        this.model = controller.getModel();
+        setSize(450, 550);
         setResizable(false);
-        setUndecorated(true);
-        setBackground(new Color(0, 0, 0, 0));
-        
-        addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowClosing(java.awt.event.WindowEvent e) {
-                dispose();
-            }
-        });
+        setLocationRelativeTo(parent);
+        setLayout(new BorderLayout());
         
         initializeComponents();
         setupCooldownTimer();
-        
-        // Start the cooldown timer immediately when UI is opened
         cooldownTimer.start();
     }
 
@@ -52,7 +43,7 @@ public class ResetPasswordUI extends JDialog {
             model.decrementCooldown();
             if (model.getCooldownSeconds() > 0) {
                 resendTokenButton.setText("Resend Token (" + model.getCooldownSeconds() + "s)");
-                resendTokenButton.setForeground(Color.WHITE);
+                resendTokenButton.setForeground(Color.GRAY);
                 resendTokenButton.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
             } else {
                 resendTokenButton.setText("Resend Token");
@@ -78,14 +69,16 @@ public class ResetPasswordUI extends JDialog {
         JPanel mainPanel = new JPanel(new GridBagLayout());
         mainPanel.setOpaque(false);
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridwidth = 1;
-        gbc.fill = GridBagConstraints.NONE;
+        gbc.gridwidth = GridBagConstraints.REMAINDER;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.anchor = GridBagConstraints.CENTER;
         gbc.insets = new Insets(5, 10, 5, 10);
 
         // Title
         JLabel titleLabel = createLabel("Reset Password", Color.WHITE, new Font("SansSerif", Font.BOLD, 28));
         titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
         gbc.gridy = 0;
+        gbc.insets = new Insets(20, 10, 20, 10);
         mainPanel.add(titleLabel, gbc);
 
         // Token section
@@ -95,9 +88,9 @@ public class ResetPasswordUI extends JDialog {
         tokenPanel.setMaximumSize(new Dimension(220, 120));
 
         JLabel tokenLabel = createLabel("Reset Token", Color.WHITE, new Font("Arial", Font.BOLD, 14));
-        tokenLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        tokenLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         tokenField = createPlaceholderField("Enter reset token from email");
-        tokenField.setAlignmentX(Component.LEFT_ALIGNMENT);
+        tokenField.setAlignmentX(Component.CENTER_ALIGNMENT);
         
         tokenPanel.add(tokenLabel);
         tokenPanel.add(Box.createVerticalStrut(5));
@@ -105,7 +98,7 @@ public class ResetPasswordUI extends JDialog {
         tokenPanel.add(Box.createVerticalStrut(5));
         
         gbc.gridy = 1;
-        gbc.insets = new Insets(20, 140, 5, 140);
+        gbc.insets = new Insets(10, 10, 10, 10);
         mainPanel.add(tokenPanel, gbc);
 
         // New Password section
@@ -115,9 +108,9 @@ public class ResetPasswordUI extends JDialog {
         newPasswordPanel.setMaximumSize(new Dimension(220, 80));
 
         JLabel newPasswordLabel = createLabel("New Password", Color.WHITE, new Font("Arial", Font.BOLD, 14));
-        newPasswordLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        newPasswordLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         newPasswordField = createPasswordField("Enter new password");
-        newPasswordField.setAlignmentX(Component.LEFT_ALIGNMENT);
+        newPasswordField.setAlignmentX(Component.CENTER_ALIGNMENT);
         
         newPasswordPanel.add(newPasswordLabel);
         newPasswordPanel.add(Box.createVerticalStrut(5));
@@ -133,9 +126,9 @@ public class ResetPasswordUI extends JDialog {
         confirmPasswordPanel.setMaximumSize(new Dimension(220, 80));
 
         JLabel confirmPasswordLabel = createLabel("Confirm Password", Color.WHITE, new Font("Arial", Font.BOLD, 14));
-        confirmPasswordLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        confirmPasswordLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         confirmPasswordField = createPasswordField("Confirm new password");
-        confirmPasswordField.setAlignmentX(Component.LEFT_ALIGNMENT);
+        confirmPasswordField.setAlignmentX(Component.CENTER_ALIGNMENT);
         
         confirmPasswordPanel.add(confirmPasswordLabel);
         confirmPasswordPanel.add(Box.createVerticalStrut(5));
@@ -153,19 +146,22 @@ public class ResetPasswordUI extends JDialog {
         mainPanel.add(resetButton, gbc);
 
         // Resend Token link
-        resendTokenButton = new JLabel("Resend Token");
-        resendTokenButton.setForeground(Color.RED);
+        resendTokenButton = new JLabel("Resend Token (30s)");
+        resendTokenButton.setForeground(Color.GRAY);
         resendTokenButton.setFont(new Font("Arial", Font.BOLD, 14));
-        resendTokenButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        resendTokenButton.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+        resendTokenButton.setHorizontalAlignment(SwingConstants.CENTER);
         resendTokenButton.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent evt) {
-                resendToken();
+                if (model.getCooldownSeconds() <= 0) {
+                    resendToken();
+                }
             }
             
             @Override
             public void mouseEntered(java.awt.event.MouseEvent evt) {
-                if (model.isResendEnabled()) {
+                if (model.getCooldownSeconds() <= 0) {
                     resendTokenButton.setForeground(Color.RED.brighter());
                     resendTokenButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
                 }
@@ -173,7 +169,7 @@ public class ResetPasswordUI extends JDialog {
             
             @Override
             public void mouseExited(java.awt.event.MouseEvent evt) {
-                if (model.isResendEnabled()) {
+                if (model.getCooldownSeconds() <= 0) {
                     resendTokenButton.setForeground(Color.RED);
                 }
             }
@@ -313,15 +309,8 @@ public class ResetPasswordUI extends JDialog {
     }
 
     private void resendToken() {
-        if (model.isResendEnabled()) {
+        if (model.getCooldownSeconds() <= 0) {
             controller.resendToken();
-            // Update UI to show cooldown
-            resendTokenButton.setText("Resend Token (" + model.getCooldownSeconds() + "s)");
-            resendTokenButton.setForeground(Color.WHITE);
-            resendTokenButton.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-            cooldownTimer.start();
-        } else {
-            showMessage("Please wait before requesting another token.", false);
         }
     }
 
@@ -541,9 +530,5 @@ public class ResetPasswordUI extends JDialog {
     public void updateMessageLabel(String message, boolean success) {
         messageLabel.setText(message);
         messageLabel.setForeground(success ? Color.GREEN : Color.RED);
-    }
-
-    public ResetPasswordModel getModel() {
-        return model;
     }
 } 
