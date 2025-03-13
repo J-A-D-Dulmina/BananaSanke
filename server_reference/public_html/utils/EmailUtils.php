@@ -1,4 +1,12 @@
 <?php
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\SMTP;
+use PHPMailer\PHPMailer\Exception;
+
+// Require PHPMailer files
+require_once __DIR__ . '/PHPMailer/src/Exception.php';
+require_once __DIR__ . '/PHPMailer/src/PHPMailer.php';
+require_once __DIR__ . '/PHPMailer/src/SMTP.php';
 
 class EmailUtils {
     private const FROM_EMAIL = "deshandulmina30840@gmail.com";
@@ -58,15 +66,6 @@ class EmailUtils {
                 </body>
                 </html>
             ";
-
-            // Use PHPMailer for sending email
-            require_once __DIR__ . '/PHPMailer/src/Exception.php';
-            require_once __DIR__ . '/PHPMailer/src/PHPMailer.php';
-            require_once __DIR__ . '/PHPMailer/src/SMTP.php';
-
-            use PHPMailer\PHPMailer\PHPMailer;
-            use PHPMailer\PHPMailer\SMTP;
-            use PHPMailer\PHPMailer\Exception;
 
             $mail = new PHPMailer(true);
 
