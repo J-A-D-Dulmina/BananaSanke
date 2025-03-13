@@ -14,8 +14,8 @@ public class ResetPasswordUI extends JDialog {
     private static final long serialVersionUID = 1L;
     private JTextField tokenField;
     private JPasswordField newPasswordField, confirmPasswordField;
-    private JButton resetButton, resendTokenButton;
-    private JLabel messageLabel, backgroundLabel, backToLoginLabel;
+    private JButton resetButton;
+    private JLabel resendTokenButton, messageLabel, backgroundLabel, backToLoginLabel;
     private String username;
     private String email;
     private Timer cooldownTimer;
@@ -40,9 +40,11 @@ public class ResetPasswordUI extends JDialog {
                 cooldownSeconds--;
                 resendTokenButton.setText("Resend Token (" + cooldownSeconds + "s)");
                 resendTokenButton.setEnabled(false);
+                resendTokenButton.setForeground(Color.WHITE);
             } else {
                 resendTokenButton.setText("Resend Token");
                 resendTokenButton.setEnabled(true);
+                resendTokenButton.setForeground(Color.RED);
                 cooldownTimer.stop();
             }
         });
@@ -76,16 +78,10 @@ public class ResetPasswordUI extends JDialog {
         tokenField = createPlaceholderField("Enter reset token from email");
         tokenField.setAlignmentX(Component.LEFT_ALIGNMENT);
         
-        // Add resend token button
-        resendTokenButton = createButton("Resend Token", Color.BLUE, Color.WHITE, e -> resendToken());
-        resendTokenButton.setAlignmentX(Component.LEFT_ALIGNMENT);
-        resendTokenButton.setEnabled(false); // Initially disabled
-        
         tokenPanel.add(tokenLabel);
         tokenPanel.add(Box.createVerticalStrut(5));
         tokenPanel.add(tokenField);
         tokenPanel.add(Box.createVerticalStrut(5));
-        tokenPanel.add(resendTokenButton);
         
         gbc.gridy = 1;
         gbc.insets = new Insets(20, 140, 5, 140);
@@ -135,6 +131,23 @@ public class ResetPasswordUI extends JDialog {
         gbc.anchor = GridBagConstraints.CENTER;
         mainPanel.add(resetButton, gbc);
 
+        // Resend Token link
+        resendTokenButton = new JLabel("Resend Token");
+        resendTokenButton.setForeground(Color.WHITE);
+        resendTokenButton.setFont(new Font("Arial", Font.BOLD, 14));
+        resendTokenButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        resendTokenButton.setEnabled(false);
+        resendTokenButton.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                if (resendTokenButton.isEnabled()) {
+                    resendToken();
+                }
+            }
+        });
+        gbc.gridy = 5;
+        gbc.insets = new Insets(0, 10, 10, 10);
+        mainPanel.add(resendTokenButton, gbc);
+
         // Back to Login link
         backToLoginLabel = createLabel("Back to Login", Color.YELLOW, new Font("Arial", Font.BOLD, 14));
         backToLoginLabel.setHorizontalAlignment(SwingConstants.CENTER);
@@ -145,14 +158,14 @@ public class ResetPasswordUI extends JDialog {
                 SwingUtilities.invokeLater(() -> new LoginUI().setVisible(true));
             }
         });
-        gbc.gridy = 5;
+        gbc.gridy = 6;
         gbc.insets = new Insets(5, 10, 5, 10);
         mainPanel.add(backToLoginLabel, gbc);
 
         // Message label
         messageLabel = createLabel("", Color.RED, null);
         messageLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        gbc.gridy = 6;
+        gbc.gridy = 7;
         mainPanel.add(messageLabel, gbc);
 
         backgroundLabel.add(mainPanel);
@@ -301,6 +314,7 @@ public class ResetPasswordUI extends JDialog {
                 cooldownSeconds = 60;
                 resendTokenButton.setText("Resend Token (" + cooldownSeconds + "s)");
                 resendTokenButton.setEnabled(false);
+                resendTokenButton.setForeground(Color.WHITE);
                 cooldownTimer.start();
             } else {
                 showMessage(jsonResponse.getString("message"), false);
