@@ -14,8 +14,7 @@ public class ResetPasswordController {
 
     public ResetPasswordController(ResetPasswordUI view, String username, String email) {
         this.view = view;
-        // Create new model since view doesn't have getModel method
-        this.model = new ResetPasswordModel(username, email);
+        this.model = view.getModel();
     }
 
     public void resetPassword(String token, String newPassword, String confirmPassword) {
@@ -72,9 +71,15 @@ public class ResetPasswordController {
                 return;
             }
 
-            // Clear any existing token first
-            clearResetToken();
+            // First clear any existing token
+            String clearResponse = APIClient.clearResetToken(model.getUsername());
+            JSONObject clearJson = new JSONObject(clearResponse);
+            if (!clearJson.getString("status").equals("success")) {
+                updateMessage("Failed to clear existing token.", false);
+                return;
+            }
 
+            // Then request a new token
             String response = APIClient.requestPasswordReset(
                 model.getUsername(), 
                 model.getEmail()

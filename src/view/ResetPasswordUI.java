@@ -32,7 +32,6 @@ public class ResetPasswordUI extends JDialog {
         
         initializeComponents();
         setupCooldownTimer();
-        cooldownTimer.start();
     }
 
     private void setupCooldownTimer() {
@@ -41,9 +40,11 @@ public class ResetPasswordUI extends JDialog {
             if (model.getCooldownSeconds() > 0) {
                 resendTokenButton.setText("Resend Token (" + model.getCooldownSeconds() + "s)");
                 resendTokenButton.setForeground(Color.WHITE);
+                resendTokenButton.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
             } else {
                 resendTokenButton.setText("Resend Token");
                 resendTokenButton.setForeground(Color.RED);
+                resendTokenButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
                 cooldownTimer.stop();
             }
         });
@@ -139,10 +140,10 @@ public class ResetPasswordUI extends JDialog {
         mainPanel.add(resetButton, gbc);
 
         // Resend Token link
-        resendTokenButton = new JLabel("Resend Token (30s)");
-        resendTokenButton.setForeground(Color.WHITE);
+        resendTokenButton = new JLabel("Resend Token");
+        resendTokenButton.setForeground(Color.RED);
         resendTokenButton.setFont(new Font("Arial", Font.BOLD, 14));
-        resendTokenButton.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+        resendTokenButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         resendTokenButton.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent evt) {
@@ -151,13 +152,17 @@ public class ResetPasswordUI extends JDialog {
             
             @Override
             public void mouseEntered(java.awt.event.MouseEvent evt) {
-                resendTokenButton.setForeground(Color.RED.brighter());
-                resendTokenButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+                if (model.isResendEnabled()) {
+                    resendTokenButton.setForeground(Color.RED.brighter());
+                    resendTokenButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+                }
             }
             
             @Override
             public void mouseExited(java.awt.event.MouseEvent evt) {
-                resendTokenButton.setForeground(Color.RED);
+                if (model.isResendEnabled()) {
+                    resendTokenButton.setForeground(Color.RED);
+                }
             }
         });
         gbc.gridy = 5;
@@ -300,7 +305,10 @@ public class ResetPasswordUI extends JDialog {
             // Update UI to show cooldown
             resendTokenButton.setText("Resend Token (" + model.getCooldownSeconds() + "s)");
             resendTokenButton.setForeground(Color.WHITE);
+            resendTokenButton.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
             cooldownTimer.start();
+        } else {
+            showMessage("Please wait before requesting another token.", false);
         }
     }
 
@@ -520,5 +528,9 @@ public class ResetPasswordUI extends JDialog {
     public void updateMessageLabel(String message, boolean success) {
         messageLabel.setText(message);
         messageLabel.setForeground(success ? Color.GREEN : Color.RED);
+    }
+
+    public ResetPasswordModel getModel() {
+        return model;
     }
 } 
