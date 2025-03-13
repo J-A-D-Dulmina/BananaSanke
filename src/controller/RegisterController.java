@@ -23,7 +23,6 @@ public class RegisterController {
         }
 
         String response = Register.registerUser(username, email, password);
-        System.out.println("Server Response: " + response); // Debug log
 
         try {
             JSONObject jsonResponse = new JSONObject(response);
@@ -35,7 +34,6 @@ public class RegisterController {
                 registerUI.dispose();
                 SwingUtilities.invokeLater(() -> new LoginUI().setVisible(true));
             } else {
-                // Show the specific error message from the server
                 registerUI.showMessage(message, false);
             }
         } catch (JSONException e) {

@@ -59,7 +59,6 @@ public class GameMainInterface extends JFrame {
             // Request focus to ensure keyboard input works
             requestFocus();
             
-            System.out.println("Game interface initialized successfully for user: " + SessionManager.getUsername());
         } catch (Exception e) {
             System.err.println("Error initializing game interface: " + e.getMessage());
             e.printStackTrace();
@@ -105,7 +104,6 @@ public class GameMainInterface extends JFrame {
             add(topBar, BorderLayout.NORTH);
             add(splitPane, BorderLayout.CENTER);
             
-            System.out.println("Game components initialized successfully");
         } catch (Exception e) {
             System.err.println("Error initializing game components: " + e.getMessage());
             e.printStackTrace();

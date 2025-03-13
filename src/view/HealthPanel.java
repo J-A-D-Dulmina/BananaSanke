@@ -69,19 +69,16 @@ public class HealthPanel extends JPanel {
         if (wrongAttempts <= 3) {
             currentHealth--;
             updateHealthDisplay();
-            System.out.println("Lost health! Current health: " + currentHealth + " (Attempt " + wrongAttempts + " of " + MAX_ATTEMPTS + ")");
             
             if (wrongAttempts == 3) {
                 healthLabel.setText("FINAL CHANCE!");
                 healthLabel.setForeground(Color.RED);
-                System.out.println("FINAL CHANCE! Next wrong answer will end the game!");
             }
             
             return true;
         } else if (wrongAttempts == 4) {
             currentHealth = 0;
             updateHealthDisplay();
-            System.out.println("Game Over - Used all 4 attempts!");
             return false;
         }
         
@@ -106,7 +103,6 @@ public class HealthPanel extends JPanel {
         healthLabel.setText("Health: ");
         healthLabel.setForeground(Color.WHITE);
         updateHealthDisplay();
-        System.out.println("Health reset to full! All attempts reset!");
     }
 
     /**
