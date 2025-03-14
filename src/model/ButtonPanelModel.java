@@ -1,7 +1,6 @@
 package model;
 
 import view.SnakePanel;
-import controller.SnakeGameController;
 import interfaces.IGameController;
 import interfaces.IGameLogic;
 import interfaces.IButtonPanelModel;

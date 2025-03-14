@@ -14,8 +14,6 @@ import java.awt.event.WindowEvent;
 import interfaces.IButtonPanelController;
 import interfaces.IButtonPanelModel;
 import interfaces.ISoundManager;
-import interfaces.ISessionManager;
-import interfaces.IAPIClient;
 import factory.ComponentFactory;
 
 public class ButtonPanelController implements IButtonPanelController {
@@ -23,16 +21,13 @@ public class ButtonPanelController implements IButtonPanelController {
     private final ButtonPanel view;
     private final GameMainInterface mainFrame;
     private final ISoundManager soundManager;
-    private final ISessionManager sessionManager;
-    private final IAPIClient apiClient;
-
     public ButtonPanelController(ButtonPanelModel model, ButtonPanel view, GameMainInterface mainFrame) {
         this.model = model;
         this.view = view;
         this.mainFrame = mainFrame;
         this.soundManager = ComponentFactory.getSoundManager();
-        this.sessionManager = ComponentFactory.getSessionManager();
-        this.apiClient = ComponentFactory.getAPIClient();
+        ComponentFactory.getSessionManager();
+        ComponentFactory.getAPIClient();
     }
 
     @Override

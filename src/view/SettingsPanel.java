@@ -1,18 +1,15 @@
 package view;
 
 import javax.swing.*;
-import javax.swing.border.AbstractBorder;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.RoundRectangle2D;
 import model.SoundManager;
-import java.util.Observer;
-import java.util.Observable;
 import controller.SettingsController;
+import interfaces.SoundObserver;
 
-public class SettingsPanel extends JDialog implements Observer {
+public class SettingsPanel extends JDialog implements SoundObserver {
     private static final long serialVersionUID = 1L;
-    private final GameMainInterface mainFrame;
     private JSlider volumeSlider;
     private JToggleButton muteButton;
     private JLabel volumeNumberLabel;
@@ -23,7 +20,6 @@ public class SettingsPanel extends JDialog implements Observer {
 
     public SettingsPanel(GameMainInterface mainFrame) {
         super(mainFrame, true);
-        this.mainFrame = mainFrame;
         this.soundManager = SoundManager.getInstance();
         soundManager.addObserver(this);
         this.controller = new SettingsController(this);
@@ -44,7 +40,9 @@ public class SettingsPanel extends JDialog implements Observer {
 
         // Create main panel with rounded corners
         JPanel mainPanel = new JPanel() {
-            @Override
+            private static final long serialVersionUID = 6593606916065772418L;
+
+			@Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -122,7 +120,9 @@ public class SettingsPanel extends JDialog implements Observer {
 
         // Volume slider with custom colors
         volumeSlider = new JSlider(JSlider.HORIZONTAL, 0, 100, 50) {
-            @Override
+            private static final long serialVersionUID = 8706604664729312745L;
+
+			@Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -197,12 +197,10 @@ public class SettingsPanel extends JDialog implements Observer {
     }
 
     @Override
-    public void update(Observable o, Object arg) {
-        if (o instanceof SoundManager) {
-            SwingUtilities.invokeLater(() -> {
-                controller.updateView();
-            });
-        }
+    public void onSoundUpdate() {
+        SwingUtilities.invokeLater(() -> {
+            controller.updateView();
+        });
     }
 
     // View update methods for controller
@@ -225,7 +223,9 @@ public class SettingsPanel extends JDialog implements Observer {
 
     private JToggleButton createStyledToggleButton(String text, Color bgColor, Color textColor) {
         JToggleButton button = new JToggleButton(text) {
-            @Override
+            private static final long serialVersionUID = 9183447387730347843L;
+
+			@Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);

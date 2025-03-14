@@ -1,27 +1,31 @@
 package model;
 
 import interfaces.ISoundManager;
+import interfaces.SoundObserver;
 import javax.sound.sampled.*;
 import java.io.File;
-import java.io.IOException;
-import java.util.Observable;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 import javax.swing.SwingUtilities;
 import view.APISection;
 import view.BananaPanel;
 import view.SnakePanel;
 import java.awt.Component;
 
-public class SoundManager extends Observable implements ISoundManager {
+public class SoundManager implements ISoundManager {
     private static SoundManager instance;
     private Clip backgroundMusic;
     private Map<String, Clip> soundEffects;
-    private float volume = 0.5f; // 50% default volume
+    private float volume = 0.8f; // 80% default volume
     private boolean isMuted = false;
     private boolean isPlaying = false;
     private volatile Clip runningSound = null;
     private final Object runningSoundLock = new Object();
+    
+    // List of observers
+    private final List<SoundObserver> observers = new ArrayList<>();
 
     private SoundManager() {
         soundEffects = new HashMap<>();
@@ -34,6 +38,33 @@ public class SoundManager extends Observable implements ISoundManager {
             instance = new SoundManager();
         }
         return instance;
+    }
+    
+    /**
+     * Adds an observer to be notified of changes.
+     * @param observer The observer to add
+     */
+    public void addObserver(SoundObserver observer) {
+        if (observer != null && !observers.contains(observer)) {
+            observers.add(observer);
+        }
+    }
+    
+    /**
+     * Removes an observer.
+     * @param observer The observer to remove
+     */
+    public void removeObserver(SoundObserver observer) {
+        observers.remove(observer);
+    }
+    
+    /**
+     * Notifies all observers of a change.
+     */
+    protected void notifyObservers() {
+        for (SoundObserver observer : observers) {
+            observer.onSoundUpdate();
+        }
     }
 
     private void loadSoundEffects() {
@@ -172,7 +203,6 @@ public class SoundManager extends Observable implements ISoundManager {
                 backgroundMusic.start();
                 backgroundMusic.loop(Clip.LOOP_CONTINUOUSLY);
                 isPlaying = true;
-                setChanged();
                 notifyObservers();
             } catch (Exception e) {
                 // Silently fail for background music playing errors
@@ -186,7 +216,6 @@ public class SoundManager extends Observable implements ISoundManager {
             try {
                 backgroundMusic.stop();
                 isPlaying = false;
-                setChanged();
                 notifyObservers();
             } catch (Exception e) {
                 // Silently fail for background music pausing errors
@@ -201,7 +230,6 @@ public class SoundManager extends Observable implements ISoundManager {
                 backgroundMusic.stop();
                 backgroundMusic.setFramePosition(0);
                 isPlaying = false;
-                setChanged();
                 notifyObservers();
             } catch (Exception e) {
                 // Silently fail for background music stopping errors
@@ -246,36 +274,27 @@ public class SoundManager extends Observable implements ISoundManager {
     public void setVolume(float volume) {
         this.volume = Math.max(0.0f, Math.min(1.0f, volume));
         updateVolume();
-        setChanged();
         notifyObservers();
     }
 
     @Override
     public void setMuted(boolean muted) {
-        this.isMuted = muted;
-        updateVolume();
-        
-        if (muted) {
-            pauseBackgroundMusic();
-            stopRunningSound();
-            for (Clip clip : soundEffects.values()) {
-                if (clip != null && clip.isRunning()) {
-                    clip.stop();
-                }
-            }
-        } else {
-            if (isPlaying) {
+        if (this.isMuted != muted) {
+            this.isMuted = muted;
+            
+            if (muted) {
+                pauseBackgroundMusic();
+                stopRunningSound();
+            } else if (isPlaying) {
                 playBackgroundMusic();
             }
-            if (isGameRunning()) {
-                startRunningSound();
-            }
+            
+            notifyObservers();
         }
-        setChanged();
-        notifyObservers();
     }
 
-    private boolean isGameRunning() {
+    @SuppressWarnings("unused")
+	private boolean isGameRunning() {
         try {
             if (APISection.getInstance() != null) {
                 Component parent = SwingUtilities.getAncestorOfClass(BananaPanel.class, APISection.getInstance());

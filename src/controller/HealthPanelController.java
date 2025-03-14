@@ -19,10 +19,13 @@ public class HealthPanelController {
         boolean stillAlive = model.loseHealth();
         view.updateHealthDisplay(model.getCurrentHealth());
         
-        if (model.isLastAttempt()) {
-            view.updateHealthLabel("FINAL CHANCE!");
+        // Show game over message when all hearts are gone (after 3rd hit)
+        if (model.getWrongAttempts() == 3) {
+            view.updateHealthLabel("GAME OVER!");
+            // No dialog box, just update the label
         }
         
+        // Actually end the game after 4th hit
         if (!stillAlive) {
             view.handleGameOver();
         }

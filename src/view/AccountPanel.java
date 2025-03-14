@@ -5,21 +5,10 @@ import javax.swing.border.AbstractBorder;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.RoundRectangle2D;
-import model.SessionManager;
-import api.APIClient;
-import model.SoundManager;
-import java.util.List;
-import controller.LeaderboardController;
-import controller.LeaderboardController.LeaderboardEntry;
-import org.json.JSONObject;
 import utils.CustomDialogUtils;
-import controller.AccountController;
-import model.AccountModel;
 import interfaces.ISoundManager;
 import interfaces.ISessionManager;
 import interfaces.IAccountController;
-import interfaces.IAccountModel;
-import model.SessionManagerImpl;
 import factory.ComponentFactory;
 
 public class AccountPanel extends JDialog {
@@ -39,7 +28,6 @@ public class AccountPanel extends JDialog {
     private final GameMainInterface mainFrame;
     private Image backgroundImage;
     private IAccountController controller;
-    private IAccountModel accountModel;
     private final ISoundManager soundManager;
     private final ISessionManager sessionManager;
 
@@ -51,8 +39,7 @@ public class AccountPanel extends JDialog {
         this.soundManager = ComponentFactory.getSoundManager();
         this.sessionManager = ComponentFactory.getSessionManager();
         
-        // Initialize MVC components using factory
-        this.accountModel = ComponentFactory.createAccountModel();
+        ComponentFactory.createAccountModel();
         this.controller = ComponentFactory.createAccountController(this, mainFrame);
         
         // Initialize UI
@@ -88,7 +75,9 @@ public class AccountPanel extends JDialog {
         
         // Create main panel
         JPanel mainPanel = new JPanel(new BorderLayout()) {
-            @Override
+            private static final long serialVersionUID = -7253639745702786238L;
+
+			@Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -458,7 +447,9 @@ public class AccountPanel extends JDialog {
 
     private JTextField createStyledTextField(String text) {
         JTextField field = new JTextField(text, 20) {
-            @Override
+            private static final long serialVersionUID = 6920907042275492806L;
+
+			@Override
             protected void paintComponent(Graphics g) {
                 if (!isOpaque()) {
                     Graphics2D g2 = (Graphics2D) g.create();
@@ -474,7 +465,9 @@ public class AccountPanel extends JDialog {
         field.setFont(new Font("Arial", Font.PLAIN, 14));
         field.setBorder(BorderFactory.createCompoundBorder(
             new AbstractBorder() {
-                @Override
+                private static final long serialVersionUID = 8800886604551493273L;
+
+				@Override
                 public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
                     Graphics2D g2 = (Graphics2D) g.create();
                     g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -499,7 +492,9 @@ public class AccountPanel extends JDialog {
 
     private JPasswordField createStyledPasswordField() {
         JPasswordField field = new JPasswordField(15) {
-            @Override
+            private static final long serialVersionUID = -9197649401410222631L;
+
+			@Override
             protected void paintComponent(Graphics g) {
                 if (!isOpaque()) {
                     Graphics2D g2 = (Graphics2D) g.create();
@@ -515,7 +510,9 @@ public class AccountPanel extends JDialog {
         field.setFont(new Font("Arial", Font.PLAIN, 14));
         field.setBorder(BorderFactory.createCompoundBorder(
             new AbstractBorder() {
-                @Override
+                private static final long serialVersionUID = 2616021498067549824L;
+
+				@Override
                 public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
                     Graphics2D g2 = (Graphics2D) g.create();
                     g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -540,7 +537,9 @@ public class AccountPanel extends JDialog {
 
     private JButton createStyledButton(String text, boolean isDestructive) {
         JButton button = new JButton(text) {
-            @Override
+            private static final long serialVersionUID = 5110597267871365447L;
+
+			@Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -630,21 +629,5 @@ public class AccountPanel extends JDialog {
         });
         timer.setRepeats(false);
         timer.start();
-    }
-
-    private void updateBestScore() {
-        try {
-            JSONObject response = accountModel.fetchBestScore();
-            if (response.getString("status").equals("success")) {
-                int bestScore = response.getInt("best_score");
-                SwingUtilities.invokeLater(() -> {
-                    bestScoreLabel.setText(String.valueOf(bestScore));
-                });
-            } else {
-                bestScoreLabel.setText("N/A");
-            }
-        } catch (Exception e) {
-            bestScoreLabel.setText("Error");
-        }
     }
 } 

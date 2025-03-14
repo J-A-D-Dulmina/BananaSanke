@@ -7,7 +7,6 @@ import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.geom.RoundRectangle2D;
 import javax.swing.border.AbstractBorder;
-import api.APIClient;
 import org.json.JSONObject;
 import factory.ComponentFactory;
 import interfaces.IAPIClient;
@@ -174,7 +173,9 @@ public class ForgotPasswordUI extends JDialog {
      */
     private JTextField createPlaceholderField(String placeholder) {
         JTextField field = new JTextField(20) {
-            @Override
+            private static final long serialVersionUID = -7299287470788011611L;
+
+			@Override
             protected void paintComponent(Graphics g) {
                 if (!isOpaque()) {
                     Graphics2D g2 = (Graphics2D) g.create();
@@ -207,7 +208,9 @@ public class ForgotPasswordUI extends JDialog {
         field.setText(placeholder);
         field.setBorder(BorderFactory.createCompoundBorder(
             new AbstractBorder() {
-                @Override
+                private static final long serialVersionUID = -4137680755322573975L;
+
+				@Override
                 public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
                     Graphics2D g2 = (Graphics2D) g.create();
                     g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -247,54 +250,6 @@ public class ForgotPasswordUI extends JDialog {
     }
 
     /**
-     * Configures placeholder behavior for a JTextField.
-     * @param field The text field to configure.
-     * @param placeholder The placeholder text.
-     */
-    private void configurePlaceholderField(JTextField field, String placeholder) {
-        field.setForeground(Color.GRAY);
-        field.setBackground(Color.WHITE);
-        field.setText(placeholder);
-        field.setBorder(BorderFactory.createCompoundBorder(
-            new AbstractBorder() {
-                @Override
-                public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
-                    Graphics2D g2 = (Graphics2D) g.create();
-                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                    g2.setColor(Color.WHITE);
-                    g2.draw(new RoundRectangle2D.Double(x, y, width - 1, height - 1, 10, 10));
-                    g2.dispose();
-                }
-
-                @Override
-                public Insets getBorderInsets(Component c) {
-                    return new Insets(4, 8, 4, 8);
-                }
-            },
-            BorderFactory.createEmptyBorder(2, 6, 2, 6)
-        ));
-        field.setPreferredSize(new Dimension(220, 45));
-        field.setMaximumSize(new Dimension(220, 45));
-        field.setOpaque(true);
-        field.setCaretColor(Color.BLACK);
-
-        field.addFocusListener(new FocusAdapter() {
-            public void focusGained(FocusEvent e) {
-                if (field.getText().equals(placeholder)) {
-                    field.setText("");
-                    field.setForeground(Color.BLACK);
-                }
-            }
-            public void focusLost(FocusEvent e) {
-                if (field.getText().isEmpty()) {
-                    field.setText(placeholder);
-                    field.setForeground(Color.GRAY);
-                }
-            }
-        });
-    }
-
-    /**
      * Creates a styled JButton.
      * @param text Button text.
      * @param bgColor Background color.
@@ -304,7 +259,9 @@ public class ForgotPasswordUI extends JDialog {
      */
     private JButton createButton(String text, Color bgColor, Color textColor, ActionListener action) {
         JButton button = new JButton(text) {
-            @Override
+            private static final long serialVersionUID = 3118517228745735126L;
+
+			@Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);

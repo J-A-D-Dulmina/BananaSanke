@@ -3,7 +3,6 @@ package controller;
 import view.ResetPasswordUI;
 import view.LoginUI;
 import model.ResetPasswordModel;
-import api.APIClient;
 import org.json.JSONObject;
 import org.json.JSONException;
 import javax.swing.SwingUtilities;

@@ -2,13 +2,11 @@ package view;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import controller.TimerPanelController;
-import model.TimerPanelModel;
 
 public class TimerPanel extends JPanel {
-    private JLabel timerLabel;
+    private static final long serialVersionUID = 734158447264058607L;
+	private JLabel timerLabel;
     private JLabel remainLabel;
     private TimerPanelController controller;
     private boolean isRunning = false;

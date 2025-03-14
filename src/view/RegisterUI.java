@@ -138,7 +138,9 @@ public class RegisterUI extends JDialog {
 
     private JTextField createPlaceholderField(String placeholder) {
         JTextField field = new JTextField(20) {
-            @Override
+            private static final long serialVersionUID = 8452730379447698928L;
+
+			@Override
             protected void paintComponent(Graphics g) {
                 if (!isOpaque()) {
                     Graphics2D g2 = (Graphics2D) g.create();
@@ -171,7 +173,9 @@ public class RegisterUI extends JDialog {
 
     private JPasswordField createPlaceholderPasswordField(String placeholder) {
         JPasswordField field = new JPasswordField(20) {
-            @Override
+            private static final long serialVersionUID = -7741579512978232626L;
+
+			@Override
             protected void paintComponent(Graphics g) {
                 if (!isOpaque()) {
                     Graphics2D g2 = (Graphics2D) g.create();
@@ -209,7 +213,9 @@ public class RegisterUI extends JDialog {
         field.setText(placeholder);
         field.setBorder(BorderFactory.createCompoundBorder(
             new AbstractBorder() {
-                @Override
+                private static final long serialVersionUID = -3997798974112225279L;
+
+				@Override
                 public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
                     Graphics2D g2 = (Graphics2D) g.create();
                     g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -249,7 +255,9 @@ public class RegisterUI extends JDialog {
 
     private JButton createButton(String text, Color bgColor, Color textColor, ActionListener action) {
         JButton button = new JButton(text) {
-            @Override
+            private static final long serialVersionUID = 324641248936960534L;
+
+			@Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -303,13 +311,6 @@ public class RegisterUI extends JDialog {
     }
     
 
-    private void addComponent(JPanel panel, JComponent component, GridBagConstraints gbc, int x, int y, int gridWidth) {
-        gbc.gridx = x;
-        gbc.gridy = y;
-        gbc.gridwidth = gridWidth;
-        panel.add(component, gbc);
-    }
-    
     public void showMessage(String message, boolean success) {
         messageLabel.setText(message);
         messageLabel.setForeground(success ? Color.GREEN : Color.RED); // Green for success, red for error

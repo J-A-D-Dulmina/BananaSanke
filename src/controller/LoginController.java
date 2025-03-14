@@ -3,12 +3,9 @@ package controller;
 import javax.swing.SwingUtilities;
 import org.json.JSONException;
 import org.json.JSONObject;
-import api.APIClient;
 import view.GameMainInterface;
 import view.LoginUI;
-import model.SessionManager;
 import interfaces.ISessionManager;
-import model.SessionManagerImpl;
 import factory.ComponentFactory;
 import interfaces.IAPIClient;
 

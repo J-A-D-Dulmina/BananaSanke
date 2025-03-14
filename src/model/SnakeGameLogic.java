@@ -4,20 +4,12 @@ import interfaces.IGameLogic;
 import interfaces.ISoundManager;
 import interfaces.ISessionManager;
 import java.awt.*;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import org.json.JSONObject;
 import view.APISection;
 import view.BananaPanel;
 import view.GameMainInterface;
-import view.GameOverPanel;
 import javax.swing.SwingUtilities;
-import api.APIClient;
 
 public class SnakeGameLogic implements IGameLogic {
     private final int tileSize;
@@ -129,7 +121,6 @@ public class SnakeGameLogic implements IGameLogic {
             } else {
                 soundManager.playWrongFoodSound();
                 if (APISection.getInstance() != null) {
-                    BananaPanel parent = (BananaPanel) SwingUtilities.getAncestorOfClass(BananaPanel.class, APISection.getInstance());
                     boolean stillAlive = APISection.getInstance().reduceHealth();
                     
                     if (!stillAlive) {
@@ -267,8 +258,6 @@ public class SnakeGameLogic implements IGameLogic {
     private void showGameOver() {
         try {
             soundManager.stopRunningSound();
-            String response = APIClient.getInstance().updateHighScore(score);
-            
             SwingUtilities.invokeLater(() -> {
                 BananaPanel parent = (BananaPanel) SwingUtilities.getAncestorOfClass(BananaPanel.class, APISection.getInstance());
                 if (parent != null) {

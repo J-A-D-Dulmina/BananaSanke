@@ -8,21 +8,16 @@ import controller.ButtonPanelController;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import model.SoundManager;
-import utils.CustomDialogUtils;
 import interfaces.IButtonPanelController;
 
 public class ButtonPanel extends JPanel {
     private static final long serialVersionUID = -1015522477771146689L;
     private JButton leaderboardBtn, resetBtn, settingsBtn, accountBtn;
     private ImageIcon leaderboardIcon, resetIcon, settingsIcon, accountIcon;
-    private GameMainInterface gameMainInterface;
     private SnakePanel snakePanel;
     private JPanel namePanel;
     private IButtonPanelController controller;
-    private JPanel pauseOverlay;
-
     public ButtonPanel(GameMainInterface gameMainInterface, SnakeGameLogic gameLogic, SnakePanel snakePanel) {
-        this.gameMainInterface = gameMainInterface;
         this.snakePanel = snakePanel;
 
         // Initialize MVC components

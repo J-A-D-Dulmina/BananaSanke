@@ -1,7 +1,5 @@
 package interfaces;
 
-import org.json.JSONObject;
-
 /**
  * Interface for API client operations.
  * Defines methods for communicating with the backend API.

@@ -1,10 +1,6 @@
 package model;
 
 import org.json.JSONObject;
-import java.util.List;
-import controller.LeaderboardController;
-import controller.LeaderboardController.LeaderboardEntry;
-import interfaces.ISessionManager;
 import interfaces.IAccountModel;
 import interfaces.IUserService;
 

@@ -1,8 +1,5 @@
 package model;
 
-import api.APIClient;
-import factory.ComponentFactory;
-import interfaces.IAPIClient;
 import interfaces.IAuthenticationService;
 import service.AuthenticationService;
 

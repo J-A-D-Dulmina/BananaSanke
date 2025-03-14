@@ -11,7 +11,8 @@ import java.util.List;
 import java.util.ArrayList;
 
 public class SnakePanel extends JPanel {
-    private final SnakeGameController gameController;
+    private static final long serialVersionUID = -6220166041632288689L;
+	private final SnakeGameController gameController;
     private final SnakeGameLogic gameLogic;
     private boolean gameStarted = false;
     private JPanel startOverlay;
@@ -43,7 +44,9 @@ public class SnakePanel extends JPanel {
 
     private void createStartOverlay() {
         startOverlay = new JPanel() {
-            @Override
+            private static final long serialVersionUID = -447588292493792970L;
+
+			@Override
             protected void paintComponent(Graphics g) {
                 g.setColor(new Color(0, 0, 0, 255));
                 g.fillRect(0, 0, getWidth(), getHeight());
@@ -71,7 +74,9 @@ public class SnakePanel extends JPanel {
 
     private void createPauseOverlay() {
         pauseOverlay = new JPanel() {
-            @Override
+            private static final long serialVersionUID = 6296788058452217848L;
+
+			@Override
             protected void paintComponent(Graphics g) {
                 g.setColor(new Color(0, 0, 0, 180));
                 g.fillRect(0, 0, getWidth(), getHeight());
@@ -226,28 +231,40 @@ public class SnakePanel extends JPanel {
         getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("RIGHT"), "moveRight");
 
         getActionMap().put("moveUp", new AbstractAction() {
-            @Override
+            private static final long serialVersionUID = 632562006938625925L;
+
+			@SuppressWarnings("deprecation")
+			@Override
             public void actionPerformed(ActionEvent e) {
                 gameController.handleKeyPress(new KeyEvent(SnakePanel.this, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_UP));
             }
         });
 
         getActionMap().put("moveDown", new AbstractAction() {
-            @Override
+            private static final long serialVersionUID = -6542449394368846278L;
+
+			@SuppressWarnings("deprecation")
+			@Override
             public void actionPerformed(ActionEvent e) {
                 gameController.handleKeyPress(new KeyEvent(SnakePanel.this, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_DOWN));
             }
         });
 
         getActionMap().put("moveLeft", new AbstractAction() {
-            @Override
+            private static final long serialVersionUID = 6225678115573815137L;
+
+			@SuppressWarnings("deprecation")
+			@Override
             public void actionPerformed(ActionEvent e) {
                 gameController.handleKeyPress(new KeyEvent(SnakePanel.this, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_LEFT));
             }
         });
 
         getActionMap().put("moveRight", new AbstractAction() {
-            @Override
+            private static final long serialVersionUID = 1904909473599413029L;
+
+			@SuppressWarnings("deprecation")
+			@Override
             public void actionPerformed(ActionEvent e) {
                 gameController.handleKeyPress(new KeyEvent(SnakePanel.this, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_RIGHT));
             }

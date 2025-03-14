@@ -3,7 +3,6 @@ package view;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import model.SessionManager;
 import controller.GameOverController;
 import model.GameOverModel;
 import interfaces.ISessionManager;
@@ -25,7 +24,8 @@ public class GameOverPanel extends JDialog {
         this.model = new GameOverModel();
         this.controller = new GameOverController(this);
         
-        setSize(400, 300);
+        // Reduced height from 300 to 250 since we're removing the username display
+        setSize(400, 250);
         setLocationRelativeTo(mainFrame);
         setResizable(false);
         setUndecorated(true);
@@ -40,8 +40,16 @@ public class GameOverPanel extends JDialog {
         
         initializeComponents();
         
-        // Set initial game results
-        controller.setGameResults(finalScore, 0, sessionManager.getUsername());
+        // Set initial game results - we still pass username for model consistency
+        // but we won't display it
+        String username = sessionManager.getUsername();
+        if (username == null || username.isEmpty()) {
+            username = "Guest";
+        }
+        controller.setGameResults(finalScore, 0, username);
+        
+        // Update the display
+        updateDisplay();
     }
 
     private void initializeComponents() {
@@ -49,7 +57,9 @@ public class GameOverPanel extends JDialog {
         
         // Main panel with semi-transparent dark background
         JPanel mainPanel = new JPanel() {
-            @Override
+            private static final long serialVersionUID = 6548795517653523982L;
+
+			@Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
                 Graphics2D g2d = (Graphics2D) g.create();
@@ -80,14 +90,6 @@ public class GameOverPanel extends JDialog {
         JLabel gameOverLabel = createStyledLabel("Game Over!", 32);
         gameOverLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        // Username
-        String username = model.getPlayerName();
-        if (username == null || username.isEmpty()) {
-            username = "Guest";
-        }
-        JLabel usernameLabel = createStyledLabel("Player: " + username, 24);
-        usernameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-
         // Score
         JLabel scoreLabel = createStyledLabel("Final Score: " + model.getFinalScore(), 24);
         scoreLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -114,8 +116,7 @@ public class GameOverPanel extends JDialog {
         centerPanel.add(Box.createVerticalGlue());
         centerPanel.add(gameOverLabel);
         centerPanel.add(Box.createVerticalStrut(20));
-        centerPanel.add(usernameLabel);
-        centerPanel.add(Box.createVerticalStrut(10));
+        // Username label removed
         centerPanel.add(scoreLabel);
         centerPanel.add(Box.createVerticalStrut(30));
         centerPanel.add(buttonPanel);
@@ -136,7 +137,25 @@ public class GameOverPanel extends JDialog {
     }
 
     public void updateDisplay() {
-        // Update the display with current model data
+        // Only update the score label since username was removed
+        JLabel scoreLabel = null;
+        for (Component comp : ((JPanel)getContentPane().getComponent(0)).getComponents()) {
+            if (comp instanceof JPanel && BorderLayout.CENTER.equals(((BorderLayout)((JPanel)getContentPane().getComponent(0)).getLayout()).getConstraints(comp))) {
+                for (Component innerComp : ((JPanel)comp).getComponents()) {
+                    if (innerComp instanceof JLabel && ((JLabel)innerComp).getText().startsWith("Final Score")) {
+                        scoreLabel = (JLabel)innerComp;
+                        break;
+                    }
+                }
+                break;
+            }
+        }
+        
+        if (scoreLabel != null) {
+            scoreLabel.setText("Final Score: " + model.getFinalScore());
+        }
+        
+        // Update other display elements as needed
         repaint();
     }
 
@@ -155,7 +174,9 @@ public class GameOverPanel extends JDialog {
 
     private JButton createCloseButton() {
         JButton closeButton = new JButton("×") {
-            @Override
+            private static final long serialVersionUID = -4636843601320308633L;
+
+			@Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2d = (Graphics2D) g.create();
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -191,7 +212,9 @@ public class GameOverPanel extends JDialog {
 
     private JButton createStyledButtontry(String text) {
         JButton button = new JButton(text) {
-            @Override
+            private static final long serialVersionUID = 8694406378529595501L;
+
+			@Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2d = (Graphics2D) g.create();
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -223,7 +246,9 @@ public class GameOverPanel extends JDialog {
     
     private JButton createStyledButtonleader(String text) {
         JButton button = new JButton(text) {
-            @Override
+            private static final long serialVersionUID = -1684882379236487790L;
+
+			@Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2d = (Graphics2D) g.create();
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);

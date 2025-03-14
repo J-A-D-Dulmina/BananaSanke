@@ -4,7 +4,6 @@ import view.GameOverPanel;
 import view.GameMainInterface;
 import view.LoginUI;
 import model.GameOverModel;
-import api.APIClient;
 import org.json.JSONObject;
 import javax.swing.SwingUtilities;
 import factory.ComponentFactory;

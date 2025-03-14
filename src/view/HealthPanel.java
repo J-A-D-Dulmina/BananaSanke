@@ -90,6 +90,25 @@ public class HealthPanel extends JPanel {
     }
 
     /**
+     * Shows a game over message but doesn't end the game.
+     * This is shown after the 3rd heart disappears, but the player still has one more attempt.
+     */
+    public void showGameOverMessage() {
+        BananaPanel parent = (BananaPanel) SwingUtilities.getAncestorOfClass(BananaPanel.class, this);
+        if (parent != null) {
+            // Show a message dialog but don't end the game yet
+            SwingUtilities.invokeLater(() -> {
+                JOptionPane.showMessageDialog(
+                    parent,
+                    "GAME OVER! You'll get one more chance!",
+                    "Game Over",
+                    JOptionPane.WARNING_MESSAGE
+                );
+            });
+        }
+    }
+
+    /**
      * Handles game over state.
      */
     public void handleGameOver() {

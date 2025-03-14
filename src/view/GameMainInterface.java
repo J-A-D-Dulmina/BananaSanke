@@ -3,18 +3,13 @@ package view;
 import javax.swing.*;
 import java.awt.*;
 import model.SnakeGameLogic;
-import model.SessionManager;
-import api.APIClient;
-import model.SoundManager;
 import utils.CustomDialogUtils;
-import org.json.JSONObject;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import factory.ComponentFactory;
 import interfaces.ISoundManager;
-import interfaces.ISessionManager;
 
 /**
  * Main game interface that contains the Banana Snake game layout.
@@ -24,8 +19,6 @@ public class GameMainInterface extends JFrame {
     private SnakePanel snakePanel;
     private LeaderboardPanel leaderboardPanel;
     private ISoundManager soundManager;
-    private ISessionManager sessionManager;
-
     /**
      * Constructs the main game interface with all UI components.
      */
@@ -34,7 +27,7 @@ public class GameMainInterface extends JFrame {
         
         try {
             soundManager = ComponentFactory.getSoundManager();
-            sessionManager = ComponentFactory.getSessionManager();
+            ComponentFactory.getSessionManager();
             soundManager.playBackgroundMusic();
 
             setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);

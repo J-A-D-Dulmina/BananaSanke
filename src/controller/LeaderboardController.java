@@ -1,15 +1,8 @@
 package controller;
 
-import api.APIClient;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
-import model.SessionManager;
-import java.util.Collections;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.text.SimpleDateFormat;
-import model.LeaderboardModel;
 import view.LeaderboardPanel;
 import javax.swing.SwingUtilities;
 import java.util.Timer;

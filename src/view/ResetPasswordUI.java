@@ -9,7 +9,6 @@ import java.awt.geom.RoundRectangle2D;
 import javax.swing.border.AbstractBorder;
 import controller.ResetPasswordController;
 import model.ResetPasswordModel;
-import org.json.JSONObject;
 
 public class ResetPasswordUI extends JDialog {
     private static final long serialVersionUID = 1L;
@@ -189,7 +188,9 @@ public class ResetPasswordUI extends JDialog {
 
     private JPasswordField createPasswordField(String placeholder) {
         JPasswordField field = new JPasswordField(20) {
-            @Override
+            private static final long serialVersionUID = 4264450822763785996L;
+
+			@Override
             protected void paintComponent(Graphics g) {
                 if (!isOpaque()) {
                     Graphics2D g2 = (Graphics2D) g.create();
@@ -234,7 +235,9 @@ public class ResetPasswordUI extends JDialog {
         field.setText("");
         field.setBorder(BorderFactory.createCompoundBorder(
             new AbstractBorder() {
-                @Override
+                private static final long serialVersionUID = -6567116637703042954L;
+
+				@Override
                 public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
                     Graphics2D g2 = (Graphics2D) g.create();
                     g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -320,7 +323,9 @@ public class ResetPasswordUI extends JDialog {
 
     private JTextField createPlaceholderField(String placeholder) {
         JTextField field = new JTextField(20) {
-            @Override
+            private static final long serialVersionUID = -3417621798095945880L;
+
+			@Override
             protected void paintComponent(Graphics g) {
                 if (!isOpaque()) {
                     Graphics2D g2 = (Graphics2D) g.create();
@@ -353,7 +358,9 @@ public class ResetPasswordUI extends JDialog {
         field.setText(placeholder);
         field.setBorder(BorderFactory.createCompoundBorder(
             new AbstractBorder() {
-                @Override
+                private static final long serialVersionUID = -5506773906503835800L;
+
+				@Override
                 public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
                     Graphics2D g2 = (Graphics2D) g.create();
                     g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -394,7 +401,9 @@ public class ResetPasswordUI extends JDialog {
 
     private JButton createButton(String text, Color bgColor, Color textColor, ActionListener action) {
         JButton button = new JButton(text) {
-            @Override
+            private static final long serialVersionUID = -185571891247451289L;
+
+			@Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -443,64 +452,6 @@ public class ResetPasswordUI extends JDialog {
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
         button.addActionListener(action);
         return button;
-    }
-
-    private void showMessage(String message, boolean success) {
-        messageLabel.setText(message);
-        messageLabel.setForeground(success ? Color.GREEN : Color.RED);
-    }
-
-    // Add this new method for styling password fields
-    private void stylePasswordField(JPasswordField field, String placeholder) {
-        field.setEchoChar((char) 0); // Initially show placeholder text
-        field.setText(placeholder);
-        field.setForeground(Color.GRAY);
-        field.setPreferredSize(new Dimension(220, 45));
-        field.setMaximumSize(new Dimension(220, 45));
-        field.setBorder(BorderFactory.createCompoundBorder(
-            new RoundedBorder(),
-            BorderFactory.createEmptyBorder(2, 6, 2, 6)
-        ));
-        field.setOpaque(true);
-        field.setBackground(Color.WHITE);
-        field.setCaretColor(Color.BLACK);
-
-        field.addFocusListener(new FocusAdapter() {
-            @Override
-            public void focusGained(FocusEvent e) {
-                if (String.valueOf(field.getPassword()).equals(placeholder)) {
-                    field.setText("");
-                    field.setEchoChar('•'); // Show dots when typing
-                    field.setForeground(Color.BLACK);
-                }
-            }
-
-            @Override
-            public void focusLost(FocusEvent e) {
-                if (String.valueOf(field.getPassword()).isEmpty()) {
-                    field.setEchoChar((char) 0); // Show placeholder text
-                    field.setText(placeholder);
-                    field.setForeground(Color.GRAY);
-                }
-            }
-        });
-    }
-
-    // Add this inner class for rounded borders
-    private class RoundedBorder extends AbstractBorder {
-        @Override
-        public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setColor(Color.WHITE);
-            g2.draw(new RoundRectangle2D.Double(x, y, width - 1, height - 1, 10, 10));
-            g2.dispose();
-        }
-
-        @Override
-        public Insets getBorderInsets(Component c) {
-            return new Insets(4, 8, 4, 8);
-        }
     }
 
     @Override

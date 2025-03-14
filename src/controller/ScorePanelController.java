@@ -9,10 +9,7 @@ import view.ScorePanel;
  */
 public class ScorePanelController {
     private final ScorePanelModel model;
-    private final ScorePanel view;
-
     public ScorePanelController(ScorePanel view) {
-        this.view = view;
         this.model = new ScorePanelModel();
         // Register the view as an observer
         this.model.addObserver(view);

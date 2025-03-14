@@ -1,7 +1,6 @@
 package view;
 
 import javax.swing.*;
-import javax.swing.border.AbstractBorder;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.JTableHeader;
@@ -13,16 +12,13 @@ import controller.LeaderboardController;
 import controller.LeaderboardController.LeaderboardEntry;
 import model.LeaderboardModel;
 import model.SoundManager;
-import utils.CustomDialogUtils;
 import java.awt.image.BufferedImage;
 import javax.swing.plaf.basic.BasicScrollBarUI;
-import java.net.URL;
 import javax.imageio.ImageIO;
 import java.io.File;
 
 public class LeaderboardPanel extends JDialog {
     private static final long serialVersionUID = 1L;
-    private final GameMainInterface mainFrame;
     private final LeaderboardController controller;
     private BufferedImage backgroundImage;
     
@@ -38,13 +34,14 @@ public class LeaderboardPanel extends JDialog {
 
     public LeaderboardPanel(GameMainInterface mainFrame) {
         super(mainFrame, "Leaderboard", true);
-        this.mainFrame = mainFrame;
         loadBackgroundImage();
         
         // Initialize UI components first
         String[] columnNames = {"Rank", "Player", "Score"};
         this.tableModel = new DefaultTableModel(columnNames, 0) {
-            @Override
+            private static final long serialVersionUID = 5939869733069513951L;
+
+			@Override
             public boolean isCellEditable(int row, int column) {
                 return false;
             }
@@ -77,7 +74,9 @@ public class LeaderboardPanel extends JDialog {
 
         // Create background panel
         JPanel backgroundPanel = new JPanel(new BorderLayout()) {
-            @Override
+            private static final long serialVersionUID = -7630042014815732538L;
+
+			@Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
                 Graphics2D g2 = (Graphics2D) g.create();
@@ -222,7 +221,9 @@ public class LeaderboardPanel extends JDialog {
         
         // Create semi-transparent overlay
         JPanel overlay = new JPanel() {
-            @Override
+            private static final long serialVersionUID = 8894219001765488810L;
+
+			@Override
             protected void paintComponent(Graphics g) {
                 g.setColor(new Color(0, 0, 0, 180));
                 g.fillRect(0, 0, getWidth(), getHeight());
@@ -253,7 +254,9 @@ public class LeaderboardPanel extends JDialog {
         
         // Center align all columns with custom renderer that includes borders
         DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer() {
-            @Override
+            private static final long serialVersionUID = -8473783865619209667L;
+
+			@Override
             public Component getTableCellRendererComponent(JTable table, Object value,
                     boolean isSelected, boolean hasFocus, int row, int column) {
                 Component c = super.getTableCellRendererComponent(table, value,
@@ -285,7 +288,9 @@ public class LeaderboardPanel extends JDialog {
         // Configure table header with custom renderer
         JTableHeader header = leaderboardTable.getTableHeader();
         header.setDefaultRenderer(new DefaultTableCellRenderer() {
-            @Override
+            private static final long serialVersionUID = 7193498526294670277L;
+
+			@Override
             public Component getTableCellRendererComponent(JTable table, Object value,
                     boolean isSelected, boolean hasFocus, int row, int column) {
                 JLabel label = (JLabel) super.getTableCellRendererComponent(table, value,
@@ -363,7 +368,9 @@ public class LeaderboardPanel extends JDialog {
             @Override
             protected JButton createDecreaseButton(int orientation) {
                 return new JButton() {
-                    @Override
+                    private static final long serialVersionUID = 1233096974144883906L;
+
+					@Override
                     public Dimension getPreferredSize() {
                         return ZERO_DIM;
                     }
@@ -373,7 +380,9 @@ public class LeaderboardPanel extends JDialog {
             @Override
             protected JButton createIncreaseButton(int orientation) {
                 return new JButton() {
-                    @Override
+                    private static final long serialVersionUID = -6552992236606177529L;
+
+					@Override
                     public Dimension getPreferredSize() {
                         return ZERO_DIM;
                     }
@@ -408,7 +417,9 @@ public class LeaderboardPanel extends JDialog {
 
     private JButton createStyledButton(String text) {
         JButton button = new JButton(text) {
-            @Override
+            private static final long serialVersionUID = 1030401696149941878L;
+
+			@Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);

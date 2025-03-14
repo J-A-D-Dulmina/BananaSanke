@@ -4,8 +4,6 @@ import controller.ScorePanelController;
 import model.ScoreObserver;
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 
 /**
  * ScorePanel displays the current score in the game.

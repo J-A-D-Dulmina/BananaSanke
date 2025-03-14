@@ -7,7 +7,8 @@ import java.awt.geom.RoundRectangle2D;
 public class CustomDialogUtils {
     
     private static class StyledButton extends JButton {
-        private final Color normalColor;
+        private static final long serialVersionUID = -5649515593346487607L;
+		private final Color normalColor;
         private final Color hoverColor;
         private final Color pressedColor;
 

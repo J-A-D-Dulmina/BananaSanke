@@ -21,10 +21,24 @@ public class HealthPanelModel {
     public boolean loseHealth() {
         wrongAttempts++;
         
-        if (wrongAttempts <= MAX_HEALTH) {
-            currentHealth--;
+        // First attempt: First heart disappears (currentHealth = 2)
+        if (wrongAttempts == 1) {
+            currentHealth = 2;
             return true;
-        } else if (wrongAttempts == MAX_ATTEMPTS) {
+        } 
+        // Second attempt: First and second hearts disappear (currentHealth = 1)
+        else if (wrongAttempts == 2) {
+            currentHealth = 1;
+            return true;
+        }
+        // Third attempt: All hearts disappear (currentHealth = 0)
+        else if (wrongAttempts == 3) {
+            currentHealth = 0;
+            // Still alive, but no hearts
+            return true;
+        }
+        // Fourth attempt: Game over
+        else if (wrongAttempts == MAX_ATTEMPTS) {
             currentHealth = 0;
             return false;
         }
@@ -45,6 +59,6 @@ public class HealthPanelModel {
     }
 
     public boolean isGameOver() {
-        return currentHealth <= 0;
+        return wrongAttempts >= MAX_ATTEMPTS;
     }
 } 
