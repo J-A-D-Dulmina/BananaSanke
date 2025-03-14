@@ -10,8 +10,7 @@ import interfaces.ISoundManager;
 import interfaces.ISessionManager;
 import interfaces.IAccountController;
 import interfaces.IAccountModel;
-import model.SoundManager;
-import model.SessionManagerImpl;
+import interfaces.IUserService;
 
 /**
  * Controller for the Account Panel.
@@ -23,12 +22,17 @@ public class AccountController implements IAccountController {
     private final ISoundManager soundManager;
     private final ISessionManager sessionManager;
 
-    public AccountController(AccountModel model, AccountPanel view, GameMainInterface mainFrame) {
+    public AccountController(
+            IAccountModel model, 
+            AccountPanel view, 
+            GameMainInterface mainFrame,
+            ISoundManager soundManager,
+            ISessionManager sessionManager) {
         this.model = model;
         this.view = view;
         this.mainFrame = mainFrame;
-        this.soundManager = SoundManager.getInstance();
-        this.sessionManager = SessionManagerImpl.getInstance();
+        this.soundManager = soundManager;
+        this.sessionManager = sessionManager;
     }
 
     /**

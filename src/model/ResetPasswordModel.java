@@ -1,6 +1,8 @@
 package model;
 
-public class ResetPasswordModel {
+import interfaces.IResetPasswordModel;
+
+public class ResetPasswordModel implements IResetPasswordModel {
     private String username;
     private String email;
     private String resetToken;

@@ -9,6 +9,8 @@ import java.awt.geom.RoundRectangle2D;
 import javax.swing.border.AbstractBorder;
 import api.APIClient;
 import org.json.JSONObject;
+import factory.ComponentFactory;
+import interfaces.IAPIClient;
 
 /**
  * Forgot Password UI dialog allowing users to reset their password via email.
@@ -21,6 +23,7 @@ public class ForgotPasswordUI extends JDialog {
 	private JTextField emailField, usernameField;
     private JButton sendEmailButton;
     private JLabel messageLabel, backgroundLabel, backToLoginLabel;
+    private final IAPIClient apiClient;
 
     /**
      * Constructs the Forgot Password UI dialog.
@@ -33,6 +36,8 @@ public class ForgotPasswordUI extends JDialog {
         setLocationRelativeTo(parent);
         setLayout(new BorderLayout());
 //        setUndecorated(true);
+
+        this.apiClient = ComponentFactory.getAPIClient();
 
         // Ensures Login UI reopens when the dialog is closed
         addWindowListener(new java.awt.event.WindowAdapter() {
@@ -365,24 +370,25 @@ public class ForgotPasswordUI extends JDialog {
         }
 
         try {
-            String response = APIClient.requestPasswordReset(username, email);
+            String response = apiClient.requestPasswordReset(username, email);
             JSONObject jsonResponse = new JSONObject(response);
-            String status = jsonResponse.getString("status");
-            String message = jsonResponse.getString("message");
-
-            if (status.equals("success")) {
-                showMessage(message, true);
+            
+            if (jsonResponse.getString("status").equals("success")) {
+                showMessage("Password reset instructions sent to your email", true);
+                
+                // Close this dialog and open reset password UI
                 dispose();
                 SwingUtilities.invokeLater(() -> {
                     ResetPasswordUI resetUI = new ResetPasswordUI(null, username, email);
                     resetUI.setVisible(true);
                 });
             } else {
-                showMessage(message, false);
+                String errorMessage = jsonResponse.optString("message", "Unknown error occurred");
+                showMessage(errorMessage, false);
             }
         } catch (Exception e) {
-            String errorMessage = "Error: " + e.getMessage();
-            showMessage(errorMessage, false);
+            showMessage("Error: " + e.getMessage(), false);
+            e.printStackTrace();
         }
     }
 

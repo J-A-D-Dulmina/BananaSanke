@@ -1,6 +1,8 @@
 package model;
 
-public class GameOverModel {
+import interfaces.IGameOverModel;
+
+public class GameOverModel implements IGameOverModel {
     private int finalScore;
     private int highScore;
     private String playerName;

@@ -19,6 +19,8 @@ import interfaces.IButtonPanelController;
 import interfaces.IButtonPanelModel;
 import interfaces.ISoundManager;
 import interfaces.ISessionManager;
+import interfaces.IAPIClient;
+import factory.ComponentFactory;
 
 public class ButtonPanelController implements IButtonPanelController {
     private final IButtonPanelModel model;
@@ -26,13 +28,15 @@ public class ButtonPanelController implements IButtonPanelController {
     private final GameMainInterface mainFrame;
     private final ISoundManager soundManager;
     private final ISessionManager sessionManager;
+    private final IAPIClient apiClient;
 
     public ButtonPanelController(ButtonPanelModel model, ButtonPanel view, GameMainInterface mainFrame) {
         this.model = model;
         this.view = view;
         this.mainFrame = mainFrame;
-        this.soundManager = SoundManager.getInstance();
-        this.sessionManager = SessionManagerImpl.getInstance();
+        this.soundManager = ComponentFactory.getSoundManager();
+        this.sessionManager = ComponentFactory.getSessionManager();
+        this.apiClient = ComponentFactory.getAPIClient();
     }
 
     @Override
@@ -42,21 +46,7 @@ public class ButtonPanelController implements IButtonPanelController {
 
     @Override
     public void handlePlayPause() {
-        if (!model.isGameStarted()) {
-            model.startGame();
-            view.setPlayPauseIcon("pause");
-        } else {
-            if (model.isGamePaused()) {
-                model.resumeGame();
-                view.setPlayPauseIcon("pause");
-                view.hidePauseOverlay();
-            } else {
-                model.pauseGame();
-                view.setPlayPauseIcon("play");
-                view.showPauseOverlay();
-            }
-        }
-        view.requestFocusInWindow();
+        // This functionality has been removed
     }
 
     @Override
@@ -79,7 +69,6 @@ public class ButtonPanelController implements IButtonPanelController {
                 model.resetGame();
                 
                 // Update UI elements
-                view.setPlayPauseIcon("play");
                 view.hidePauseOverlay();
                 
                 // Request focus back to the game panel
@@ -98,82 +87,7 @@ public class ButtonPanelController implements IButtonPanelController {
 
     @Override
     public void handleLogout() {
-        int confirm = CustomDialogUtils.showConfirmDialog(
-            mainFrame,
-            "Are you sure you want to logout?",
-            "Confirm Logout"
-        );
-
-        if (confirm == JOptionPane.YES_OPTION) {
-            try {
-                // First stop all sounds
-                soundManager.stopAll();
-
-                // Then cleanup game state
-                cleanupGameState();
-                
-                // Make the API call to logout
-                String response = APIClient.logoutUser();
-                JSONObject jsonResponse = new JSONObject(response);
-                
-                if (jsonResponse.getString("status").equals("success")) {
-                    // Only clear session after successful server logout
-                    sessionManager.logout();
-                    
-                    // Finally close UI and show login
-                    SwingUtilities.invokeLater(() -> {
-                        try {
-                            mainFrame.dispose();
-                            new LoginUI().setVisible(true);
-                        } catch (Exception e) {
-                            System.err.println("Error showing login window: " + e.getMessage());
-                            System.exit(0);
-                        }
-                    });
-                } else {
-                    String errorMessage = jsonResponse.optString("message", "Unknown error during logout");
-                    CustomDialogUtils.showErrorDialog(
-                        mainFrame,
-                        "Error during logout: " + errorMessage,
-                        "Logout Error"
-                    );
-                    
-                    // Restore game state if server logout failed
-                    if (!model.isGameStarted()) {
-                        model.startGame();
-                    }
-                }
-            } catch (Exception e) {
-                CustomDialogUtils.showErrorDialog(
-                    mainFrame,
-                    "Error during logout: " + e.getMessage(),
-                    "Logout Error"
-                );
-                
-                // Restore game state if there was an error
-                if (!model.isGameStarted()) {
-                    model.startGame();
-                }
-            }
-        }
-    }
-
-    private void cleanupGameState() {
-        try {
-            // Stop the game if it's running
-            if (model.isGameStarted()) {
-                model.stopGame();
-            }
-            
-            // Reset game state
-            model.resetGame();
-            
-            // Clear UI elements
-            view.setPlayPauseIcon("play");
-            view.hidePauseOverlay();
-        } catch (Exception e) {
-            System.err.println("Error during game state cleanup: " + e.getMessage());
-        }
+        // This functionality has been removed
     }
 
     @Override
@@ -181,7 +95,6 @@ public class ButtonPanelController implements IButtonPanelController {
         boolean wasRunning = model.isGameStarted() && !model.isGamePaused();
         if (wasRunning) {
             model.pauseGame();
-            view.setPlayPauseIcon("play");
             view.showPauseOverlay();
         }
         
@@ -200,7 +113,6 @@ public class ButtonPanelController implements IButtonPanelController {
         boolean wasRunning = model.isGameStarted() && !model.isGamePaused();
         if (wasRunning) {
             model.pauseGame();
-            view.setPlayPauseIcon("play");
             view.showPauseOverlay();
         }
         
@@ -219,7 +131,6 @@ public class ButtonPanelController implements IButtonPanelController {
         boolean wasRunning = model.isGameStarted() && !model.isGamePaused();
         if (wasRunning) {
             model.pauseGame();
-            view.setPlayPauseIcon("play");
             view.showPauseOverlay();
         }
         mainFrame.showLeaderboard();
@@ -230,7 +141,6 @@ public class ButtonPanelController implements IButtonPanelController {
     public void handlePauseOverlayClick() {
         if (model.isGamePaused()) {
             model.resumeGame();
-            view.setPlayPauseIcon("pause");
             view.hidePauseOverlay();
             view.requestFocusInWindow();
         }

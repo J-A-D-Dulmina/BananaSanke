@@ -20,6 +20,7 @@ import interfaces.ISessionManager;
 import interfaces.IAccountController;
 import interfaces.IAccountModel;
 import model.SessionManagerImpl;
+import factory.ComponentFactory;
 
 public class AccountPanel extends JDialog {
     private static final long serialVersionUID = 1L;
@@ -45,12 +46,14 @@ public class AccountPanel extends JDialog {
     public AccountPanel(GameMainInterface mainFrame) {
         super(mainFrame, "Account Settings", true);
         this.mainFrame = mainFrame;
-        this.soundManager = SoundManager.getInstance();
-        this.sessionManager = SessionManagerImpl.getInstance();
         
-        // Initialize MVC components first
-        this.accountModel = new AccountModel();
-        this.controller = new AccountController((AccountModel)accountModel, this, mainFrame);
+        // Get dependencies from factory
+        this.soundManager = ComponentFactory.getSoundManager();
+        this.sessionManager = ComponentFactory.getSessionManager();
+        
+        // Initialize MVC components using factory
+        this.accountModel = ComponentFactory.createAccountModel();
+        this.controller = ComponentFactory.createAccountController(this, mainFrame);
         
         // Initialize UI
         initializeUI();

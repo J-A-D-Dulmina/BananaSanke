@@ -26,14 +26,14 @@ public class TimerPanel extends JPanel {
         JPanel labelPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
         labelPanel.setOpaque(false);
 
-        // Create "Time" label
-        remainLabel = new JLabel("Time:");
+        // Create "Seconds" label
+        remainLabel = new JLabel("Seconds:");
         remainLabel.setFont(new Font("Arial", Font.BOLD, 16));
         remainLabel.setForeground(Color.WHITE);
         labelPanel.add(remainLabel);
 
         // Create timer label with custom styling
-        timerLabel = new JLabel("00:10");  // Start from 10 seconds
+        timerLabel = new JLabel("20");  // Start from 20 seconds
         timerLabel.setFont(new Font("Arial", Font.BOLD, 24));
         timerLabel.setForeground(Color.WHITE);
         labelPanel.add(timerLabel);

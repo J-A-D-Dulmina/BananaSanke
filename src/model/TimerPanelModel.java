@@ -6,7 +6,7 @@ public class TimerPanelModel {
     private boolean isRunning;
     private boolean isPaused;
     private int pauseTime;
-    private static final int START_TIME = 10; // 10 seconds countdown
+    private static final int START_TIME = 20; // 20 seconds countdown
 
     public TimerPanelModel() {
         reset();
@@ -62,7 +62,9 @@ public class TimerPanelModel {
     }
 
     public String getTimeString() {
-        return String.format("%02d:%02d", minutes, seconds);
+        // Convert total time to seconds and display only the seconds count
+        int totalSeconds = (minutes * 60) + seconds;
+        return String.format("%d", totalSeconds);
     }
 
     public int getTotalSeconds() {

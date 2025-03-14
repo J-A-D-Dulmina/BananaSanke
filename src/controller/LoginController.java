@@ -9,19 +9,23 @@ import view.LoginUI;
 import model.SessionManager;
 import interfaces.ISessionManager;
 import model.SessionManagerImpl;
+import factory.ComponentFactory;
+import interfaces.IAPIClient;
 
 public class LoginController {
     private final LoginUI loginUI;
     private final ISessionManager sessionManager;
+    private final IAPIClient apiClient;
 
     public LoginController(LoginUI loginUI) {
         this.loginUI = loginUI;
-        this.sessionManager = SessionManagerImpl.getInstance();
+        this.sessionManager = ComponentFactory.getSessionManager();
+        this.apiClient = ComponentFactory.getAPIClient();
     }
 
     public void handleLogin(String email, String password) {
         try {
-            String response = APIClient.loginUser(email, password);
+            String response = apiClient.loginUser(email, password);
             JSONObject jsonResponse = new JSONObject(response);
             String status = jsonResponse.getString("status");
 

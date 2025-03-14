@@ -16,20 +16,22 @@ import java.util.Timer;
 import java.util.TimerTask;
 import interfaces.ISessionManager;
 import model.SessionManagerImpl;
+import interfaces.ILeaderboardController;
+import interfaces.ILeaderboardModel;
 
 /**
  * Controls the leaderboard by managing score retrieval and UI updates.
  */
-public class LeaderboardController {
+public class LeaderboardController implements ILeaderboardController {
     private static final int REFRESH_INTERVAL = 30000; // 30 seconds
-    private final LeaderboardModel model;
+    private final ILeaderboardModel model;
     private final LeaderboardPanel view;
     private Timer refreshTimer;
     private final AtomicBoolean isUpdating;
     private volatile boolean isInitialized;
     private final ISessionManager sessionManager;
     
-    public LeaderboardController(LeaderboardModel model, LeaderboardPanel view) {
+    public LeaderboardController(ILeaderboardModel model, LeaderboardPanel view) {
         if (model == null || view == null) {
             throw new IllegalArgumentException("Model and view cannot be null");
         }
@@ -82,6 +84,7 @@ public class LeaderboardController {
         }
     }
 
+    @Override
     public void updateLeaderboard() {
         // Prevent concurrent updates
         if (!isUpdating.compareAndSet(false, true)) {
@@ -111,6 +114,19 @@ public class LeaderboardController {
             view.showError("Failed to fetch leaderboard data: " + e.getMessage());
             view.showLoading(false);
             isUpdating.set(false);
+        }
+    }
+
+    @Override
+    public void updateUI() {
+        try {
+            List<LeaderboardEntry> entries = model.getEntries();
+            view.updateLeaderboard(entries);
+            updateUserStats(entries);
+        } catch (Exception e) {
+            System.err.println("Error updating UI: " + e.getMessage());
+            e.printStackTrace();
+            view.showError("Failed to update leaderboard UI: " + e.getMessage());
         }
     }
 
@@ -174,6 +190,7 @@ public class LeaderboardController {
         }
     }
 
+    @Override
     public void onClose() {
         stopAutoRefresh();
     }

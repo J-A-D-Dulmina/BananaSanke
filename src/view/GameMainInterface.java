@@ -12,6 +12,9 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import factory.ComponentFactory;
+import interfaces.ISoundManager;
+import interfaces.ISessionManager;
 
 /**
  * Main game interface that contains the Banana Snake game layout.
@@ -20,7 +23,8 @@ public class GameMainInterface extends JFrame {
     private static final long serialVersionUID = 1L;
     private SnakePanel snakePanel;
     private LeaderboardPanel leaderboardPanel;
-    private SoundManager soundManager;
+    private ISoundManager soundManager;
+    private ISessionManager sessionManager;
 
     /**
      * Constructs the main game interface with all UI components.
@@ -29,7 +33,8 @@ public class GameMainInterface extends JFrame {
         super("Banana Snake");
         
         try {
-            soundManager = SoundManager.getInstance();
+            soundManager = ComponentFactory.getSoundManager();
+            sessionManager = ComponentFactory.getSessionManager();
             soundManager.playBackgroundMusic();
 
             setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
@@ -49,8 +54,15 @@ public class GameMainInterface extends JFrame {
             requestFocus();
             
         } catch (Exception e) {
-            dispose();
-            throw new RuntimeException("Failed to initialize game components", e);
+            System.err.println("Error initializing game interface: " + e.getMessage());
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(
+                null,
+                "Error starting game: " + e.getMessage(),
+                "Startup Error",
+                JOptionPane.ERROR_MESSAGE
+            );
+            System.exit(1);
         }
     }
 
@@ -114,7 +126,7 @@ public class GameMainInterface extends JFrame {
      * Asks for confirmation before closing the game.
      */
     private void confirmAndExit() {
-        SoundManager.getInstance().playButtonClickSound();
+        soundManager.playButtonClickSound();
         
         int choice = CustomDialogUtils.showConfirmDialog(
             this,
@@ -123,7 +135,7 @@ public class GameMainInterface extends JFrame {
         );
         
         if (choice == JOptionPane.YES_OPTION) {
-            APIClient.logoutUser();
+            ComponentFactory.getAPIClient().logoutUser();
             dispose();
             System.exit(0);
         }

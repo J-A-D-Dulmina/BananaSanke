@@ -8,13 +8,17 @@ import java.util.List;
 import java.util.Optional;
 import controller.LeaderboardController.LeaderboardEntry;
 import java.util.Collections;
+import factory.ComponentFactory;
+import interfaces.IAPIClient;
+import interfaces.ILeaderboardModel;
 
-public class LeaderboardModel {
+public class LeaderboardModel implements ILeaderboardModel {
     private volatile List<LeaderboardEntry> entries;
     private volatile int userRank;
     private volatile int userScore;
     private volatile int totalPlayers;
     private volatile String lastError;
+    private final IAPIClient apiClient;
 
     public LeaderboardModel() {
         this.entries = Collections.synchronizedList(new ArrayList<>());
@@ -22,10 +26,11 @@ public class LeaderboardModel {
         this.userScore = 0;
         this.totalPlayers = 0;
         this.lastError = "";
+        this.apiClient = ComponentFactory.getAPIClient();
     }
 
     public synchronized List<LeaderboardEntry> fetchLeaderboard() throws Exception {
-        String response = APIClient.getLeaderboard();
+        String response = apiClient.getLeaderboard();
         if (response == null || response.trim().isEmpty()) {
             throw new Exception("Empty response from server");
         }

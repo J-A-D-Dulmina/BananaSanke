@@ -1,23 +1,23 @@
 package model;
 
 import org.json.JSONObject;
-import api.APIClient;
 import java.util.List;
 import controller.LeaderboardController;
 import controller.LeaderboardController.LeaderboardEntry;
 import interfaces.ISessionManager;
 import interfaces.IAccountModel;
+import interfaces.IUserService;
 
 public class AccountModel implements IAccountModel {
     private String username;
     private String email;
     private int bestScore;
-    private final ISessionManager sessionManager;
+    private final IUserService userService;
 
-    public AccountModel() {
-        this.sessionManager = SessionManagerImpl.getInstance();
-        this.username = sessionManager.getUsername();
-        this.email = sessionManager.getEmail();
+    public AccountModel(IUserService userService) {
+        this.userService = userService;
+        this.username = userService.getUsername();
+        this.email = userService.getEmail();
         this.bestScore = 0;
         fetchBestScore();
     }
@@ -25,8 +25,7 @@ public class AccountModel implements IAccountModel {
     @Override
     public JSONObject fetchBestScore() {
         try {
-            String response = APIClient.getBestScore();
-            JSONObject jsonResponse = new JSONObject(response);
+            JSONObject jsonResponse = userService.fetchBestScore();
             if (jsonResponse.getString("status").equals("success")) {
                 this.bestScore = jsonResponse.getInt("best_score");
             }
@@ -60,15 +59,9 @@ public class AccountModel implements IAccountModel {
             throw new IllegalArgumentException("Username cannot be empty");
         }
 
-        String response = APIClient.sendAuthenticatedPostRequest(
-            APIClient.BASE_URL + "?action=update_username",
-            "new_username=" + newUsername
-        );
-
-        JSONObject jsonResponse = new JSONObject(response);
+        JSONObject jsonResponse = userService.updateUsername(newUsername);
         if (jsonResponse.getString("status").equals("success")) {
             this.username = newUsername;
-            sessionManager.setUsername(newUsername);
         }
         return jsonResponse;
     }
@@ -83,12 +76,11 @@ public class AccountModel implements IAccountModel {
             throw new IllegalArgumentException("New password must be at least 6 characters long");
         }
 
-        String response = APIClient.updatePassword(oldPassword, newPassword);
-        return new JSONObject(response);
+        return userService.updatePassword(oldPassword, newPassword);
     }
 
     @Override
     public void logout() {
-        APIClient.logoutUser();
+        userService.logout();
     }
 } 

@@ -13,8 +13,8 @@ import interfaces.IButtonPanelController;
 
 public class ButtonPanel extends JPanel {
     private static final long serialVersionUID = -1015522477771146689L;
-    private JButton leaderboardBtn, playPauseBtn, resetBtn, logoutBtn, settingsBtn, accountBtn;
-    private ImageIcon leaderboardIcon, pauseIcon, playIcon, resetIcon, logoutIcon, settingsIcon, accountIcon;
+    private JButton leaderboardBtn, resetBtn, settingsBtn, accountBtn;
+    private ImageIcon leaderboardIcon, resetIcon, settingsIcon, accountIcon;
     private GameMainInterface gameMainInterface;
     private SnakePanel snakePanel;
     private JPanel namePanel;
@@ -35,18 +35,13 @@ public class ButtonPanel extends JPanel {
 
         // Load all icons
         leaderboardIcon = resizeIcon(new ImageIcon("resources/leaderboard_icon.png"));
-        pauseIcon = resizeIcon(new ImageIcon("resources/pause_icon.png"));
-        playIcon = resizeIcon(new ImageIcon("resources/play_icon.png"));
         resetIcon = resizeIcon(new ImageIcon("resources/reset_icon.png"));
-        logoutIcon = resizeIcon(new ImageIcon("resources/Logout.png"));
         settingsIcon = resizeIcon(new ImageIcon("resources/settings_icon.png"));
         accountIcon = resizeIcon(new ImageIcon("resources/account_icon.png"));
 
         // Create all buttons
         leaderboardBtn = createStyledButton(leaderboardIcon);
-        playPauseBtn = createStyledButton(pauseIcon);
         resetBtn = createResetButton(); 
-        logoutBtn = createLogoutButton();
         settingsBtn = createStyledButton(settingsIcon);
         accountBtn = createStyledButton(accountIcon);
 
@@ -68,12 +63,6 @@ public class ButtonPanel extends JPanel {
     }
 
     private void setupButtonListeners() {
-        // Play/Pause button
-        playPauseBtn.addActionListener(e -> {
-            SoundManager.getInstance().playButtonClickSound();
-            controller.handlePlayPause();
-        });
-
         // Settings button
         settingsBtn.addActionListener(e -> {
             SoundManager.getInstance().playButtonClickSound();
@@ -96,12 +85,6 @@ public class ButtonPanel extends JPanel {
         resetBtn.addActionListener(e -> {
             SoundManager.getInstance().playButtonClickSound();
             controller.handleReset();
-        });
-
-        // Logout button
-        logoutBtn.addActionListener(e -> {
-            SoundManager.getInstance().playButtonClickSound();
-            controller.handleLogout();
         });
 
         // Pause overlay click listener
@@ -141,8 +124,6 @@ public class ButtonPanel extends JPanel {
         panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
         panel.setAlignmentY(Component.CENTER_ALIGNMENT);
         panel.add(Box.createHorizontalStrut(5));
-        panel.add(logoutBtn);
-        panel.add(Box.createHorizontalStrut(10));
         panel.add(leaderboardBtn);
         panel.add(Box.createHorizontalStrut(10));
         panel.add(accountBtn);
@@ -172,8 +153,6 @@ public class ButtonPanel extends JPanel {
         panel.add(settingsBtn);
         panel.add(Box.createHorizontalStrut(10));
         panel.add(resetBtn);
-        panel.add(Box.createHorizontalStrut(10));
-        panel.add(playPauseBtn);
         panel.add(Box.createHorizontalStrut(5));
         return panel;
     }
@@ -202,29 +181,9 @@ public class ButtonPanel extends JPanel {
         return button;
     }
 
-    private JButton createLogoutButton() {
-        JButton button = new JButton(logoutIcon);
-        button.setPreferredSize(new Dimension(30, 30));
-        button.setMinimumSize(new Dimension(30, 30));
-        button.setMaximumSize(new Dimension(30, 30));
-        button.setContentAreaFilled(false);
-        button.setBorderPainted(false);
-        button.setFocusPainted(false);
-        button.setAlignmentY(Component.CENTER_ALIGNMENT);
-        return button;
-    }
-
     private ImageIcon resizeIcon(ImageIcon icon) {
         Image img = icon.getImage().getScaledInstance(30, 30, Image.SCALE_SMOOTH);
         return new ImageIcon(img);
-    }
-
-    public void setPlayPauseIcon(String state) {
-        if (state.equals("pause")) {
-            playPauseBtn.setIcon(pauseIcon);
-        } else {
-            playPauseBtn.setIcon(playIcon);
-        }
     }
 
     public void showPauseOverlay() {

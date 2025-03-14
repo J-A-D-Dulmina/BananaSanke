@@ -7,25 +7,33 @@ import model.GameOverModel;
 import api.APIClient;
 import org.json.JSONObject;
 import javax.swing.SwingUtilities;
+import factory.ComponentFactory;
+import interfaces.IAPIClient;
+import interfaces.IGameOverController;
+import interfaces.IGameOverModel;
 
-public class GameOverController {
+public class GameOverController implements IGameOverController {
     private final GameOverPanel view;
-    private final GameOverModel model;
+    private final IGameOverModel model;
+    private final IAPIClient apiClient;
 
     public GameOverController(GameOverPanel view) {
         this.view = view;
         this.model = new GameOverModel();
+        this.apiClient = ComponentFactory.getAPIClient();
     }
 
+    @Override
     public void setGameResults(int finalScore, int highScore, String playerName) {
         model.setGameResults(finalScore, highScore, playerName);
         view.updateDisplay();
     }
 
+    @Override
     public void saveGameResult() {
         if (model.isHighScore()) {
             try {
-                String response = APIClient.updateHighScore(model.getFinalScore());
+                String response = apiClient.updateHighScore(model.getFinalScore());
                 JSONObject jsonResponse = new JSONObject(response);
                 
                 if (jsonResponse.getString("status").equals("success")) {
@@ -41,22 +49,26 @@ public class GameOverController {
         }
     }
 
+    @Override
     public void resetGame() {
         model.reset();
         view.updateDisplay();
     }
 
-    public GameOverModel getModel() {
+    @Override
+    public IGameOverModel getModel() {
         return model;
     }
 
+    @Override
     public void dispose() {
         model.reset();
     }
 
+    @Override
     public void updateHighScore() {
         try {
-            String response = APIClient.getBestScore();
+            String response = apiClient.getBestScore();
             JSONObject jsonResponse = new JSONObject(response);
             
             if (jsonResponse.getString("status").equals("success")) {
@@ -70,9 +82,10 @@ public class GameOverController {
         }
     }
 
+    @Override
     public void saveScore() {
         try {
-            String response = APIClient.updateHighScore(model.getFinalScore());
+            String response = apiClient.updateHighScore(model.getFinalScore());
             JSONObject jsonResponse = new JSONObject(response);
             
             if (jsonResponse.getString("status").equals("success")) {
@@ -86,6 +99,7 @@ public class GameOverController {
         }
     }
 
+    @Override
     public void restartGame() {
         view.dispose();
         SwingUtilities.invokeLater(() -> {
@@ -94,6 +108,7 @@ public class GameOverController {
         });
     }
 
+    @Override
     public void returnToMainMenu() {
         view.dispose();
         SwingUtilities.invokeLater(() -> {

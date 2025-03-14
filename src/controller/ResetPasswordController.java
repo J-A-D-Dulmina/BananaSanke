@@ -7,17 +7,24 @@ import api.APIClient;
 import org.json.JSONObject;
 import org.json.JSONException;
 import javax.swing.SwingUtilities;
+import factory.ComponentFactory;
+import interfaces.IAPIClient;
+import interfaces.IResetPasswordController;
+import interfaces.IResetPasswordModel;
 
-public class ResetPasswordController {
+public class ResetPasswordController implements IResetPasswordController {
     private ResetPasswordUI view;
-    private ResetPasswordModel model;
+    private IResetPasswordModel model;
+    private final IAPIClient apiClient;
 
     public ResetPasswordController(ResetPasswordUI view, String username, String email) {
         this.view = view;
         // Create new model since view doesn't have getModel method
         this.model = new ResetPasswordModel(username, email);
+        this.apiClient = ComponentFactory.getAPIClient();
     }
 
+    @Override
     public void resetPassword(String token, String newPassword, String confirmPassword) {
         try {
             // Update model with new values
@@ -43,7 +50,7 @@ public class ResetPasswordController {
             }
 
             // Make API call
-            String response = APIClient.verifyResetToken(
+            String response = apiClient.verifyResetToken(
                 model.getUsername(), 
                 model.getResetToken(), 
                 model.getNewPassword()
@@ -65,6 +72,7 @@ public class ResetPasswordController {
         }
     }
 
+    @Override
     public void resendToken() {
         try {
             if (!model.isResendEnabled()) {
@@ -72,7 +80,7 @@ public class ResetPasswordController {
                 return;
             }
 
-            String response = APIClient.requestPasswordReset(
+            String response = apiClient.requestPasswordReset(
                 model.getUsername(), 
                 model.getEmail()
             );
@@ -94,9 +102,10 @@ public class ResetPasswordController {
         }
     }
 
+    @Override
     public void clearResetToken() {
         try {
-            String response = APIClient.clearResetToken(model.getUsername());
+            String response = apiClient.clearResetToken(model.getUsername());
             JSONObject jsonResponse = new JSONObject(response);
             
             if (!jsonResponse.getString("status").equals("success")) {
