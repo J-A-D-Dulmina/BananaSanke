@@ -1,6 +1,5 @@
 package controller;
 
-import model.AccountModel;
 import view.AccountPanel;
 import view.GameMainInterface;
 import view.LoginUI;
@@ -10,7 +9,6 @@ import interfaces.ISoundManager;
 import interfaces.ISessionManager;
 import interfaces.IAccountController;
 import interfaces.IAccountModel;
-import interfaces.IUserService;
 
 /**
  * Controller for the Account Panel.

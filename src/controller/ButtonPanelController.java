@@ -3,18 +3,14 @@ package controller;
 import model.ButtonPanelModel;
 import view.ButtonPanel;
 import view.GameMainInterface;
-import view.LoginUI;
 import view.SettingsPanel;
 import view.AccountPanel;
 import utils.CustomDialogUtils;
 import javax.swing.JOptionPane;
-import javax.swing.SwingUtilities;
-import org.json.JSONObject;
+
+
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import api.APIClient;
-import model.SessionManagerImpl;
-import model.SoundManager;
 import interfaces.IButtonPanelController;
 import interfaces.IButtonPanelModel;
 import interfaces.ISoundManager;

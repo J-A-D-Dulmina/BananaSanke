@@ -6,7 +6,6 @@ import java.net.URL;
 import java.net.URLEncoder;
 import org.json.JSONException;
 import org.json.JSONObject;
-import model.SessionManager; // For static methods
 import model.SessionManagerImpl; // For interface implementation
 import interfaces.ISessionManager;
 import interfaces.IAPIClient;
