@@ -39,7 +39,7 @@ public class SnakeGameController implements IGameController, ActionListener {
      */
     @Override
     public void startGame() {
-        gameTimer.stop(); // Stop any existing timer
+        gameTimer.stop(); 
         gameState.reset();
         gameLogic.reset();
         direction = RIGHT;
