@@ -231,7 +231,7 @@ public class APIClient {
 
     public static String logoutUser() {
         try {
-            String apiUrl = BASE_URL + "?action=logout";
+            String apiUrl = BASE_URL + "?action=logout_user";
             String response = sendAuthenticatedPostRequest(apiUrl, "");
             
             try {

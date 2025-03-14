@@ -1,5 +1,6 @@
 package controller;
 
+import interfaces.IGameController;
 import model.SnakeGameLogic;
 import view.SnakePanel;
 import java.awt.event.KeyEvent;
@@ -13,7 +14,7 @@ import java.util.List;
 /**
  * Controls snake game mechanics, user input, and game flow.
  */
-public class SnakeGameController implements ActionListener {
+public class SnakeGameController implements IGameController, ActionListener {
     private final SnakePanel snakePanel;
     private final SnakeGameLogic gameLogic;
     private final GameState gameState;
@@ -36,11 +37,14 @@ public class SnakeGameController implements ActionListener {
     /**
      * Starts or restarts the game
      */
+    @Override
     public void startGame() {
         gameTimer.stop(); // Stop any existing timer
         gameState.reset();
+        gameLogic.reset();
         direction = RIGHT;
         gameState.setPaused(false);
+        gameLogic.setRunning(true);
         gameLogic.updateGame();
         gameTimer.start();
         snakePanel.repaint();
@@ -49,20 +53,27 @@ public class SnakeGameController implements ActionListener {
     /**
      * Stops the game timer
      */
+    @Override
     public void stopGame() {
         if (gameTimer != null) {
             gameTimer.stop();
         }
+        gameLogic.setRunning(false);
+        gameState.setPaused(true);
     }
 
     /**
      * Toggles the pause state of the game
      */
+    @Override
     public void pauseGame() {
         if (gameState.isGameOver()) return;
         
-        gameState.setPaused(!gameState.isPaused());
-        if (gameState.isPaused()) {
+        boolean newPauseState = !gameState.isPaused();
+        gameState.setPaused(newPauseState);
+        gameLogic.setRunning(!newPauseState);
+        
+        if (newPauseState) {
             gameTimer.stop();
         } else {
             gameTimer.start();
@@ -72,6 +83,7 @@ public class SnakeGameController implements ActionListener {
     /**
      * Handles keyboard input for snake direction
      */
+    @Override
     public void handleKeyPress(KeyEvent e) {
         if (gameState.isGameOver() || gameState.isPaused()) return;
 
@@ -123,12 +135,14 @@ public class SnakeGameController implements ActionListener {
     /**
      * Resets the game to initial state
      */
+    @Override
     public void resetGame() {
         System.out.println("Game resetting...");
         stopGame();
         gameLogic.reset();
         gameState.reset();
         direction = RIGHT;
+        gameLogic.setRunning(true);
 
         SwingUtilities.invokeLater(() -> {
             snakePanel.repaint();
@@ -162,17 +176,21 @@ public class SnakeGameController implements ActionListener {
     private void gameOver() {
         stopGame();
         gameState.setGameOver(true);
+        gameLogic.setRunning(false);
     }
 
     // Getters for game state
+    @Override
     public boolean isGameOver() {
         return gameState.isGameOver();
     }
 
+    @Override
     public boolean isPaused() {
         return gameState.isPaused();
     }
 
+    @Override
     public int getScore() {
         return gameState.getScore();
     }

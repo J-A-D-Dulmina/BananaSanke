@@ -2,11 +2,13 @@ package model;
 
 import view.SnakePanel;
 import controller.SnakeGameController;
+import interfaces.IGameController;
+import interfaces.IGameLogic;
 
 public class ButtonPanelModel {
-    private final SnakeGameLogic gameLogic;
+    private final IGameLogic gameLogic;
     private final SnakePanel snakePanel;
-    private SnakeGameController gameController;
+    private IGameController gameController;
     private String username;
 
     public ButtonPanelModel(SnakeGameLogic gameLogic, SnakePanel snakePanel) {
@@ -30,7 +32,7 @@ public class ButtonPanelModel {
         return username;
     }
 
-    public SnakeGameLogic getGameLogic() {
+    public IGameLogic getGameLogic() {
         return gameLogic;
     }
 
@@ -40,47 +42,52 @@ public class ButtonPanelModel {
 
     public void startGame() {
         if (!isGameStarted()) {
-            snakePanel.startGame();
-            updateGameController();
+            if (SessionManager.getAuthToken() != null && !SessionManager.getAuthToken().isEmpty()) {
+                snakePanel.startGame();
+                updateGameController();
+            } else {
+                throw new IllegalStateException("No valid API session found");
+            }
         }
     }
 
     public void pauseGame() {
-        if (isGameStarted() && !isGamePaused()) {
-            updateGameController();
-            if (gameController != null) {
-                gameController.pauseGame();
-            }
+        updateGameController();
+        if (gameController != null && isGameStarted()) {
+            gameController.pauseGame();
+            gameLogic.setRunning(false);
         }
     }
 
     public void resumeGame() {
-        if (isGameStarted() && isGamePaused()) {
-            updateGameController();
-            if (gameController != null) {
-                gameController.pauseGame(); // Toggle pause state to resume
-            }
+        updateGameController();
+        if (gameController != null && isGameStarted() && gameController.isPaused()) {
+            gameController.pauseGame(); // Toggle pause state
+            gameLogic.setRunning(true);
         }
     }
 
     public void resetGame() {
-        if (isGameStarted()) {
-            updateGameController();
-            if (gameController != null) {
-                gameController.stopGame();
-            }
-        }
-        gameLogic.reset();
-        snakePanel.resetToStart();
         updateGameController();
+        if (gameController != null) {
+            // First stop the game
+            gameController.stopGame();
+            gameLogic.setRunning(false);
+            
+            // Then reset everything
+            gameController.resetGame();
+            gameLogic.reset();
+            
+            // Ensure snake panel is in start state
+            snakePanel.resetToStart();
+        }
     }
 
     public void stopGame() {
-        if (isGameStarted()) {
-            updateGameController();
-            if (gameController != null) {
-                gameController.stopGame();
-            }
+        updateGameController();
+        if (gameController != null) {
+            gameController.stopGame();
+            gameLogic.setRunning(false);
         }
     }
 
@@ -89,16 +96,13 @@ public class ButtonPanelModel {
     }
 
     public boolean isGamePaused() {
-        if (!isGameStarted()) {
-            return false;
-        }
         updateGameController();
         return gameController != null && gameController.isPaused();
     }
 
     private void updateGameController() {
         if (snakePanel != null) {
-            SnakeGameController currentController = snakePanel.getGameController();
+            IGameController currentController = snakePanel.getGameController();
             if (currentController != null) {
                 gameController = currentController;
             }

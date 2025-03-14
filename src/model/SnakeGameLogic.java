@@ -1,5 +1,6 @@
 package model;
 
+import interfaces.IGameLogic;
 import java.awt.*;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -16,7 +17,7 @@ import view.GameOverPanel;
 import javax.swing.SwingUtilities;
 import api.APIClient;
 
-public class SnakeGameLogic {
+public class SnakeGameLogic implements IGameLogic {
     private final int tileSize;
     private final int panelWidth;
     private final int panelHeight;
@@ -60,6 +61,7 @@ public class SnakeGameLogic {
         snake.add(new Point(STARTING_POSITION.x - (2 * tileSize), STARTING_POSITION.y));
     }
 
+    @Override
     public void updateGame() {
         if (!running) return;
 
@@ -141,10 +143,12 @@ public class SnakeGameLogic {
         snake.add(0, newHead);
     }
 
+    @Override
     public int getScore() {
         return score;
     }
 
+    @Override
     public boolean isRunning() {
         return running;
     }
@@ -164,10 +168,12 @@ public class SnakeGameLogic {
         return food.getSecondFoodNumber();
     }
 
+    @Override
     public List<Point> getSnakePositions() {
         return new ArrayList<>(snake);
     }
     
+    @Override
     public void changeDirection(String newDirection) {
         if (!isOppositeDirection(newDirection)) {
             direction = newDirection;
@@ -181,41 +187,58 @@ public class SnakeGameLogic {
                (direction.equals("DOWN") && newDirection.equals("UP"));
     }
 
+    @Override
     public String getDirection() {
         return direction;
     }
     
+    @Override
     public void reset() {
+        // Stop sound effects
         SoundManager.getInstance().stopRunningSound();
+        
+        // Reset basic game state
         direction = "RIGHT";  
         score = 0;
         waitingForAnswer = false;
-        running = true;
+        running = false; // Set to false initially to ensure proper start state
 
+        // Reset snake position
         initializeSnake();
 
+        // Handle API section reset while maintaining session
         if (APISection.getInstance() != null) {
-            BananaPanel parent = (BananaPanel) SwingUtilities.getAncestorOfClass(BananaPanel.class, APISection.getInstance());
-            if (parent != null) {
-                parent.getHealthPanel().resetHealth();
-                parent.getTimerPanel().reset();
-                parent.getTimerPanel().start();
-            }
-            
-            APISection.getInstance().updateScore(0);
-            APISection.getInstance().loadNextQuestion();
-            Game newGame = APISection.getInstance().getCurrentGame();
-            if (newGame != null) {
-                food.setCurrentGame(newGame);
+            try {
+                BananaPanel parent = (BananaPanel) SwingUtilities.getAncestorOfClass(BananaPanel.class, APISection.getInstance());
+                if (parent != null) {
+                    // Reset health and timer
+                    parent.getHealthPanel().resetHealth();
+                    parent.getTimerPanel().reset();
+                    parent.getTimerPanel().stop(); // Ensure timer is stopped
+                }
+                
+                // Reset API state while maintaining session
+                APISection.getInstance().updateScore(0);
+                
+                // Load new question only if we have valid session
+                if (SessionManager.getAuthToken() != null && !SessionManager.getAuthToken().isEmpty()) {
+                    APISection.getInstance().loadNextQuestion();
+                    Game newGame = APISection.getInstance().getCurrentGame();
+                    if (newGame != null) {
+                        food.setCurrentGame(newGame);
+                        food.spawnFood(snake);
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("Error resetting API state: " + e.getMessage());
             }
         }
 
-        food.spawnFood(snake);
+        // Stop all sounds and ensure they're in initial state
+        SoundManager.getInstance().stopRunningSound();
+        SoundManager.getInstance().stopBackgroundMusic();
 
-        if (!SoundManager.getInstance().isMuted()) {
-            SoundManager.getInstance().startRunningSound();
-        }
-
+        // Refresh UI
         SwingUtilities.invokeLater(() -> {
             BananaPanel parent = (BananaPanel) SwingUtilities.getAncestorOfClass(BananaPanel.class, APISection.getInstance());
             if (parent != null) {
@@ -259,6 +282,7 @@ public class SnakeGameLogic {
         }
     }
 
+    @Override
     public void setRunning(boolean running) {
         if (this.running && !running) {
             // If we're stopping the game, stop the running sound
@@ -317,14 +341,17 @@ public class SnakeGameLogic {
         return !running;
     }
 
+    @Override
     public int getTileSize() {
         return tileSize;
     }
 
+    @Override
     public int getPanelWidth() {
         return panelWidth;
     }
 
+    @Override
     public int getPanelHeight() {
         return panelHeight;
     }
