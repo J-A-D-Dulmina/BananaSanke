@@ -4,12 +4,15 @@ import view.SnakePanel;
 import controller.SnakeGameController;
 import interfaces.IGameController;
 import interfaces.IGameLogic;
+import interfaces.IButtonPanelModel;
+import interfaces.ISessionManager;
 
-public class ButtonPanelModel {
+public class ButtonPanelModel implements IButtonPanelModel {
     private final IGameLogic gameLogic;
     private final SnakePanel snakePanel;
     private IGameController gameController;
     private String username;
+    private final ISessionManager sessionManager;
 
     public ButtonPanelModel(SnakeGameLogic gameLogic, SnakePanel snakePanel) {
         if (gameLogic == null || snakePanel == null) {
@@ -18,9 +21,11 @@ public class ButtonPanelModel {
         this.gameLogic = gameLogic;
         this.snakePanel = snakePanel;
         this.gameController = snakePanel.getGameController();
-        this.username = SessionManager.getUsername();
+        this.sessionManager = SessionManagerImpl.getInstance();
+        this.username = sessionManager.getUsername();
     }
 
+    @Override
     public void updateUsername(String newUsername) {
         if (newUsername == null || newUsername.trim().isEmpty()) {
             throw new IllegalArgumentException("Username cannot be null or empty");
@@ -28,21 +33,25 @@ public class ButtonPanelModel {
         this.username = newUsername.trim();
     }
 
+    @Override
     public String getUsername() {
         return username;
     }
 
+    @Override
     public IGameLogic getGameLogic() {
         return gameLogic;
     }
 
+    @Override
     public SnakePanel getSnakePanel() {
         return snakePanel;
     }
 
+    @Override
     public void startGame() {
         if (!isGameStarted()) {
-            if (SessionManager.getAuthToken() != null && !SessionManager.getAuthToken().isEmpty()) {
+            if (sessionManager.getAuthToken() != null && !sessionManager.getAuthToken().isEmpty()) {
                 snakePanel.startGame();
                 updateGameController();
             } else {
@@ -51,6 +60,7 @@ public class ButtonPanelModel {
         }
     }
 
+    @Override
     public void pauseGame() {
         updateGameController();
         if (gameController != null && isGameStarted()) {
@@ -59,6 +69,7 @@ public class ButtonPanelModel {
         }
     }
 
+    @Override
     public void resumeGame() {
         updateGameController();
         if (gameController != null && isGameStarted() && gameController.isPaused()) {
@@ -67,6 +78,7 @@ public class ButtonPanelModel {
         }
     }
 
+    @Override
     public void resetGame() {
         updateGameController();
         if (gameController != null) {
@@ -79,10 +91,12 @@ public class ButtonPanelModel {
             gameLogic.reset();
             
             // Ensure snake panel is in start state
+            // This will handle showing the start overlay
             snakePanel.resetToStart();
         }
     }
 
+    @Override
     public void stopGame() {
         updateGameController();
         if (gameController != null) {
@@ -91,10 +105,12 @@ public class ButtonPanelModel {
         }
     }
 
+    @Override
     public boolean isGameStarted() {
         return snakePanel != null && snakePanel.isGameStarted();
     }
 
+    @Override
     public boolean isGamePaused() {
         updateGameController();
         return gameController != null && gameController.isPaused();

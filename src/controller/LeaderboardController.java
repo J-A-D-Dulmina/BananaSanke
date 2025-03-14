@@ -14,6 +14,8 @@ import view.LeaderboardPanel;
 import javax.swing.SwingUtilities;
 import java.util.Timer;
 import java.util.TimerTask;
+import interfaces.ISessionManager;
+import model.SessionManagerImpl;
 
 /**
  * Controls the leaderboard by managing score retrieval and UI updates.
@@ -25,6 +27,7 @@ public class LeaderboardController {
     private Timer refreshTimer;
     private final AtomicBoolean isUpdating;
     private volatile boolean isInitialized;
+    private final ISessionManager sessionManager;
     
     public LeaderboardController(LeaderboardModel model, LeaderboardPanel view) {
         if (model == null || view == null) {
@@ -34,6 +37,7 @@ public class LeaderboardController {
         this.view = view;
         this.isUpdating = new AtomicBoolean(false);
         this.isInitialized = false;
+        this.sessionManager = SessionManagerImpl.getInstance();
         
         // Initialize the view and start updates
         if (SwingUtilities.isEventDispatchThread()) {
@@ -111,7 +115,7 @@ public class LeaderboardController {
     }
 
     private void updateUserStats(List<LeaderboardEntry> entries) {
-        String currentUsername = SessionManager.getUsername();
+        String currentUsername = sessionManager.getUsername();
         if (currentUsername == null || entries.isEmpty()) {
             view.updateUserRank(0, 0);
             view.updateBestScore(0);

@@ -142,13 +142,15 @@ public class SnakeGameController implements IGameController, ActionListener {
         gameLogic.reset();
         gameState.reset();
         direction = RIGHT;
-        gameLogic.setRunning(true);
+        
+        // Don't set running to true here, let the SnakePanel handle it
+        // gameLogic.setRunning(true);
 
         SwingUtilities.invokeLater(() -> {
             snakePanel.repaint();
-            startGame();
+            // Don't call startGame() here, let the SnakePanel handle it
+            // startGame();
         });
-        System.out.println("Game restarted");
     }
 
     private boolean checkCollision() {

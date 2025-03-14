@@ -9,15 +9,17 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import model.SoundManager;
 import utils.CustomDialogUtils;
+import interfaces.IButtonPanelController;
 
 public class ButtonPanel extends JPanel {
     private static final long serialVersionUID = -1015522477771146689L;
     private JButton leaderboardBtn, playPauseBtn, resetBtn, logoutBtn, settingsBtn, accountBtn;
-    private ImageIcon leaderboardIcon, pauseIcon, resetIcon, logoutIcon, settingsIcon, accountIcon;
+    private ImageIcon leaderboardIcon, pauseIcon, playIcon, resetIcon, logoutIcon, settingsIcon, accountIcon;
     private GameMainInterface gameMainInterface;
     private SnakePanel snakePanel;
     private JPanel namePanel;
-    private ButtonPanelController controller;
+    private IButtonPanelController controller;
+    private JPanel pauseOverlay;
 
     public ButtonPanel(GameMainInterface gameMainInterface, SnakeGameLogic gameLogic, SnakePanel snakePanel) {
         this.gameMainInterface = gameMainInterface;
@@ -34,6 +36,7 @@ public class ButtonPanel extends JPanel {
         // Load all icons
         leaderboardIcon = resizeIcon(new ImageIcon("resources/leaderboard_icon.png"));
         pauseIcon = resizeIcon(new ImageIcon("resources/pause_icon.png"));
+        playIcon = resizeIcon(new ImageIcon("resources/play_icon.png"));
         resetIcon = resizeIcon(new ImageIcon("resources/reset_icon.png"));
         logoutIcon = resizeIcon(new ImageIcon("resources/Logout.png"));
         settingsIcon = resizeIcon(new ImageIcon("resources/settings_icon.png"));
@@ -220,7 +223,7 @@ public class ButtonPanel extends JPanel {
         if (state.equals("pause")) {
             playPauseBtn.setIcon(pauseIcon);
         } else {
-            playPauseBtn.setIcon(resizeIcon(new ImageIcon("resources/play_icon.png")));
+            playPauseBtn.setIcon(playIcon);
         }
     }
 

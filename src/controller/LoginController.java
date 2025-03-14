@@ -7,12 +7,16 @@ import api.APIClient;
 import view.GameMainInterface;
 import view.LoginUI;
 import model.SessionManager;
+import interfaces.ISessionManager;
+import model.SessionManagerImpl;
 
 public class LoginController {
     private final LoginUI loginUI;
+    private final ISessionManager sessionManager;
 
     public LoginController(LoginUI loginUI) {
         this.loginUI = loginUI;
+        this.sessionManager = SessionManagerImpl.getInstance();
     }
 
     public void handleLogin(String email, String password) {
@@ -27,9 +31,9 @@ public class LoginController {
                 JSONObject userObj = jsonResponse.getJSONObject("user");
                 String userEmail = userObj.getString("email");
                 
-                SessionManager.setAuthToken(authToken);
-                SessionManager.setUsername(username);
-                SessionManager.setEmail(userEmail);
+                sessionManager.setAuthToken(authToken);
+                sessionManager.setUsername(username);
+                sessionManager.setEmail(userEmail);
                 
                 loginUI.showMessage("Login Successful!", true);
                 loginUI.dispose();

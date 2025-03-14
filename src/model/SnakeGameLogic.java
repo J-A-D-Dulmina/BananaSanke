@@ -1,6 +1,8 @@
 package model;
 
 import interfaces.IGameLogic;
+import interfaces.ISoundManager;
+import interfaces.ISessionManager;
 import java.awt.*;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -28,6 +30,8 @@ public class SnakeGameLogic implements IGameLogic {
     private int score;
     private boolean waitingForAnswer;
     private static final Point STARTING_POSITION = new Point(240, 240); // Center position
+    private final ISoundManager soundManager;
+    private final ISessionManager sessionManager;
 
     public SnakeGameLogic(int panelWidth, int panelHeight, int tileSize) {
         this.tileSize = tileSize;
@@ -38,6 +42,8 @@ public class SnakeGameLogic implements IGameLogic {
         this.running = true;
         this.score = 0;
         this.waitingForAnswer = false;
+        this.soundManager = SoundManager.getInstance();
+        this.sessionManager = SessionManagerImpl.getInstance();
 
         initializeSnake();
         food = new Food(panelWidth, panelHeight, tileSize);
@@ -90,7 +96,7 @@ public class SnakeGameLogic implements IGameLogic {
 
         if (snake.contains(newHead)) {
             running = false;
-            SoundManager.getInstance().stopRunningSound();
+            soundManager.stopRunningSound();
             showGameOver();
             return;
         }
@@ -104,7 +110,7 @@ public class SnakeGameLogic implements IGameLogic {
                                        (ateSecondFood && food.getSecondFoodNumber() == correctAnswer);
             
             if (correctAnswerEaten) {
-                SoundManager.getInstance().playEatSound();
+                soundManager.playEatSound();
                 APISection.getInstance().loadNextQuestion();
                 Game newGame = APISection.getInstance().getCurrentGame();
                 if (newGame != null) {
@@ -121,14 +127,14 @@ public class SnakeGameLogic implements IGameLogic {
                     parent.getTimerPanel().start();
                 }
             } else {
-                SoundManager.getInstance().playWrongFoodSound();
+                soundManager.playWrongFoodSound();
                 if (APISection.getInstance() != null) {
                     BananaPanel parent = (BananaPanel) SwingUtilities.getAncestorOfClass(BananaPanel.class, APISection.getInstance());
                     boolean stillAlive = APISection.getInstance().reduceHealth();
                     
                     if (!stillAlive) {
                         running = false;
-                        SoundManager.getInstance().stopRunningSound();
+                        soundManager.stopRunningSound();
                         showGameOver();
                         return;
                     }
@@ -195,7 +201,7 @@ public class SnakeGameLogic implements IGameLogic {
     @Override
     public void reset() {
         // Stop sound effects
-        SoundManager.getInstance().stopRunningSound();
+        soundManager.stopRunningSound();
         
         // Reset basic game state
         direction = "RIGHT";  
@@ -221,7 +227,7 @@ public class SnakeGameLogic implements IGameLogic {
                 APISection.getInstance().updateScore(0);
                 
                 // Load new question only if we have valid session
-                if (SessionManager.getAuthToken() != null && !SessionManager.getAuthToken().isEmpty()) {
+                if (sessionManager.getAuthToken() != null && !sessionManager.getAuthToken().isEmpty()) {
                     APISection.getInstance().loadNextQuestion();
                     Game newGame = APISection.getInstance().getCurrentGame();
                     if (newGame != null) {
@@ -235,8 +241,7 @@ public class SnakeGameLogic implements IGameLogic {
         }
 
         // Stop all sounds and ensure they're in initial state
-        SoundManager.getInstance().stopRunningSound();
-        SoundManager.getInstance().stopBackgroundMusic();
+        soundManager.stopAll();
 
         // Refresh UI
         SwingUtilities.invokeLater(() -> {
@@ -254,14 +259,14 @@ public class SnakeGameLogic implements IGameLogic {
     public void handleTimeUp() {
         if (running) {
             running = false;
-            SoundManager.getInstance().stopRunningSound();
+            soundManager.stopRunningSound();
             showGameOver();
         }
     }
 
     private void showGameOver() {
         try {
-            SoundManager.getInstance().stopRunningSound();
+            soundManager.stopRunningSound();
             String response = APIClient.getInstance().updateHighScore(score);
             
             SwingUtilities.invokeLater(() -> {
@@ -286,7 +291,7 @@ public class SnakeGameLogic implements IGameLogic {
     public void setRunning(boolean running) {
         if (this.running && !running) {
             // If we're stopping the game, stop the running sound
-            SoundManager.getInstance().stopRunningSound();
+            soundManager.stopRunningSound();
         }
         this.running = running;
         // Update background music state and running sound
@@ -301,7 +306,7 @@ public class SnakeGameLogic implements IGameLogic {
                     ((GameMainInterface) comp).handleGameStateChange(running);
                     // Handle running sound
                     if (running) {
-                        SoundManager.getInstance().startRunningSound();
+                        soundManager.startRunningSound();
                         // Start the timer
                         parent.getTimerPanel().start();
                     } else {
@@ -316,7 +321,7 @@ public class SnakeGameLogic implements IGameLogic {
     public void pauseGame() {
         if (running) {
             running = false;
-            SoundManager.getInstance().stopRunningSound();
+            soundManager.stopRunningSound();
             BananaPanel parent = (BananaPanel) SwingUtilities.getAncestorOfClass(BananaPanel.class, APISection.getInstance());
             if (parent != null) {
                 parent.getTimerPanel().stop();
@@ -327,8 +332,8 @@ public class SnakeGameLogic implements IGameLogic {
     public void resumeGame() {
         if (!running) {
             running = true;
-            if (!SoundManager.getInstance().isMuted()) {
-                SoundManager.getInstance().startRunningSound();
+            if (!soundManager.isMuted()) {
+                soundManager.startRunningSound();
             }
             BananaPanel parent = (BananaPanel) SwingUtilities.getAncestorOfClass(BananaPanel.class, APISection.getInstance());
             if (parent != null) {

@@ -4,3 +4,10 @@
 /model/
 /view/
 /utils/
+/services/
+/adapters/
+/commands/
+/di/
+/factories/
+/main/
+/strategies/

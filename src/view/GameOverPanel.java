@@ -6,16 +6,20 @@ import java.awt.event.*;
 import model.SessionManager;
 import controller.GameOverController;
 import model.GameOverModel;
+import interfaces.ISessionManager;
+import model.SessionManagerImpl;
 
 public class GameOverPanel extends JDialog {
     private static final long serialVersionUID = 1L;
     private final GameMainInterface mainFrame;
     private final GameOverController controller;
     private final GameOverModel model;
+    private final ISessionManager sessionManager;
 
     public GameOverPanel(GameMainInterface mainFrame, int finalScore) {
         super(mainFrame, "Game Over", true);
         this.mainFrame = mainFrame;
+        this.sessionManager = SessionManagerImpl.getInstance();
         
         // Initialize MVC components
         this.model = new GameOverModel();
@@ -37,7 +41,7 @@ public class GameOverPanel extends JDialog {
         initializeComponents();
         
         // Set initial game results
-        controller.setGameResults(finalScore, 0, SessionManager.getUsername());
+        controller.setGameResults(finalScore, 0, sessionManager.getUsername());
     }
 
     private void initializeComponents() {

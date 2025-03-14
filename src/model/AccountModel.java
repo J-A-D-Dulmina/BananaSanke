@@ -5,19 +5,24 @@ import api.APIClient;
 import java.util.List;
 import controller.LeaderboardController;
 import controller.LeaderboardController.LeaderboardEntry;
+import interfaces.ISessionManager;
+import interfaces.IAccountModel;
 
-public class AccountModel {
+public class AccountModel implements IAccountModel {
     private String username;
     private String email;
     private int bestScore;
+    private final ISessionManager sessionManager;
 
     public AccountModel() {
-        this.username = SessionManager.getUsername();
-        this.email = SessionManager.getEmail();
+        this.sessionManager = SessionManagerImpl.getInstance();
+        this.username = sessionManager.getUsername();
+        this.email = sessionManager.getEmail();
         this.bestScore = 0;
         fetchBestScore();
     }
 
+    @Override
     public JSONObject fetchBestScore() {
         try {
             String response = APIClient.getBestScore();
@@ -34,18 +39,22 @@ public class AccountModel {
         }
     }
 
+    @Override
     public String getUsername() {
         return username;
     }
 
+    @Override
     public String getEmail() {
         return email;
     }
 
+    @Override
     public int getBestScore() {
         return bestScore;
     }
 
+    @Override
     public JSONObject updateUsername(String newUsername) throws Exception {
         if (newUsername.isEmpty()) {
             throw new IllegalArgumentException("Username cannot be empty");
@@ -59,11 +68,12 @@ public class AccountModel {
         JSONObject jsonResponse = new JSONObject(response);
         if (jsonResponse.getString("status").equals("success")) {
             this.username = newUsername;
-            SessionManager.setUsername(newUsername);
+            sessionManager.setUsername(newUsername);
         }
         return jsonResponse;
     }
 
+    @Override
     public JSONObject updatePassword(String oldPassword, String newPassword) throws Exception {
         if (oldPassword.isEmpty() || newPassword.isEmpty()) {
             throw new IllegalArgumentException("Password fields cannot be empty");
@@ -77,6 +87,7 @@ public class AccountModel {
         return new JSONObject(response);
     }
 
+    @Override
     public void logout() {
         APIClient.logoutUser();
     }

@@ -6,7 +6,9 @@ import java.net.URL;
 import java.net.URLEncoder;
 import org.json.JSONException;
 import org.json.JSONObject;
-import model.SessionManager; // For storing authentication tokens
+import model.SessionManager; // For static methods
+import model.SessionManagerImpl; // For interface implementation
+import interfaces.ISessionManager;
 
 /**
  * APIClient handles HTTP requests for interacting with the backend API.
@@ -18,6 +20,7 @@ public class APIClient {
     private static final String CONTENT_TYPE = "application/x-www-form-urlencoded";
     private static final String ACCEPT_TYPE = "application/json";
     private static APIClient instance;
+    private static final ISessionManager sessionManager = SessionManagerImpl.getInstance();
 
     private APIClient() {}
 
@@ -126,7 +129,7 @@ public class APIClient {
         }
 
         if (authRequired) {
-            String authToken = SessionManager.getAuthToken();
+            String authToken = sessionManager.getAuthToken();
             if (authToken != null && !authToken.isEmpty()) {
                 conn.setRequestProperty("Authorization", "Bearer " + authToken);
             }
@@ -209,9 +212,9 @@ public class APIClient {
                         return "{\"status\":\"error\", \"message\":\"Server did not provide authentication token\"}";
                     }
                     
-                    SessionManager.setAuthToken(authToken);
+                    sessionManager.setAuthToken(authToken);
                     
-                    String storedToken = SessionManager.getAuthToken();
+                    String storedToken = sessionManager.getAuthToken();
                     if (storedToken == null || storedToken.isEmpty()) {
                         return "{\"status\":\"error\", \"message\":\"Failed to store authentication token\"}";
                     }
@@ -354,7 +357,7 @@ public class APIClient {
     public static String getBestScore() {
         try {
             String apiUrl = BASE_URL + "?action=get_best_score";
-            String authToken = SessionManager.getAuthToken();
+            String authToken = sessionManager.getAuthToken();
             
             if (authToken == null || authToken.isEmpty()) {
                 return "{\"status\":\"error\", \"message\":\"Not authenticated\"}";

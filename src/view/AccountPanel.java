@@ -15,6 +15,11 @@ import org.json.JSONObject;
 import utils.CustomDialogUtils;
 import controller.AccountController;
 import model.AccountModel;
+import interfaces.ISoundManager;
+import interfaces.ISessionManager;
+import interfaces.IAccountController;
+import interfaces.IAccountModel;
+import model.SessionManagerImpl;
 
 public class AccountPanel extends JDialog {
     private static final long serialVersionUID = 1L;
@@ -32,16 +37,20 @@ public class AccountPanel extends JDialog {
     private boolean isEditingUsername = false;
     private final GameMainInterface mainFrame;
     private Image backgroundImage;
-    private AccountController controller;
-    private AccountModel accountModel;
+    private IAccountController controller;
+    private IAccountModel accountModel;
+    private final ISoundManager soundManager;
+    private final ISessionManager sessionManager;
 
     public AccountPanel(GameMainInterface mainFrame) {
         super(mainFrame, "Account Settings", true);
         this.mainFrame = mainFrame;
+        this.soundManager = SoundManager.getInstance();
+        this.sessionManager = SessionManagerImpl.getInstance();
         
         // Initialize MVC components first
         this.accountModel = new AccountModel();
-        this.controller = new AccountController(accountModel, this, mainFrame);
+        this.controller = new AccountController((AccountModel)accountModel, this, mainFrame);
         
         // Initialize UI
         initializeUI();
@@ -70,7 +79,7 @@ public class AccountPanel extends JDialog {
         setShape(new RoundRectangle2D.Double(0, 0, 400, 550, 20, 20));
         
         // Initialize username components first
-        usernameLabel = new JLabel(SessionManager.getUsername());
+        usernameLabel = new JLabel(sessionManager.getUsername());
         usernameLabel.setForeground(Color.WHITE);
         usernameLabel.setFont(new Font("Arial", Font.BOLD, 16));
         
@@ -129,7 +138,7 @@ public class AccountPanel extends JDialog {
         closeButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                SoundManager.getInstance().playButtonClickSound();
+                soundManager.playButtonClickSound();
                 dispose();
             }
         });
@@ -179,9 +188,6 @@ public class AccountPanel extends JDialog {
         topPanel.add(scorePanel);
         topPanel.add(Box.createVerticalStrut(15));
 
-        // Immediately fetch and display best score
-        updateBestScore();
-
         contentPanel.add(topPanel);
 
         // Username section with edit icon
@@ -200,7 +206,7 @@ public class AccountPanel extends JDialog {
         emailTitleLabel.setForeground(Color.WHITE);
         emailTitleLabel.setFont(new Font("Arial", Font.PLAIN, 14));
         
-        String userEmail = SessionManager.getEmail();
+        String userEmail = sessionManager.getEmail();
         JLabel emailValueLabel = new JLabel(userEmail != null ? userEmail : "Not available");
         emailValueLabel.setForeground(Color.WHITE);
         emailValueLabel.setFont(new Font("Arial", Font.PLAIN, 14));
@@ -317,7 +323,7 @@ public class AccountPanel extends JDialog {
         labelPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 0));
         labelPanel.setBackground(new Color(40, 40, 40, 0));
 
-        usernameLabel = new JLabel(SessionManager.getUsername());
+        usernameLabel = new JLabel(sessionManager.getUsername());
         usernameLabel.setForeground(Color.WHITE);
         usernameLabel.setFont(new Font("Arial", Font.BOLD, 16));
 
@@ -332,7 +338,7 @@ public class AccountPanel extends JDialog {
         labelPanel.add(editIconLabel);
 
         // Create username field and edit panel
-        usernameField = createStyledTextField(SessionManager.getUsername());
+        usernameField = createStyledTextField(sessionManager.getUsername());
         
         // Create edit panel with fixed width
         editPanel = new JPanel();
@@ -364,7 +370,7 @@ public class AccountPanel extends JDialog {
         closeEditButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                SoundManager.getInstance().playButtonClickSound();
+                soundManager.playButtonClickSound();
                 cancelEditing();
             }
         });
@@ -382,7 +388,7 @@ public class AccountPanel extends JDialog {
         editIconLabel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                SoundManager.getInstance().playButtonClickSound();
+                soundManager.playButtonClickSound();
                 startEditing();
             }
         });

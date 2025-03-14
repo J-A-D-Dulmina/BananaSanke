@@ -1,5 +1,6 @@
 package model;
 
+import interfaces.ISoundManager;
 import javax.sound.sampled.*;
 import java.io.File;
 import java.io.IOException;
@@ -12,7 +13,7 @@ import view.BananaPanel;
 import view.SnakePanel;
 import java.awt.Component;
 
-public class SoundManager extends Observable {
+public class SoundManager extends Observable implements ISoundManager {
     private static SoundManager instance;
     private Clip backgroundMusic;
     private Map<String, Clip> soundEffects;
@@ -104,6 +105,7 @@ public class SoundManager extends Observable {
         }
     }
 
+    @Override
     public void playEatSound() {
         synchronized (runningSoundLock) {
             stopRunningSound();
@@ -121,6 +123,7 @@ public class SoundManager extends Observable {
         }
     }
 
+    @Override
     public void playWrongFoodSound() {
         synchronized (runningSoundLock) {
             stopRunningSound();
@@ -129,9 +132,7 @@ public class SoundManager extends Observable {
                 SwingUtilities.invokeLater(() -> {
                     try {
                         Thread.sleep(300);
-                        if (isGameRunning()) {
-                            startRunningSound();
-                        }
+                        startRunningSound();
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                     }
@@ -140,25 +141,7 @@ public class SoundManager extends Observable {
         }
     }
 
-    private boolean isGameRunning() {
-        try {
-            if (APISection.getInstance() != null) {
-                Component parent = SwingUtilities.getAncestorOfClass(BananaPanel.class, APISection.getInstance());
-                if (parent instanceof BananaPanel) {
-                    BananaPanel bananaPanel = (BananaPanel) parent;
-                    SnakePanel snakePanel = bananaPanel.getSnakePanel();
-                    if (snakePanel != null) {
-                        SnakeGameLogic gameLogic = snakePanel.getGameLogic();
-                        return gameLogic != null && gameLogic.isRunning();
-                    }
-                }
-            }
-        } catch (Exception e) {
-            // Silently fail for game state check errors
-        }
-        return false;
-    }
-
+    @Override
     public void playGameOverSound() {
         synchronized (runningSoundLock) {
             stopRunningSound();
@@ -181,6 +164,7 @@ public class SoundManager extends Observable {
         }
     }
 
+    @Override
     public void playBackgroundMusic() {
         if (backgroundMusic != null && !isPlaying && !isMuted) {
             try {
@@ -196,6 +180,7 @@ public class SoundManager extends Observable {
         }
     }
 
+    @Override
     public void pauseBackgroundMusic() {
         if (backgroundMusic != null && isPlaying) {
             try {
@@ -209,6 +194,7 @@ public class SoundManager extends Observable {
         }
     }
 
+    @Override
     public void stopBackgroundMusic() {
         if (backgroundMusic != null) {
             try {
@@ -223,6 +209,7 @@ public class SoundManager extends Observable {
         }
     }
 
+    @Override
     public void startRunningSound() {
         synchronized (runningSoundLock) {
             if (!isMuted && soundEffects.containsKey("snake_running")) {
@@ -242,6 +229,7 @@ public class SoundManager extends Observable {
         }
     }
 
+    @Override
     public void stopRunningSound() {
         synchronized (runningSoundLock) {
             if (runningSound != null && runningSound.isRunning()) {
@@ -254,6 +242,7 @@ public class SoundManager extends Observable {
         }
     }
 
+    @Override
     public void setVolume(float volume) {
         this.volume = Math.max(0.0f, Math.min(1.0f, volume));
         updateVolume();
@@ -261,6 +250,7 @@ public class SoundManager extends Observable {
         notifyObservers();
     }
 
+    @Override
     public void setMuted(boolean muted) {
         this.isMuted = muted;
         updateVolume();
@@ -283,6 +273,25 @@ public class SoundManager extends Observable {
         }
         setChanged();
         notifyObservers();
+    }
+
+    private boolean isGameRunning() {
+        try {
+            if (APISection.getInstance() != null) {
+                Component parent = SwingUtilities.getAncestorOfClass(BananaPanel.class, APISection.getInstance());
+                if (parent instanceof BananaPanel) {
+                    BananaPanel bananaPanel = (BananaPanel) parent;
+                    SnakePanel snakePanel = bananaPanel.getSnakePanel();
+                    if (snakePanel != null) {
+                        SnakeGameLogic gameLogic = snakePanel.getGameLogic();
+                        return gameLogic != null && gameLogic.isRunning();
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // Silently fail for game state check errors
+        }
+        return false;
     }
 
     private void updateVolume() {
@@ -309,21 +318,50 @@ public class SoundManager extends Observable {
         }
     }
 
+    @Override
     public float getVolume() {
         return volume;
     }
 
+    @Override
     public boolean isMuted() {
         return isMuted;
     }
 
+    @Override
     public boolean isPlaying() {
         return isPlaying;
     }
 
+    @Override
     public void playButtonClickSound() {
         if (!isMuted) {
             playSound("button_click");
+        }
+    }
+
+    /**
+     * Stops all sounds including background music and sound effects.
+     * This is useful for cleanup operations like logout.
+     */
+    @Override
+    public void stopAll() {
+        try {
+            // Stop background music
+            stopBackgroundMusic();
+            
+            // Stop running sound
+            stopRunningSound();
+            
+            // Stop all sound effects
+            for (Clip clip : soundEffects.values()) {
+                if (clip != null && clip.isRunning()) {
+                    clip.stop();
+                    clip.setFramePosition(0);
+                }
+            }
+        } catch (Exception e) {
+            // Silently fail for sound stopping errors
         }
     }
 } 

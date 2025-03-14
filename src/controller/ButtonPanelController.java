@@ -13,24 +13,34 @@ import org.json.JSONObject;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import api.APIClient;
-import model.SessionManager;
+import model.SessionManagerImpl;
 import model.SoundManager;
+import interfaces.IButtonPanelController;
+import interfaces.IButtonPanelModel;
+import interfaces.ISoundManager;
+import interfaces.ISessionManager;
 
-public class ButtonPanelController {
-    private final ButtonPanelModel model;
+public class ButtonPanelController implements IButtonPanelController {
+    private final IButtonPanelModel model;
     private final ButtonPanel view;
     private final GameMainInterface mainFrame;
+    private final ISoundManager soundManager;
+    private final ISessionManager sessionManager;
 
     public ButtonPanelController(ButtonPanelModel model, ButtonPanel view, GameMainInterface mainFrame) {
         this.model = model;
         this.view = view;
         this.mainFrame = mainFrame;
+        this.soundManager = SoundManager.getInstance();
+        this.sessionManager = SessionManagerImpl.getInstance();
     }
 
-    public ButtonPanelModel getModel() {
+    @Override
+    public IButtonPanelModel getModel() {
         return model;
     }
 
+    @Override
     public void handlePlayPause() {
         if (!model.isGameStarted()) {
             model.startGame();
@@ -49,6 +59,7 @@ public class ButtonPanelController {
         view.requestFocusInWindow();
     }
 
+    @Override
     public void handleReset() {
         int confirm = CustomDialogUtils.showConfirmDialog(
             view,
@@ -59,16 +70,13 @@ public class ButtonPanelController {
         if (confirm == JOptionPane.YES_OPTION) {
             try {
                 // First stop any running sounds
-                SoundManager.getInstance().stopRunningSound();
+                soundManager.stopRunningSound();
                 
                 // Stop the current game completely
                 model.stopGame();
                 
                 // Reset the game state and model
                 model.resetGame();
-                
-                // Reset to initial start state
-                model.getSnakePanel().resetToStart();
                 
                 // Update UI elements
                 view.setPlayPauseIcon("play");
@@ -82,10 +90,13 @@ public class ButtonPanelController {
                     "Error resetting game: " + e.getMessage(),
                     "Reset Error"
                 );
+                System.err.println("Reset error: " + e.getMessage());
+                e.printStackTrace();
             }
         }
     }
 
+    @Override
     public void handleLogout() {
         int confirm = CustomDialogUtils.showConfirmDialog(
             mainFrame,
@@ -95,10 +106,8 @@ public class ButtonPanelController {
 
         if (confirm == JOptionPane.YES_OPTION) {
             try {
-                // First stop sounds
-                SoundManager soundManager = SoundManager.getInstance();
-                soundManager.stopBackgroundMusic();
-                soundManager.stopRunningSound();
+                // First stop all sounds
+                soundManager.stopAll();
 
                 // Then cleanup game state
                 cleanupGameState();
@@ -109,7 +118,7 @@ public class ButtonPanelController {
                 
                 if (jsonResponse.getString("status").equals("success")) {
                     // Only clear session after successful server logout
-                    SessionManager.logout();
+                    sessionManager.logout();
                     
                     // Finally close UI and show login
                     SwingUtilities.invokeLater(() -> {
@@ -167,6 +176,7 @@ public class ButtonPanelController {
         }
     }
 
+    @Override
     public void handleSettings() {
         boolean wasRunning = model.isGameStarted() && !model.isGamePaused();
         if (wasRunning) {
@@ -185,6 +195,7 @@ public class ButtonPanelController {
         settingsPanel.setVisible(true);
     }
 
+    @Override
     public void handleAccount() {
         boolean wasRunning = model.isGameStarted() && !model.isGamePaused();
         if (wasRunning) {
@@ -203,6 +214,7 @@ public class ButtonPanelController {
         accountPanel.setVisible(true);
     }
 
+    @Override
     public void handleLeaderboard() {
         boolean wasRunning = model.isGameStarted() && !model.isGamePaused();
         if (wasRunning) {
@@ -214,6 +226,7 @@ public class ButtonPanelController {
         view.requestFocusInWindow();
     }
 
+    @Override
     public void handlePauseOverlayClick() {
         if (model.isGamePaused()) {
             model.resumeGame();
@@ -223,6 +236,7 @@ public class ButtonPanelController {
         }
     }
 
+    @Override
     public void updateUsername(String newUsername) {
         model.updateUsername(newUsername);
         view.updateUsernameDisplay(newUsername);
