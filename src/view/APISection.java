@@ -23,7 +23,7 @@ public class APISection extends JPanel {
     private static final Color MESSAGE_BACKGROUND_COLOR = new Color(0, 128, 0, 200);
     private static final Font QUESTION_FONT = new Font("Courier New", Font.BOLD, 35);
     private static final Font MESSAGE_FONT = new Font("Arial", Font.BOLD, 20);
-    private static final String DEFAULT_MESSAGE = "Eat the correct number!";
+    private static final String DEFAULT_MESSAGE = "Eat the correct number before time expire!";
 
     /**
      * Initializes the API section panel and its components.

@@ -27,7 +27,7 @@ public class TimerPanel extends JPanel {
         labelPanel.setOpaque(false);
 
         // Create "Seconds" label
-        remainLabel = new JLabel("Seconds:");
+        remainLabel = new JLabel("Timer:");
         remainLabel.setFont(new Font("Arial", Font.BOLD, 16));
         remainLabel.setForeground(Color.WHITE);
         labelPanel.add(remainLabel);
