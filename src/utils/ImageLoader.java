@@ -2,6 +2,7 @@ package utils;
 
 import javax.swing.*;
 import java.awt.*;
+import java.net.URL;
 
 /**
  * Utility class for loading and resizing images.
@@ -14,7 +15,13 @@ public class ImageLoader {
      * @return ImageIcon containing the loaded image.
      */
     public static ImageIcon loadImage(String path) {
-        return new ImageIcon(path);
+        URL imageUrl = ResourceLoader.getResource(path);
+        if (imageUrl != null) {
+            return new ImageIcon(imageUrl);
+        } else {
+            System.out.println("Error: Image not found -> " + path);
+            return null;
+        }
     }
 
     /**
@@ -26,12 +33,18 @@ public class ImageLoader {
      * @return Resized ImageIcon or null if the image is not found.
      */
     public static ImageIcon loadImage(String path, int width, int height) {
-        ImageIcon icon = new ImageIcon(path);
-        if (icon.getIconWidth() <= 0) {
+        URL imageUrl = ResourceLoader.getResource(path);
+        if (imageUrl != null) {
+            ImageIcon icon = new ImageIcon(imageUrl);
+            if (icon.getIconWidth() <= 0) {
+                System.out.println("Error: Image not found or invalid -> " + path);
+                return null; // Prevents crashes if image is missing
+            }
+            Image img = icon.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
+            return new ImageIcon(img);
+        } else {
             System.out.println("Error: Image not found -> " + path);
-            return null; // Prevents crashes if image is missing
+            return null;
         }
-        Image img = icon.getImage().getScaledInstance(width, height, Image.SCALE_DEFAULT);
-        return new ImageIcon(img);
     }
 }

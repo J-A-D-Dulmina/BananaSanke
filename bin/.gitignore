@@ -1,4 +1,9 @@
-/interfaces/
-/model/
-/view/
 /api/
+/controller/
+/factory/
+/interfaces/
+/main/
+/model/
+/service/
+/utils/
+/view/

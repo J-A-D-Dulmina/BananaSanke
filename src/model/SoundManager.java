@@ -3,7 +3,6 @@ package model;
 import interfaces.ISoundManager;
 import interfaces.SoundObserver;
 import javax.sound.sampled.*;
-import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ArrayList;
@@ -13,6 +12,8 @@ import view.APISection;
 import view.BananaPanel;
 import view.SnakePanel;
 import java.awt.Component;
+import java.io.InputStream;
+import java.io.BufferedInputStream;
 
 public class SoundManager implements ISoundManager {
     private static SoundManager instance;
@@ -77,17 +78,22 @@ public class SoundManager implements ISoundManager {
 
     private void loadClip(String name, String path) {
         try {
-            File soundFile = new File(path);
-            if (!soundFile.exists()) {
+            // Use ResourceLoader to get the sound file
+            InputStream inputStream = utils.ResourceLoader.getResourceAsStream(path);
+            if (inputStream == null) {
+                System.err.println("Sound file not found: " + path);
                 return;
             }
-
-            AudioInputStream audioStream = AudioSystem.getAudioInputStream(soundFile);
+            
+            // Convert to AudioInputStream
+            AudioInputStream audioStream = AudioSystem.getAudioInputStream(
+                new BufferedInputStream(inputStream));
             AudioFormat format = audioStream.getFormat();
             
             DataLine.Info info = new DataLine.Info(Clip.class, format);
             
             if (!AudioSystem.isLineSupported(info)) {
+                System.err.println("Audio format not supported: " + path);
                 return;
             }
             
@@ -96,23 +102,31 @@ public class SoundManager implements ISoundManager {
             soundEffects.put(name, clip);
             
         } catch (Exception e) {
-            // Silently fail for sound loading errors
+            // Log error but continue
+            System.err.println("Error loading sound: " + path);
+            e.printStackTrace();
         }
     }
 
     private void loadBackgroundMusic() {
         try {
-            File musicFile = new File("resources/Sound Effect/background_music.wav");
-            if (!musicFile.exists()) {
+            // Use ResourceLoader to get the background music file
+            String musicPath = "resources/Sound Effect/background_music.wav";
+            InputStream inputStream = utils.ResourceLoader.getResourceAsStream(musicPath);
+            if (inputStream == null) {
+                System.err.println("Background music file not found: " + musicPath);
                 return;
             }
 
-            AudioInputStream audioStream = AudioSystem.getAudioInputStream(musicFile);
+            // Convert to AudioInputStream
+            AudioInputStream audioStream = AudioSystem.getAudioInputStream(
+                new BufferedInputStream(inputStream));
             AudioFormat format = audioStream.getFormat();
             
             DataLine.Info info = new DataLine.Info(Clip.class, format);
             
             if (!AudioSystem.isLineSupported(info)) {
+                System.err.println("Audio format not supported for background music");
                 return;
             }
             
@@ -132,7 +146,9 @@ public class SoundManager implements ISoundManager {
             updateVolume();
             
         } catch (Exception e) {
-            // Silently fail for background music loading errors
+            // Log error but continue
+            System.err.println("Error loading background music");
+            e.printStackTrace();
         }
     }
 
