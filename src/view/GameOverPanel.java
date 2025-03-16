@@ -225,22 +225,60 @@ public class GameOverPanel extends JDialog {
         if (highScoreLabel != null) {
             highScoreLabel.setVisible(model.shouldShowHighScoreMessage());
             if (model.shouldShowHighScoreMessage()) {
-                highScoreLabel.setText("NEW HIGH SCORE: " + finalScore);
+                // Only show "NEW HIGH SCORE" without the score value
+                highScoreLabel.setText("NEW HIGH SCORE");
                 
-                // Try to add the happy snake icon if not already set
-                if (!(highScoreLabel.getIcon() instanceof ImageIcon)) {
-                    try {
-                        ImageIcon snakeIcon = ImageLoader.loadImage("resources/score_update_happy_snake.png");
-                        if (snakeIcon != null) {
-                            // Scale the icon to a reasonable size
-                            Image img = snakeIcon.getImage().getScaledInstance(30, 30, Image.SCALE_SMOOTH);
-                            highScoreLabel.setIcon(new ImageIcon(img));
-                            // Add some space between text and icon
-                            highScoreLabel.setIconTextGap(10);
+                // Try to add happy snake icons on both sides
+                try {
+                    ImageIcon snakeIcon = ImageLoader.loadImage("resources/score_update_happy_snake.png");
+                    if (snakeIcon != null) {
+                        // Scale the icon to a reasonable size
+                        Image img = snakeIcon.getImage().getScaledInstance(30, 30, Image.SCALE_SMOOTH);
+                        ImageIcon scaledIcon = new ImageIcon(img);
+                        
+                        // Set the icon on the left side
+                        highScoreLabel.setIcon(scaledIcon);
+                        
+                        // Set the same icon on the right side
+                        highScoreLabel.setHorizontalTextPosition(JLabel.CENTER);
+                        highScoreLabel.setIconTextGap(15);
+                        highScoreLabel.setVerticalTextPosition(JLabel.CENTER);
+                        
+                        // We need to use a compound label layout to have icons on both sides
+                        JPanel iconPanel = new JPanel(new BorderLayout());
+                        iconPanel.setOpaque(false);
+                        
+                        // Add left icon
+                        JLabel leftIconLabel = new JLabel(scaledIcon);
+                        iconPanel.add(leftIconLabel, BorderLayout.WEST);
+                        
+                        // Add text in center
+                        JLabel textLabel = new JLabel("NEW HIGH SCORE");
+                        textLabel.setFont(new Font("Arial", Font.BOLD, 20));
+                        textLabel.setForeground(Color.YELLOW);
+                        textLabel.setHorizontalAlignment(JLabel.CENTER);
+                        iconPanel.add(textLabel, BorderLayout.CENTER);
+                        
+                        // Add right icon
+                        JLabel rightIconLabel = new JLabel(scaledIcon);
+                        iconPanel.add(rightIconLabel, BorderLayout.EAST);
+                        
+                        // Replace the highScoreLabel with this panel
+                        int index = 0;
+                        Container parent = highScoreLabel.getParent();
+                        for (int i = 0; i < parent.getComponentCount(); i++) {
+                            if (parent.getComponent(i) == highScoreLabel) {
+                                index = i;
+                                break;
+                            }
                         }
-                    } catch (Exception e) {
-                        System.err.println("Error loading happy snake icon: " + e.getMessage());
+                        
+                        parent.remove(highScoreLabel);
+                        parent.add(iconPanel, index);
+                        highScoreLabel = textLabel; // Update the reference
                     }
+                } catch (Exception e) {
+                    System.err.println("Error loading happy snake icon: " + e.getMessage());
                 }
             }
         }
@@ -374,23 +412,60 @@ public class GameOverPanel extends JDialog {
      */
     public void showHighScoreMessage(int score) {
         if (highScoreLabel != null) {
-            highScoreLabel.setText("NEW HIGH SCORE: " + score);
-            
-            // Try to add the happy snake icon
             try {
-                ImageIcon snakeIcon = ImageLoader.loadImage("resources/score_update_happy_snake.png");
+                // Create panel with happy snake icons on both sides
+                ImageIcon snakeIcon = utils.ImageLoader.loadImage("resources/score_update_happy_snake.png");
                 if (snakeIcon != null) {
                     // Scale the icon to a reasonable size
                     Image img = snakeIcon.getImage().getScaledInstance(30, 30, Image.SCALE_SMOOTH);
-                    highScoreLabel.setIcon(new ImageIcon(img));
-                    // Add some space between text and icon
-                    highScoreLabel.setIconTextGap(10);
+                    ImageIcon scaledIcon = new ImageIcon(img);
+                    
+                    // Create a panel with both icons
+                    JPanel iconPanel = new JPanel(new BorderLayout());
+                    iconPanel.setOpaque(false);
+                    
+                    // Add left icon
+                    JLabel leftIconLabel = new JLabel(scaledIcon);
+                    iconPanel.add(leftIconLabel, BorderLayout.WEST);
+                    
+                    // Add text in center
+                    JLabel textLabel = new JLabel("NEW HIGH SCORE");
+                    textLabel.setFont(new Font("Arial", Font.BOLD, 20));
+                    textLabel.setForeground(Color.YELLOW);
+                    textLabel.setHorizontalAlignment(JLabel.CENTER);
+                    iconPanel.add(textLabel, BorderLayout.CENTER);
+                    
+                    // Add right icon
+                    JLabel rightIconLabel = new JLabel(scaledIcon);
+                    iconPanel.add(rightIconLabel, BorderLayout.EAST);
+                    
+                    // Replace the highScoreLabel with this panel
+                    int index = 0;
+                    Container parent = highScoreLabel.getParent();
+                    for (int i = 0; i < parent.getComponentCount(); i++) {
+                        if (parent.getComponent(i) == highScoreLabel) {
+                            index = i;
+                            break;
+                        }
+                    }
+                    
+                    parent.remove(highScoreLabel);
+                    parent.add(iconPanel, index);
+                    highScoreLabel = textLabel; // Update the reference
                 }
             } catch (Exception e) {
+                // Fallback to simple text if icon loading fails
+                highScoreLabel.setText("NEW HIGH SCORE");
                 System.err.println("Error loading happy snake icon: " + e.getMessage());
             }
             
-            highScoreLabel.setVisible(true);
+            // Make sure it's visible
+            if (highScoreLabel.getParent() != null) {
+                highScoreLabel.getParent().setVisible(true);
+            } else {
+                highScoreLabel.setVisible(true);
+            }
+            
             revalidate();
             repaint();
         }
