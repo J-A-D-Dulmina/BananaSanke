@@ -241,7 +241,7 @@ public class GameOverPanel extends JDialog {
                         
                         // Set the same icon on the right side
                         highScoreLabel.setHorizontalTextPosition(JLabel.CENTER);
-                        highScoreLabel.setIconTextGap(15);
+                        highScoreLabel.setIconTextGap(2);
                         highScoreLabel.setVerticalTextPosition(JLabel.CENTER);
                         
                         // We need to use a compound label layout to have icons on both sides
@@ -257,6 +257,7 @@ public class GameOverPanel extends JDialog {
                         textLabel.setFont(new Font("Arial", Font.BOLD, 20));
                         textLabel.setForeground(Color.YELLOW);
                         textLabel.setHorizontalAlignment(JLabel.CENTER);
+                        textLabel.setBorder(BorderFactory.createEmptyBorder(0, 2, 0, 2)); 
                         iconPanel.add(textLabel, BorderLayout.CENTER);
                         
                         // Add right icon
@@ -433,6 +434,7 @@ public class GameOverPanel extends JDialog {
                     textLabel.setFont(new Font("Arial", Font.BOLD, 20));
                     textLabel.setForeground(Color.YELLOW);
                     textLabel.setHorizontalAlignment(JLabel.CENTER);
+                    textLabel.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5)); // Small padding
                     iconPanel.add(textLabel, BorderLayout.CENTER);
                     
                     // Add right icon
