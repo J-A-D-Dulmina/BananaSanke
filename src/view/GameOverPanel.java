@@ -434,7 +434,7 @@ public class GameOverPanel extends JDialog {
                     textLabel.setFont(new Font("Arial", Font.BOLD, 20));
                     textLabel.setForeground(Color.YELLOW);
                     textLabel.setHorizontalAlignment(JLabel.CENTER);
-                    textLabel.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5)); // Small padding
+                    textLabel.setBorder(BorderFactory.createEmptyBorder(0, 2, 0, 2)); 
                     iconPanel.add(textLabel, BorderLayout.CENTER);
                     
                     // Add right icon
