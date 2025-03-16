@@ -46,10 +46,20 @@ public class HealthPanel extends JPanel {
         heartPanel.setOpaque(false);
 
         for (int i = 0; i < 3; i++) {
+            // Try loading with full path first
             ImageIcon heartGif = ImageLoader.loadImage("resources/heart_icon.gif", 18, 18);
+            
+            // If that fails, try alternate paths
+            if (heartGif == null) {
+                System.out.println("Trying alternate path for heart icon...");
+                heartGif = ImageLoader.loadImage("heart_icon.gif", 18, 18);
+            }
+            
             if (heartGif != null) {
+                System.out.println("Heart icon loaded successfully");
                 hearts[i] = new JLabel(heartGif);
             } else {
+                System.out.println("Failed to load heart icon, using text fallback");
                 hearts[i] = new JLabel("♥");
                 hearts[i].setFont(new Font("Arial", Font.BOLD, 18));
                 hearts[i].setForeground(Color.RED);
