@@ -56,7 +56,7 @@ public class Food {
         do {
             x1 = random.nextInt(panelWidth / tileSize) * tileSize;
             y1 = random.nextInt(panelHeight / tileSize) * tileSize;
-            foodOnSnake = (snake != null && snake.contains(new Point(x1, y1)));
+            foodOnSnake = (snake != null && !snake.isEmpty() && snake.contains(new Point(x1, y1)));
         } while (foodOnSnake);
 
         // Keep the current API answer if available
@@ -68,7 +68,7 @@ public class Food {
         do {
             x2 = random.nextInt(panelWidth / tileSize) * tileSize;
             y2 = random.nextInt(panelHeight / tileSize) * tileSize;
-            foodOnSnake = (snake != null && snake.contains(new Point(x2, y2))) || (x1 == x2 && y1 == y2);
+            foodOnSnake = (snake != null && !snake.isEmpty() && snake.contains(new Point(x2, y2))) || (x1 == x2 && y1 == y2);
         } while (foodOnSnake);
 
         // Generate a random number for second food that's different from the first

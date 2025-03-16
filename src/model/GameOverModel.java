@@ -18,6 +18,7 @@ public class GameOverModel implements IGameOverModel {
     }
 
     public void setGameResults(int finalScore, int highScore, String playerName) {
+        System.out.println("GameOverModel: Setting game results with score " + finalScore);
         this.finalScore = finalScore;
         this.highScore = highScore;
         this.playerName = playerName;
@@ -29,6 +30,7 @@ public class GameOverModel implements IGameOverModel {
     }
 
     public void setFinalScore(int finalScore) {
+        System.out.println("GameOverModel: Setting final score to " + finalScore);
         this.finalScore = finalScore;
     }
 

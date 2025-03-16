@@ -52,6 +52,14 @@ public class BananaAPI {
             URL url = new URL(urlString);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
+            conn.setConnectTimeout(5000);
+            conn.setReadTimeout(5000);
+
+            int responseCode = conn.getResponseCode();
+            if (responseCode != 200) {
+                System.err.println("HTTP Error: " + responseCode);
+                return null;
+            }
 
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
                 StringBuilder response = new StringBuilder();
@@ -64,6 +72,9 @@ public class BananaAPI {
                 return response.toString();
             }
         } catch (Exception e) {
+            System.err.println("Error reading from URL: " + urlString);
+            System.err.println("Error details: " + e.getMessage());
+            e.printStackTrace();
             return null;
         }
     }

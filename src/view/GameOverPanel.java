@@ -5,6 +5,7 @@ import java.awt.*;
 import java.awt.event.*;
 import controller.GameOverController;
 import model.GameOverModel;
+import model.SoundManager;
 import interfaces.ISessionManager;
 import model.SessionManagerImpl;
 
@@ -14,15 +15,39 @@ public class GameOverPanel extends JDialog {
     private final GameOverController controller;
     private final GameOverModel model;
     private final ISessionManager sessionManager;
+    private JLabel scoreLabel; // Store reference to the score label
+    private boolean isClosing = false;
 
     public GameOverPanel(GameMainInterface mainFrame, int finalScore) {
         super(mainFrame, "Game Over", true);
         this.mainFrame = mainFrame;
         this.sessionManager = SessionManagerImpl.getInstance();
         
+        // Stop all sounds when game over panel appears
+        try {
+            SoundManager.getInstance().stopAll();
+            System.out.println("Stopped all sounds in GameOverPanel constructor");
+        } catch (Exception e) {
+            System.err.println("Error stopping sounds: " + e.getMessage());
+        }
+        
         // Initialize MVC components
         this.model = new GameOverModel();
         this.controller = new GameOverController(this);
+        
+        // Set initial game results - we still pass username for model consistency
+        // but we won't display it
+        String username = sessionManager.getUsername();
+        if (username == null || username.isEmpty()) {
+            username = "Guest";
+        }
+        
+        // Set the final score immediately
+        model.setFinalScore(finalScore);
+        controller.setGameResults(finalScore, 0, username);
+        
+        // Debug - confirm score is set correctly
+        System.out.println("Score set in model: " + model.getFinalScore());
         
         // Reduced height from 300 to 250 since we're removing the username display
         setSize(400, 250);
@@ -31,6 +56,7 @@ public class GameOverPanel extends JDialog {
         setUndecorated(true);
         setBackground(new Color(0, 0, 0, 0));
         
+        // Add proper disposing on window close
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
@@ -40,16 +66,15 @@ public class GameOverPanel extends JDialog {
         
         initializeComponents();
         
-        // Set initial game results - we still pass username for model consistency
-        // but we won't display it
-        String username = sessionManager.getUsername();
-        if (username == null || username.isEmpty()) {
-            username = "Guest";
+        // Force score label update with final score
+        if (scoreLabel != null) {
+            scoreLabel.setText("Final Score: " + finalScore);
+            System.out.println("Explicitly set score label to: " + finalScore);
         }
-        controller.setGameResults(finalScore, 0, username);
         
-        // Update the display
-        updateDisplay();
+        // Debug output
+        System.out.println("GameOverPanel created with score: " + finalScore);
+        System.out.println("Model score value: " + model.getFinalScore());
     }
 
     private void initializeComponents() {
@@ -90,8 +115,8 @@ public class GameOverPanel extends JDialog {
         JLabel gameOverLabel = createStyledLabel("Game Over!", 32);
         gameOverLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        // Score
-        JLabel scoreLabel = createStyledLabel("Final Score: " + model.getFinalScore(), 24);
+        // Score - initialize and store reference
+        scoreLabel = createStyledLabel("Final Score: " + model.getFinalScore(), 24);
         scoreLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         // Buttons panel
@@ -116,7 +141,6 @@ public class GameOverPanel extends JDialog {
         centerPanel.add(Box.createVerticalGlue());
         centerPanel.add(gameOverLabel);
         centerPanel.add(Box.createVerticalStrut(20));
-        // Username label removed
         centerPanel.add(scoreLabel);
         centerPanel.add(Box.createVerticalStrut(30));
         centerPanel.add(buttonPanel);
@@ -125,34 +149,58 @@ public class GameOverPanel extends JDialog {
         mainPanel.add(topPanel, BorderLayout.NORTH);
         mainPanel.add(centerPanel, BorderLayout.CENTER);
         add(mainPanel, BorderLayout.CENTER);
+        
+        // Debug to confirm scoreLabel is initialized
+        System.out.println("scoreLabel initialized: " + (scoreLabel != null));
     }
 
     private void resetAndClose() {
-        dispose();
+        // First flag that we're closing to prevent further updates
+        isClosing = true;
+        
+        // Make sure all sounds are stopped
+        try {
+            SoundManager.getInstance().stopAll();
+        } catch (Exception e) {
+            System.err.println("Error stopping sounds: " + e.getMessage());
+        }
+        
+        // Ensure we're cleaning up resources
+        controller.dispose();
+        
+        // Then dispose the dialog
         SwingUtilities.invokeLater(() -> {
-            mainFrame.getSnakePanel().getGameController().resetGame();
-            mainFrame.getSnakePanel().resetToStart();
-            mainFrame.requestFocusInWindow();
+            dispose();
+            // Give focus back to the main frame and reset the game
+            if (mainFrame != null) {
+                mainFrame.getSnakePanel().getGameController().resetGame();
+                mainFrame.getSnakePanel().resetToStart();
+                mainFrame.requestFocusInWindow();
+            }
         });
     }
 
     public void updateDisplay() {
-        // Only update the score label since username was removed
-        JLabel scoreLabel = null;
-        for (Component comp : ((JPanel)getContentPane().getComponent(0)).getComponents()) {
-            if (comp instanceof JPanel && BorderLayout.CENTER.equals(((BorderLayout)((JPanel)getContentPane().getComponent(0)).getLayout()).getConstraints(comp))) {
-                for (Component innerComp : ((JPanel)comp).getComponents()) {
-                    if (innerComp instanceof JLabel && ((JLabel)innerComp).getText().startsWith("Final Score")) {
-                        scoreLabel = (JLabel)innerComp;
-                        break;
-                    }
-                }
-                break;
-            }
+        // Don't update if we're closing
+        if (isClosing) {
+            return;
         }
         
+        // Ensure we're on the EDT
+        if (!SwingUtilities.isEventDispatchThread()) {
+            SwingUtilities.invokeLater(this::updateDisplay);
+            return;
+        }
+        
+        // Get score directly from model to ensure consistency
+        int finalScore = model.getFinalScore();
+        
+        // Update score label if it exists
         if (scoreLabel != null) {
-            scoreLabel.setText("Final Score: " + model.getFinalScore());
+            scoreLabel.setText("Final Score: " + finalScore);
+            System.out.println("Updated score label to: " + finalScore);
+        } else {
+            System.err.println("Error: scoreLabel is null in updateDisplay");
         }
         
         // Update other display elements as needed

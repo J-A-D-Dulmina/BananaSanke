@@ -97,31 +97,31 @@ public class SnakeGameLogic implements IGameLogic {
         boolean ateSecondFood = newHead.equals(food.getSecondFoodPosition());
 
         if (ateFirstFood || ateSecondFood) {
-            int correctAnswer = APISection.getInstance().getCorrectAnswer();
+            int correctAnswer = safeGetAPISection().getCorrectAnswer();
             boolean correctAnswerEaten = (ateFirstFood && food.getFirstFoodNumber() == correctAnswer) ||
                                        (ateSecondFood && food.getSecondFoodNumber() == correctAnswer);
             
             if (correctAnswerEaten) {
                 soundManager.playEatSound();
-                APISection.getInstance().loadNextQuestion();
-                Game newGame = APISection.getInstance().getCurrentGame();
+                safeGetAPISection().loadNextQuestion();
+                Game newGame = safeGetAPISection().getCurrentGame();
                 if (newGame != null) {
                     food.setCurrentGame(newGame);
                 }
                 score++;
-                if (APISection.getInstance() != null) {
-                    APISection.getInstance().updateScore(score);
+                if (safeGetAPISection() != null) {
+                    safeGetAPISection().updateScore(score);
                 }
                 
-                BananaPanel parent = (BananaPanel) SwingUtilities.getAncestorOfClass(BananaPanel.class, APISection.getInstance());
+                BananaPanel parent = (BananaPanel) SwingUtilities.getAncestorOfClass(BananaPanel.class, safeGetAPISection());
                 if (parent != null) {
                     parent.getTimerPanel().reset();
                     parent.getTimerPanel().start();
                 }
             } else {
                 soundManager.playWrongFoodSound();
-                if (APISection.getInstance() != null) {
-                    boolean stillAlive = APISection.getInstance().reduceHealth();
+                if (safeGetAPISection() != null) {
+                    boolean stillAlive = safeGetAPISection().reduceHealth();
                     
                     if (!stillAlive) {
                         running = false;
@@ -138,6 +138,19 @@ public class SnakeGameLogic implements IGameLogic {
         }
 
         snake.add(0, newHead);
+    }
+
+    /**
+     * Safe way to get APISection instance with null check
+     * @return APISection instance or null if not available
+     */
+    private APISection safeGetAPISection() {
+        try {
+            return APISection.getInstance();
+        } catch (Exception e) {
+            System.err.println("Error accessing APISection: " + e.getMessage());
+            return null;
+        }
     }
 
     @Override
@@ -259,18 +272,25 @@ public class SnakeGameLogic implements IGameLogic {
         try {
             soundManager.stopRunningSound();
             SwingUtilities.invokeLater(() -> {
-                BananaPanel parent = (BananaPanel) SwingUtilities.getAncestorOfClass(BananaPanel.class, APISection.getInstance());
-                if (parent != null) {
-                    parent.getTimerPanel().stop();
-                    parent.showGameOver(score);
+                APISection apiSection = safeGetAPISection();
+                if (apiSection != null) {
+                    BananaPanel parent = (BananaPanel) SwingUtilities.getAncestorOfClass(BananaPanel.class, apiSection);
+                    if (parent != null) {
+                        parent.getTimerPanel().stop();
+                        parent.showGameOver(score);
+                    }
                 }
             });
         } catch (Exception e) {
+            System.err.println("Error showing game over: " + e.getMessage());
             SwingUtilities.invokeLater(() -> {
-                BananaPanel parent = (BananaPanel) SwingUtilities.getAncestorOfClass(BananaPanel.class, APISection.getInstance());
-                if (parent != null) {
-                    parent.getTimerPanel().stop();
-                    parent.showGameOver(score);
+                APISection apiSection = safeGetAPISection();
+                if (apiSection != null) {
+                    BananaPanel parent = (BananaPanel) SwingUtilities.getAncestorOfClass(BananaPanel.class, apiSection);
+                    if (parent != null) {
+                        parent.getTimerPanel().stop();
+                        parent.showGameOver(score);
+                    }
                 }
             });
         }
@@ -284,8 +304,9 @@ public class SnakeGameLogic implements IGameLogic {
         }
         this.running = running;
         // Update background music state and running sound
-        if (APISection.getInstance() != null) {
-            BananaPanel parent = (BananaPanel) SwingUtilities.getAncestorOfClass(BananaPanel.class, APISection.getInstance());
+        APISection apiSection = safeGetAPISection();
+        if (apiSection != null) {
+            BananaPanel parent = (BananaPanel) SwingUtilities.getAncestorOfClass(BananaPanel.class, apiSection);
             if (parent != null) {
                 Component comp = parent;
                 while (comp != null && !(comp instanceof GameMainInterface)) {

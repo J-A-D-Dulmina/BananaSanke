@@ -168,18 +168,19 @@ public class APISection extends JPanel {
      */
     public void updateScore(int score) {
         if (scorePanel != null) {
+            final int scoreToUpdate = score;
             SwingUtilities.invokeLater(() -> {
                 try {
                     // Get the current score
                     int currentScore = scorePanel.getScore();
                     
                     // If the new score is higher than the current score, increment it
-                    if (score > currentScore) {
+                    if (scoreToUpdate > currentScore) {
                         scorePanel.incrementScore();
-                    } else if (score < currentScore) {
+                    } else if (scoreToUpdate < currentScore) {
                         // If the new score is lower, reset and increment to the desired score
                         scorePanel.resetScore();
-                        for (int i = 0; i < score; i++) {
+                        for (int i = 0; i < scoreToUpdate; i++) {
                             scorePanel.incrementScore();
                         }
                     }
@@ -196,9 +197,14 @@ public class APISection extends JPanel {
      * @return true if still alive, false if game over
      */
     public boolean reduceHealth() {
-        BananaPanel parent = (BananaPanel) SwingUtilities.getAncestorOfClass(BananaPanel.class, this);
-        if (parent != null) {
-            return parent.getHealthPanel().loseHealth();
+        try {
+            BananaPanel parent = (BananaPanel) SwingUtilities.getAncestorOfClass(BananaPanel.class, this);
+            if (parent != null && parent.getHealthPanel() != null) {
+                return parent.getHealthPanel().loseHealth();
+            }
+        } catch (Exception e) {
+            System.err.println("Error reducing health: " + e.getMessage());
+            e.printStackTrace();
         }
         return true;
     }

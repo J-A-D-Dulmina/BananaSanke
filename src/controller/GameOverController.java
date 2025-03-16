@@ -24,8 +24,20 @@ public class GameOverController implements IGameOverController {
 
     @Override
     public void setGameResults(int finalScore, int highScore, String playerName) {
-        model.setGameResults(finalScore, highScore, playerName);
-        view.updateDisplay();
+        // Ensure score is non-negative
+        int scoreToSet = Math.max(0, finalScore);
+        System.out.println("GameOverController setting score: " + scoreToSet);
+        
+        // Directly set in model first
+        model.setFinalScore(scoreToSet);
+        
+        // Then set the full results
+        model.setGameResults(scoreToSet, highScore, playerName);
+        
+        // Force view update
+        SwingUtilities.invokeLater(() -> {
+            view.updateDisplay();
+        });
     }
 
     @Override

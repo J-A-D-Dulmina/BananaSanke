@@ -2,10 +2,13 @@ package view;
 
 import controller.BananaPanelController;
 import model.BananaPanelModel;
+import model.SoundManager;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
 /**
  * Panel that contains the button panel, API section, and bottom bar.
@@ -22,6 +25,8 @@ public class BananaPanel extends JPanel {
     private static final Color BANANA_COLOR = new Color(255, 225, 53);
     private static final Color BANANA_PEEL_COLOR = new Color(255, 200, 0);
     
+    // Keep track of whether game over panel is showing
+    private boolean gameOverShowing = false;
 
     /**
      * Constructs the BananaPanel with different sections.
@@ -113,21 +118,76 @@ public class BananaPanel extends JPanel {
     }
 
     /**
-     * Shows the game over screen with the final score.
+     * Shows the game over screen with final score.
+     * @param score The final score to display.
      */
     public void showGameOver(int score) {
-        timerPanel.stop();
-        snakePanel.getGameLogic().setRunning(false);
+        // Prevent multiple game over panels
+        if (gameOverShowing) {
+            System.out.println("Game over panel already showing, ignoring request");
+            return;
+        }
         
+        // Stop all sounds
+        try {
+            SoundManager.getInstance().stopAll();
+            System.out.println("Stopped all sounds in showGameOver");
+        } catch (Exception e) {
+            System.err.println("Error stopping sounds: " + e.getMessage());
+        }
+        
+        // Stop the timer and set game to not running
+        if (timerPanel != null) {
+            timerPanel.stop();
+        }
+        
+        if (snakePanel != null && snakePanel.getGameLogic() != null) {
+            snakePanel.getGameLogic().setRunning(false);
+        }
+        
+        // Find the main frame
         Component comp = this;
+        GameMainInterface mainFrame = null;
         while (comp != null && !(comp instanceof GameMainInterface)) {
             comp = comp.getParent();
         }
         
         if (comp instanceof GameMainInterface) {
-            GameMainInterface mainFrame = (GameMainInterface) comp;
-            GameOverPanel gameOverPanel = new GameOverPanel(mainFrame, score);
-            gameOverPanel.setVisible(true);
+            mainFrame = (GameMainInterface) comp;
+            
+            // Make sure we have a valid score
+            int finalScore = Math.max(0, score);
+            // Also check if ScorePanel has a score
+            if (scorePanel != null) {
+                finalScore = Math.max(finalScore, scorePanel.getScore());
+            }
+            
+            System.out.println("Showing game over panel with final score: " + finalScore);
+            
+            // Use SwingUtilities.invokeLater to prevent thread issues
+            final GameMainInterface finalMainFrame = mainFrame;
+            final int displayScore = finalScore;
+            
+            gameOverShowing = true;
+            
+            SwingUtilities.invokeLater(() -> {
+                try {
+                    GameOverPanel gameOverPanel = new GameOverPanel(finalMainFrame, displayScore);
+                    gameOverPanel.addWindowListener(new WindowAdapter() {
+                        @Override
+                        public void windowClosed(WindowEvent e) {
+                            gameOverShowing = false;
+                        }
+                    });
+                    gameOverPanel.setVisible(true);
+                } catch (Exception e) {
+                    gameOverShowing = false;
+                    System.err.println("Error showing game over panel: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            });
+        } else {
+            System.err.println("Error: Could not find main frame to show game over panel");
         }
     }
 
