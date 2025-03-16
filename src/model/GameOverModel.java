@@ -8,6 +8,7 @@ public class GameOverModel implements IGameOverModel {
     private String playerName;
     private boolean isHighScore;
     private boolean isGameSaved;
+    private boolean showHighScoreMessage;
 
     public GameOverModel() {
         this.finalScore = 0;
@@ -15,6 +16,7 @@ public class GameOverModel implements IGameOverModel {
         this.playerName = "";
         this.isHighScore = false;
         this.isGameSaved = false;
+        this.showHighScoreMessage = false;
     }
 
     public void setGameResults(int finalScore, int highScore, String playerName) {
@@ -23,6 +25,11 @@ public class GameOverModel implements IGameOverModel {
         this.highScore = highScore;
         this.playerName = playerName;
         this.isHighScore = finalScore > highScore;
+        
+        // If it's a high score, automatically show the message
+        if (this.isHighScore) {
+            this.showHighScoreMessage = true;
+        }
     }
 
     public int getFinalScore() {
@@ -66,6 +73,16 @@ public class GameOverModel implements IGameOverModel {
     public void setGameSaved(boolean gameSaved) {
         isGameSaved = gameSaved;
     }
+    
+    @Override
+    public boolean shouldShowHighScoreMessage() {
+        return showHighScoreMessage;
+    }
+    
+    @Override
+    public void setShouldShowHighScoreMessage(boolean show) {
+        this.showHighScoreMessage = show;
+    }
 
     public void reset() {
         this.finalScore = 0;
@@ -73,5 +90,6 @@ public class GameOverModel implements IGameOverModel {
         this.playerName = "";
         this.isHighScore = false;
         this.isGameSaved = false;
+        this.showHighScoreMessage = false;
     }
 } 

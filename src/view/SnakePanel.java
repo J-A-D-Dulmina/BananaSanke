@@ -3,6 +3,8 @@ package view;
 import controller.SnakeGameController;
 import model.SnakeGameLogic;
 import model.SoundManager;
+import model.HighScoreNotifier;
+import interfaces.IHighScoreListener;
 
 import javax.swing.*;
 import java.awt.*;
@@ -10,7 +12,7 @@ import java.awt.event.*;
 import java.util.List;
 import java.util.ArrayList;
 
-public class SnakePanel extends JPanel {
+public class SnakePanel extends JPanel implements IHighScoreListener {
     private static final long serialVersionUID = -6220166041632288689L;
 	private final SnakeGameController gameController;
     private final SnakeGameLogic gameLogic;
@@ -35,6 +37,9 @@ public class SnakePanel extends JPanel {
         setupKeyBindings();
         createStartOverlay();
         createPauseOverlay();
+        
+        // Register as high score listener
+        HighScoreNotifier.getInstance().addHighScoreListener(this);
         
         // Only show start overlay initially
         if (startOverlay != null) {
@@ -325,5 +330,48 @@ public class SnakePanel extends JPanel {
             repaint();
             requestFocusInWindow();
         }
+    }
+
+    public void showHighScoreMessage(int score) {
+        SwingUtilities.invokeLater(() -> {
+            // Create a floating message that shows for a few seconds
+            JLabel highScoreLabel = new JLabel("NEW HIGH SCORE: " + score + "!");
+            highScoreLabel.setFont(new Font("Arial", Font.BOLD, 24));
+            highScoreLabel.setForeground(Color.YELLOW);
+            highScoreLabel.setBackground(new Color(0, 0, 0, 150));
+            highScoreLabel.setOpaque(true);
+            highScoreLabel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+            highScoreLabel.setHorizontalAlignment(JLabel.CENTER);
+            
+            // Position it in the center of the panel
+            int labelWidth = 300;
+            int labelHeight = 50;
+            int x = (getWidth() - labelWidth) / 2;
+            int y = getHeight() / 3; // Position at 1/3 from top
+            
+            highScoreLabel.setBounds(x, y, labelWidth, labelHeight);
+            
+            // Add to panel
+            add(highScoreLabel);
+            revalidate();
+            repaint();
+            
+            // Remove after a delay
+            Timer timer = new Timer(3000, e -> {
+                remove(highScoreLabel);
+                revalidate();
+                repaint();
+            });
+            timer.setRepeats(false);
+            timer.start();
+        });
+    }
+
+    /**
+     * Implementation of IHighScoreListener
+     */
+    @Override
+    public void onNewHighScore(int score) {
+        showHighScoreMessage(score);
     }
 }

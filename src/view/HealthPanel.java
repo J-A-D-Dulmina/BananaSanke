@@ -1,13 +1,10 @@
 package view;
 
-import utils.ImageLoader;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import model.HealthPanelModel;
 import controller.HealthPanelController;
-import java.net.URL;
 
 /**
  * Panel displaying the player's health with heart icons.
@@ -48,19 +45,19 @@ public class HealthPanel extends JPanel {
         JPanel heartPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
         heartPanel.setOpaque(false);
 
-        // Skip external file loading and directly create the heart icon
-        ImageIcon heartIcon = createHeartIcon(20, 20);
-        System.out.println("Created heart icon directly in code to avoid loading issues");
-        
-        // Create and add heart labels to panel
+        // Create a red dot instead of loading heart icons
         for (int i = 0; i < 3; i++) {
-            // Always create a new copy of the icon to avoid sharing issues
-            ImageIcon heartCopy = new ImageIcon(heartIcon.getImage());
-            hearts[i] = new JLabel(heartCopy);
-            hearts[i].setPreferredSize(new Dimension(20, 20));
-            hearts[i].setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));
+            // Create a custom red dot icon
+            BufferedImage img = new BufferedImage(18, 18, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g2 = (Graphics2D) img.getGraphics();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(Color.RED);
+            g2.fillOval(0, 0, 18, 18);
+            g2.dispose();
+            
+            hearts[i] = new JLabel(new ImageIcon(img));
+            System.out.println("Created red dot health indicator #" + i);
             heartPanel.add(hearts[i]);
-            System.out.println("Added heart #" + i);
         }
 
         gbc.gridx = 1;
@@ -68,48 +65,6 @@ public class HealthPanel extends JPanel {
         
         // Ensure all hearts are visible initially
         updateHealthDisplay(3);
-    }
-
-    /**
-     * Creates a heart-shaped icon with proper styling
-     */
-    private ImageIcon createHeartIcon(int width, int height) {
-        // Create a custom heart shape
-        BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g2 = (Graphics2D) img.getGraphics();
-        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        
-        // Draw a red heart shape
-        g2.setColor(new Color(255, 0, 0, 240));
-        
-        // Create heart shape using Bezier curves for smoother look
-        int centerX = width / 2;
-        int size = Math.min(width, height);
-        
-        // Create a smooth heart shape
-        int[] xPoints = new int[]{
-            centerX, centerX + size/2, centerX + size/3, centerX, 
-            centerX - size/3, centerX - size/2, centerX
-        };
-        
-        int[] yPoints = new int[]{
-            size/4, size/2, size - size/4, size - size/6, 
-            size - size/4, size/2, size/4
-        };
-        
-        // Fill the heart shape
-        g2.fillPolygon(xPoints, yPoints, xPoints.length);
-        
-        // Add shading for 3D effect
-        g2.setColor(new Color(255, 0, 0, 255));
-        int shadowSize = size/8;
-        
-        // Two circles for top of heart with better position
-        g2.fillOval(centerX - size/4 - shadowSize/2, size/5, size/2, size/2);
-        g2.fillOval(centerX - shadowSize/2, size/5, size/2, size/2);
-        
-        g2.dispose();
-        return new ImageIcon(img);
     }
 
     /**

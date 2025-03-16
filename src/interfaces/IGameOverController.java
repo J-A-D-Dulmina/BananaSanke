@@ -55,4 +55,19 @@ public interface IGameOverController {
      * Returns to the main menu
      */
     void returnToMainMenu();
+    
+    /**
+     * Shows a high score message in the view
+     * 
+     * @param score The high score to display
+     */
+    void showHighScoreMessage(int score);
+    
+    /**
+     * Checks if a score is a high score and updates the display accordingly
+     * 
+     * @param score The score to check
+     * @return true if it's a high score
+     */
+    boolean checkAndDisplayHighScore(int score);
 } 

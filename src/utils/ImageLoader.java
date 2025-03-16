@@ -21,39 +21,32 @@ public class ImageLoader {
         // Debug output
         System.out.println("Attempting to load image: " + path);
         
-        // Method 1: Direct file access - prioritize resources folder
+        // Method 1: Using ResourceLoader
+        URL imageUrl = ResourceLoader.getResource(path);
+        if (imageUrl != null) {
+            System.out.println("Successfully found resource via ResourceLoader: " + imageUrl);
+            icon = new ImageIcon(imageUrl);
+            if (icon.getIconWidth() > 0) {
+                return icon;
+            }
+        } else {
+            System.out.println("ResourceLoader could not find: " + path);
+        }
+        
+        // Method 2: Direct file access
         try {
-            // For resources/, ensure we're using the proper path
             File file = new File(path);
             if (file.exists() && file.canRead()) {
                 System.out.println("Loading via direct file access: " + file.getAbsolutePath());
                 icon = new ImageIcon(file.getAbsolutePath());
                 if (icon.getIconWidth() > 0) {
-                    System.out.println("Successfully loaded image via direct file access: " + path);
                     return icon;
-                } else {
-                    System.out.println("Direct file access found file but image has invalid dimensions: " + path);
                 }
             } else {
                 System.out.println("Direct file access failed for: " + file.getAbsolutePath());
             }
         } catch (Exception e) {
             System.out.println("Error in direct file access: " + e.getMessage());
-        }
-        
-        // Method 2: Using ResourceLoader
-        URL imageUrl = ResourceLoader.getResource(path);
-        if (imageUrl != null) {
-            System.out.println("Successfully found resource via ResourceLoader: " + imageUrl);
-            icon = new ImageIcon(imageUrl);
-            if (icon.getIconWidth() > 0) {
-                System.out.println("Successfully loaded image via ResourceLoader: " + path);
-                return icon;
-            } else {
-                System.out.println("ResourceLoader found URL but image has invalid dimensions: " + path);
-            }
-        } else {
-            System.out.println("ResourceLoader could not find: " + path);
         }
         
         // Method 3: Class resource
@@ -63,10 +56,7 @@ public class ImageLoader {
                 System.out.println("Found as class resource: " + url);
                 icon = new ImageIcon(url);
                 if (icon.getIconWidth() > 0) {
-                    System.out.println("Successfully loaded image via class resource: " + path);
                     return icon;
-                } else {
-                    System.out.println("Class resource found URL but image has invalid dimensions: " + path);
                 }
             } else {
                 System.out.println("Not found as class resource: /" + path);
@@ -83,10 +73,7 @@ public class ImageLoader {
                 System.out.println("Loading from project root: " + file.getAbsolutePath());
                 icon = new ImageIcon(file.getAbsolutePath());
                 if (icon.getIconWidth() > 0) {
-                    System.out.println("Successfully loaded image via project root: " + path);
                     return icon;
-                } else {
-                    System.out.println("Project root found file but image has invalid dimensions: " + path);
                 }
             } else {
                 System.out.println("Project root path failed: " + file.getAbsolutePath());

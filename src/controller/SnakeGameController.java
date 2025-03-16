@@ -1,7 +1,9 @@
 package controller;
 
 import interfaces.IGameController;
+import interfaces.ISnakeGameController;
 import model.SnakeGameLogic;
+import model.HighScoreNotifier;
 import view.SnakePanel;
 import java.awt.event.KeyEvent;
 import java.awt.event.ActionListener;
@@ -14,12 +16,13 @@ import java.util.List;
 /**
  * Controls snake game mechanics, user input, and game flow.
  */
-public class SnakeGameController implements IGameController, ActionListener {
+public class SnakeGameController implements IGameController, ISnakeGameController, ActionListener {
     private final SnakePanel snakePanel;
     private final SnakeGameLogic gameLogic;
     private final GameState gameState;
     private Timer gameTimer;
     private int direction;
+    private HighScoreNotifier highScoreNotifier;
     
     public static final int UP = 0;
     public static final int RIGHT = 1;
@@ -32,6 +35,7 @@ public class SnakeGameController implements IGameController, ActionListener {
         this.gameState = new GameState();
         this.direction = RIGHT;
         this.gameTimer = new Timer(100, this); // Timer triggers every 100ms
+        this.highScoreNotifier = HighScoreNotifier.getInstance();
     }
 
     /**
@@ -179,6 +183,16 @@ public class SnakeGameController implements IGameController, ActionListener {
         stopGame();
         gameState.setGameOver(true);
         gameLogic.setRunning(false);
+        
+        // Get the final score
+        final int finalScore = gameState.getScore();
+        
+        // Check if high score on a background thread
+        if (finalScore > 0) {
+            SwingUtilities.invokeLater(() -> {
+                saveHighScore(finalScore);
+            });
+        }
     }
 
     // Getters for game state
@@ -195,5 +209,45 @@ public class SnakeGameController implements IGameController, ActionListener {
     @Override
     public int getScore() {
         return gameState.getScore();
+    }
+
+    /**
+     * Checks if the given score is a high score
+     */
+    @Override
+    public boolean isHighScore(int score) {
+        return score > 0 && (score > highScoreNotifier.getCurrentHighScore() || 
+                highScoreNotifier.getCurrentHighScore() == 0);
+    }
+
+    /**
+     * Saves a high score and notifies listeners
+     */
+    @Override
+    public boolean saveHighScore(int score) {
+        if (isHighScore(score)) {
+            return highScoreNotifier.checkAndNotifyHighScore(score);
+        }
+        return false;
+    }
+    
+    /**
+     * Toggles game pause state
+     */
+    @Override
+    public void togglePause() {
+        if (gameState.isPaused()) {
+            // Resume game
+            gameState.setPaused(false);
+            gameLogic.setRunning(true);
+            gameTimer.start();
+            snakePanel.hidePauseOverlay();
+        } else {
+            // Pause game
+            gameState.setPaused(true);
+            gameLogic.setRunning(false);
+            gameTimer.stop();
+            snakePanel.showPauseOverlay();
+        }
     }
 }

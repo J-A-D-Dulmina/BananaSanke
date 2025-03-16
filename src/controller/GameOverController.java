@@ -100,7 +100,8 @@ public class GameOverController implements IGameOverController {
             JSONObject jsonResponse = new JSONObject(response);
             
             if (jsonResponse.getString("status").equals("success")) {
-                view.showMessage("Score saved successfully!", true);
+                // Success - don't show dialog anymore
+                model.setGameSaved(true);
             } else {
                 view.showMessage("Failed to save score: " + jsonResponse.getString("message"), false);
             }
@@ -126,5 +127,52 @@ public class GameOverController implements IGameOverController {
             LoginUI loginUI = new LoginUI();
             loginUI.setVisible(true);
         });
+    }
+
+    @Override
+    public void showHighScoreMessage(int score) {
+        // First update the model
+        model.setShouldShowHighScoreMessage(true);
+        
+        // Then update the view
+        if (view != null) {
+            SwingUtilities.invokeLater(() -> {
+                try {
+                    // Call the view's method to display the message
+                    view.showHighScoreMessage(score);
+                } catch (Exception e) {
+                    System.err.println("Error showing high score message: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            });
+        }
+    }
+    
+    @Override
+    public boolean checkAndDisplayHighScore(int score) {
+        // First check if we have a current high score to compare against
+        try {
+            updateHighScore(); // Get the latest high score from API
+            
+            boolean isHighScore = (model.getHighScore() == 0 || score > model.getHighScore());
+            
+            if (isHighScore) {
+                // Save the score to API
+                saveScore();
+                
+                // Update model and display
+                model.setHighScore(true);
+                showHighScoreMessage(score);
+                return true;
+            } else {
+                model.setHighScore(false);
+                model.setShouldShowHighScoreMessage(false);
+            }
+        } catch (Exception e) {
+            System.err.println("Error checking high score: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return false;
     }
 } 

@@ -8,6 +8,7 @@ import model.GameOverModel;
 import model.SoundManager;
 import interfaces.ISessionManager;
 import model.SessionManagerImpl;
+import utils.ImageLoader;
 
 public class GameOverPanel extends JDialog {
     private static final long serialVersionUID = 1L;
@@ -16,6 +17,7 @@ public class GameOverPanel extends JDialog {
     private final GameOverModel model;
     private final ISessionManager sessionManager;
     private JLabel scoreLabel; // Store reference to the score label
+    private JLabel highScoreLabel; // Label for high score message
     private boolean isClosing = false;
 
     public GameOverPanel(GameMainInterface mainFrame, int finalScore) {
@@ -72,6 +74,13 @@ public class GameOverPanel extends JDialog {
             System.out.println("Explicitly set score label to: " + finalScore);
         }
         
+        // Handle high score checking using controller
+        if (finalScore > 0) {
+            SwingUtilities.invokeLater(() -> {
+                controller.checkAndDisplayHighScore(finalScore);
+            });
+        }
+        
         // Debug output
         System.out.println("GameOverPanel created with score: " + finalScore);
         System.out.println("Model score value: " + model.getFinalScore());
@@ -118,6 +127,13 @@ public class GameOverPanel extends JDialog {
         // Score - initialize and store reference
         scoreLabel = createStyledLabel("Final Score: " + model.getFinalScore(), 24);
         scoreLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        
+        // High score message - initially hidden
+        highScoreLabel = new JLabel("NEW HIGH SCORE!");
+        highScoreLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        highScoreLabel.setForeground(Color.YELLOW);
+        highScoreLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        highScoreLabel.setVisible(false); // Initially hidden
 
         // Buttons panel
         JPanel buttonPanel = new JPanel();
@@ -142,7 +158,9 @@ public class GameOverPanel extends JDialog {
         centerPanel.add(gameOverLabel);
         centerPanel.add(Box.createVerticalStrut(20));
         centerPanel.add(scoreLabel);
-        centerPanel.add(Box.createVerticalStrut(30));
+        centerPanel.add(Box.createVerticalStrut(10));
+        centerPanel.add(highScoreLabel); // Add high score label
+        centerPanel.add(Box.createVerticalStrut(20));
         centerPanel.add(buttonPanel);
         centerPanel.add(Box.createVerticalGlue());
 
@@ -201,6 +219,30 @@ public class GameOverPanel extends JDialog {
             System.out.println("Updated score label to: " + finalScore);
         } else {
             System.err.println("Error: scoreLabel is null in updateDisplay");
+        }
+        
+        // Update high score message based on model state
+        if (highScoreLabel != null) {
+            highScoreLabel.setVisible(model.shouldShowHighScoreMessage());
+            if (model.shouldShowHighScoreMessage()) {
+                highScoreLabel.setText("NEW HIGH SCORE: " + finalScore);
+                
+                // Try to add the happy snake icon if not already set
+                if (!(highScoreLabel.getIcon() instanceof ImageIcon)) {
+                    try {
+                        ImageIcon snakeIcon = ImageLoader.loadImage("resources/score_update_happy_snake.png");
+                        if (snakeIcon != null) {
+                            // Scale the icon to a reasonable size
+                            Image img = snakeIcon.getImage().getScaledInstance(30, 30, Image.SCALE_SMOOTH);
+                            highScoreLabel.setIcon(new ImageIcon(img));
+                            // Add some space between text and icon
+                            highScoreLabel.setIconTextGap(10);
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Error loading happy snake icon: " + e.getMessage());
+                    }
+                }
+            }
         }
         
         // Update other display elements as needed
@@ -324,5 +366,33 @@ public class GameOverPanel extends JDialog {
         button.setContentAreaFilled(false);
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
         return button;
+    }
+
+    /**
+     * Shows high score message in the panel
+     * @param score The high score value
+     */
+    public void showHighScoreMessage(int score) {
+        if (highScoreLabel != null) {
+            highScoreLabel.setText("NEW HIGH SCORE: " + score);
+            
+            // Try to add the happy snake icon
+            try {
+                ImageIcon snakeIcon = ImageLoader.loadImage("resources/score_update_happy_snake.png");
+                if (snakeIcon != null) {
+                    // Scale the icon to a reasonable size
+                    Image img = snakeIcon.getImage().getScaledInstance(30, 30, Image.SCALE_SMOOTH);
+                    highScoreLabel.setIcon(new ImageIcon(img));
+                    // Add some space between text and icon
+                    highScoreLabel.setIconTextGap(10);
+                }
+            } catch (Exception e) {
+                System.err.println("Error loading happy snake icon: " + e.getMessage());
+            }
+            
+            highScoreLabel.setVisible(true);
+            revalidate();
+            repaint();
+        }
     }
 } 

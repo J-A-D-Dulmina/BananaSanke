@@ -88,4 +88,18 @@ public interface IGameOverModel {
      * Resets the model to its initial state
      */
     void reset();
+    
+    /**
+     * Returns whether a high score message should be displayed
+     * 
+     * @return true if high score message should be displayed
+     */
+    boolean shouldShowHighScoreMessage();
+    
+    /**
+     * Sets whether to show high score message
+     * 
+     * @param show true to show the message
+     */
+    void setShouldShowHighScoreMessage(boolean show);
 } 
