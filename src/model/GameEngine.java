@@ -24,6 +24,13 @@ public class GameEngine {
         return (currentGame != null) ? currentGame.getSolution() : -1;
     }
 
+    /**
+     * Gets the current game instance.
+     * @return The current Game object.
+     */
+    public Game getCurrentGame() {
+        return currentGame;
+    }
 
     /**
      * Fetches the next game puzzle.
@@ -34,8 +41,7 @@ public class GameEngine {
             currentGame = bananaAPI.getRandomGame();
             return currentGame.getLocation();
         } catch (MalformedURLException e) {
-            System.out.println("Error retrieving the game image!");
-            e.printStackTrace();
+            System.err.println("Error retrieving the game image: " + e.getMessage());
             return null;
         }
     }

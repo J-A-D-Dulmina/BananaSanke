@@ -3,206 +3,423 @@ package api;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLEncoder;
 import org.json.JSONException;
 import org.json.JSONObject;
-import model.SessionManager; // For storing authentication tokens
+import model.SessionManagerImpl; // For interface implementation
+import interfaces.ISessionManager;
+import interfaces.IAPIClient;
 
 /**
  * APIClient handles HTTP requests for interacting with the backend API.
- * Supports authentication via session token.
+ * Supports authentication via JWT tokens.
  */
-public class APIClient {
+public class APIClient implements IAPIClient {
 
-    private static final String BASE_URL = "https://deshandulmina.info/db_api.php";
+    public static final String BASE_URL = "https://deshandulmina.info/api.php";
     private static final String CONTENT_TYPE = "application/x-www-form-urlencoded";
     private static final String ACCEPT_TYPE = "application/json";
+    private static APIClient instance;
+    private final ISessionManager sessionManager;
+
+    private APIClient() {
+        this.sessionManager = SessionManagerImpl.getInstance();
+    }
+
+    public static APIClient getInstance() {
+        if (instance == null) {
+            instance = new APIClient();
+        }
+        return instance;
+    }
 
     /**
-     * Sends a GET request to the given API URL with authentication.
-     *
-     * @param apiUrl The full API URL for the GET request.
-     * @return The API response as a String.
+     * Sends a GET request with authentication.
      */
-    public static String sendAuthenticatedGetRequest(String apiUrl) {
+    @Override
+    public String sendAuthenticatedGetRequest(String apiUrl) {
         return sendHttpRequest(apiUrl, "GET", null, true);
     }
 
     /**
-     * Sends a POST request to the given API URL with authentication.
-     *
-     * @param apiUrl   The full API URL for the POST request.
-     * @param postData The request payload as a URL-encoded string.
-     * @return The API response as a String.
+     * Sends a POST request with authentication.
      */
-    public static String sendAuthenticatedPostRequest(String apiUrl, String postData) {
+    @Override
+    public String sendAuthenticatedPostRequest(String apiUrl, String postData) {
         return sendHttpRequest(apiUrl, "POST", postData, true);
     }
 
-    /**
-     * Handles the core HTTP request logic for both GET and POST methods.
-     *
-     * @param apiUrl       The API endpoint URL.
-     * @param method       The HTTP method (GET or POST).
-     * @param postData     The request body for POST requests.
-     * @param authRequired Whether authentication is required.
-     * @return The response from the API as a String.
-     */
-    private static String sendHttpRequest(String apiUrl, String method, String postData, boolean authRequired) {
-        StringBuilder response = new StringBuilder();
+    // For backward compatibility - these static methods delegate to the singleton instance
+    public static String sendAuthenticatedGetRequestStatic(String apiUrl) {
+        return getInstance().sendAuthenticatedGetRequest(apiUrl);
+    }
 
-        try {
-            HttpURLConnection conn = setupHttpConnection(apiUrl, method, authRequired);
-
-            if ("POST".equals(method) && postData != null) {
-                writePostData(conn, postData);
-            }
-
-            response.append(readResponse(conn));
-        } catch (IOException e) {
-            e.printStackTrace();
-            return "{\"status\":\"error\", \"message\":\"Network error occurred\"}";
-        }
-
-        return response.toString();
+    public static String sendAuthenticatedPostRequestStatic(String apiUrl, String postData) {
+        return getInstance().sendAuthenticatedPostRequest(apiUrl, postData);
     }
 
     /**
-     * Sets up an HttpURLConnection object with necessary headers.
-     *
-     * @param apiUrl       The API endpoint URL.
-     * @param method       The HTTP method (GET or POST).
-     * @param authRequired Whether authentication is required.
-     * @return Configured HttpURLConnection instance.
-     * @throws IOException If an I/O error occurs.
+     * Sends an HTTP request.
      */
-    private static HttpURLConnection setupHttpConnection(String apiUrl, String method, boolean authRequired) throws IOException {
+    private String sendHttpRequest(String apiUrl, String method, String postData, boolean authRequired) {
+        StringBuilder response = new StringBuilder();
+        HttpURLConnection conn = null;
+
+        try {
+            conn = setupHttpConnection(apiUrl, method, authRequired);
+
+            if ("POST".equals(method) && postData != null) {
+                byte[] postDataBytes = postData.getBytes("UTF-8");
+                conn.setRequestProperty("Content-Length", String.valueOf(postDataBytes.length));
+                
+                try (OutputStream os = conn.getOutputStream()) {
+                    os.write(postDataBytes);
+                    os.flush();
+                }
+            }
+
+            int responseCode = conn.getResponseCode();
+            String responseMessage = conn.getResponseMessage();
+            
+            InputStream inputStream = (responseCode >= 400) ? conn.getErrorStream() : conn.getInputStream();
+            
+            if (inputStream != null) {
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, "UTF-8"))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        response.append(line);
+                    }
+                }
+            }
+
+            if (response.length() == 0) {
+                return String.format(
+                    "{\"status\":\"error\", \"message\":\"Empty response from server (HTTP %d: %s)\", \"http_code\":%d}",
+                    responseCode,
+                    responseMessage,
+                    responseCode
+                );
+            }
+
+            try {
+                new JSONObject(response.toString());
+                return response.toString();
+            } catch (JSONException e) {
+                return String.format(
+                    "{\"status\":\"error\", \"message\":\"Invalid JSON response from server\", \"http_code\":%d}",
+                    responseCode
+                );
+            }
+            
+        } catch (Exception e) {
+            return String.format(
+                "{\"status\":\"error\", \"message\":\"%s\"}",
+                e.getMessage().replace("\"", "\\\"")
+            );
+        } finally {
+            if (conn != null) {
+                conn.disconnect();
+            }
+        }
+    }
+
+    private HttpURLConnection setupHttpConnection(String apiUrl, String method, boolean authRequired) throws IOException {
         URL url = new URL(apiUrl);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod(method);
+        conn.setRequestProperty("Content-Type", CONTENT_TYPE);
         conn.setRequestProperty("Accept", ACCEPT_TYPE);
-
+        conn.setDoOutput("POST".equals(method));
+        conn.setDoInput(true);
+        conn.setConnectTimeout(15000);
+        conn.setReadTimeout(15000);
+        
         if (authRequired) {
-            String authToken = SessionManager.getAuthToken();
-            if (authToken != null) {
+            String authToken = sessionManager.getAuthToken();
+            if (authToken != null && !authToken.isEmpty()) {
                 conn.setRequestProperty("Authorization", "Bearer " + authToken);
             }
         }
-
-        if ("POST".equals(method)) {
-            conn.setDoOutput(true);
-            conn.setRequestProperty("Content-Type", CONTENT_TYPE);
-        }
+        
         return conn;
     }
 
     /**
-     * Writes POST request data to the connection output stream.
-     *
-     * @param conn     The HttpURLConnection instance.
-     * @param postData The request body as a URL-encoded string.
-     * @throws IOException If an I/O error occurs.
-     */
-    private static void writePostData(HttpURLConnection conn, String postData) throws IOException {
-        try (DataOutputStream out = new DataOutputStream(conn.getOutputStream())) {
-            out.writeBytes(postData);
-            out.flush();
-        }
-    }
-
-    /**
-     * Reads the API response from the connection input stream.
-     *
-     * @param conn The HttpURLConnection instance.
-     * @return The response as a String.
-     * @throws IOException If an I/O error occurs.
-     */
-    private static String readResponse(HttpURLConnection conn) throws IOException {
-        StringBuilder response = new StringBuilder();
-        int responseCode = conn.getResponseCode();
-
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                response.append(line);
-            }
-        }
-
-        if (responseCode != HttpURLConnection.HTTP_OK) {
-            System.out.println("Request failed. Response Code: " + responseCode);
-        }
-
-        return response.toString();
-    }
-
-    /**
      * Registers a new user.
-     *
-     * @param username The desired username.
-     * @param email    The user's email.
-     * @param password The user's password.
-     * @return The API response message.
      */
-    public static String registerUser(String username, String email, String password) {
-        String apiUrl = BASE_URL + "?action=register_user";
-        String postData = "username=" + username + "&email=" + email + "&password=" + password;
-
-        String response = sendHttpRequest(apiUrl, "POST", postData, false);
-        System.out.println("API Response (Register): " + response);
-
+    @Override
+    public String registerUser(String username, String email, String password) {
         try {
-            JSONObject jsonResponse = new JSONObject(response);
-            return jsonResponse.optString("message", "Unexpected error occurred");
-        } catch (JSONException e) {
-            return "Error processing registration request";
+            String postData = String.format(
+                "username=%s&email=%s&password=%s",
+                URLEncoder.encode(username, "UTF-8"),
+                URLEncoder.encode(email, "UTF-8"),
+                URLEncoder.encode(password, "UTF-8")
+            );
+            
+            return sendHttpRequest(BASE_URL + "?action=register_user", "POST", postData, false);
+        } catch (Exception e) {
+            return String.format("{\"status\":\"error\", \"message\":\"%s\"}", e.getMessage().replace("\"", "\\\""));
         }
+    }
+
+    // Static method for backward compatibility
+    public static String registerUserStatic(String username, String email, String password) {
+        return getInstance().registerUser(username, email, password);
     }
 
     /**
-     * Logs in a user and stores authentication token.
-     *
-     * @param email    The user's email.
-     * @param password The user's password.
-     * @return The full API response as JSON.
+     * Logs in a user.
      */
-    public static String loginUser(String email, String password) {
-        String apiUrl = BASE_URL + "?action=login_user";
-        String postData = "email=" + email + "&password=" + password;
-
-        String response = sendHttpRequest(apiUrl, "POST", postData, false);
-        System.out.println("API Response (Login): " + response);
-
+    @Override
+    public String loginUser(String email, String password) {
         try {
-            JSONObject jsonResponse = new JSONObject(response);
-            if (jsonResponse.optString("status").equals("success")) {
-                String authToken = jsonResponse.optString("auth_token");
-                SessionManager.setAuthToken(authToken);
-            }
-        } catch (JSONException e) {
-            return "{\"status\":\"error\", \"message\":\"Error processing login request\"}";
+            String postData = String.format(
+                "email=%s&password=%s",
+                URLEncoder.encode(email, "UTF-8"),
+                URLEncoder.encode(password, "UTF-8")
+            );
+            
+            return sendHttpRequest(BASE_URL + "?action=login_user", "POST", postData, false);
+        } catch (Exception e) {
+            return String.format("{\"status\":\"error\", \"message\":\"%s\"}", e.getMessage().replace("\"", "\\\""));
         }
+    }
 
-        return response;
+    // Static method for backward compatibility
+    public static String loginUserStatic(String email, String password) {
+        return getInstance().loginUser(email, password);
     }
 
     /**
-     * Logs out a user and clears authentication token.
-     *
-     * @return The API response message.
+     * Logs out the current user.
      */
-    public static String logoutUser() {
-        String apiUrl = BASE_URL + "?action=logout_user";
-        String authToken = SessionManager.getAuthToken();
-
-        if (authToken == null) {
-            return "{\"status\":\"error\", \"message\":\"No active session\"}";
+    @Override
+    public String logoutUser() {
+        try {
+            return sendAuthenticatedGetRequest(BASE_URL + "?action=logout_user");
+        } catch (Exception e) {
+            return String.format("{\"status\":\"error\", \"message\":\"%s\"}", e.getMessage().replace("\"", "\\\""));
         }
-
-        String postData = "auth_token=" + authToken;
-        String response = sendHttpRequest(apiUrl, "POST", postData, true);
-        System.out.println("API Response (Logout): " + response);
-
-        SessionManager.logout(); // Fixed: Now using the correct method
-        return response;
     }
 
+    // Static method for backward compatibility
+    public static String logoutUserStatic() {
+        return getInstance().logoutUser();
+    }
+
+    /**
+     * Resets a user's password.
+     */
+    @Override
+    public String resetPassword(String email, String newPassword) {
+        try {
+            String postData = String.format(
+                "email=%s&new_password=%s",
+                URLEncoder.encode(email, "UTF-8"),
+                URLEncoder.encode(newPassword, "UTF-8")
+            );
+            
+            return sendHttpRequest(BASE_URL + "?action=reset_password", "POST", postData, false);
+        } catch (Exception e) {
+            return String.format("{\"status\":\"error\", \"message\":\"%s\"}", e.getMessage().replace("\"", "\\\""));
+        }
+    }
+
+    // Static method for backward compatibility
+    public static String resetPasswordStatic(String email, String newPassword) {
+        return getInstance().resetPassword(email, newPassword);
+    }
+
+    /**
+     * Updates the current user's username.
+     */
+    @Override
+    public String updateUsername(String newUsername) {
+        try {
+            String postData = String.format("new_username=%s", URLEncoder.encode(newUsername, "UTF-8"));
+            return sendAuthenticatedPostRequest(BASE_URL + "?action=update_username", postData);
+        } catch (Exception e) {
+            return String.format("{\"status\":\"error\", \"message\":\"%s\"}", e.getMessage().replace("\"", "\\\""));
+        }
+    }
+
+    // Static method for backward compatibility
+    public static String updateUsernameStatic(String newUsername) {
+        return getInstance().updateUsername(newUsername);
+    }
+
+    /**
+     * Updates the current user's password.
+     */
+    @Override
+    public String updatePassword(String oldPassword, String newPassword) {
+        try {
+            String postData = String.format(
+                "old_password=%s&new_password=%s",
+                URLEncoder.encode(oldPassword, "UTF-8"),
+                URLEncoder.encode(newPassword, "UTF-8")
+            );
+            
+            return sendAuthenticatedPostRequest(BASE_URL + "?action=update_password", postData);
+        } catch (Exception e) {
+            return String.format("{\"status\":\"error\", \"message\":\"%s\"}", e.getMessage().replace("\"", "\\\""));
+        }
+    }
+
+    // Static method for backward compatibility
+    public static String updatePasswordStatic(String oldPassword, String newPassword) {
+        return getInstance().updatePassword(oldPassword, newPassword);
+    }
+
+    /**
+     * Gets the current user's email.
+     */
+    @Override
+    public String getUserEmail() {
+        try {
+            return sendAuthenticatedGetRequest(BASE_URL + "?action=get_user_email");
+        } catch (Exception e) {
+            return String.format("{\"status\":\"error\", \"message\":\"%s\"}", e.getMessage().replace("\"", "\\\""));
+        }
+    }
+
+    // Static method for backward compatibility
+    public static String getUserEmailStatic() {
+        return getInstance().getUserEmail();
+    }
+
+    /**
+     * Gets a list of all users.
+     */
+    @Override
+    public String getUsers() {
+        try {
+            return sendAuthenticatedGetRequest(BASE_URL + "?action=get_users");
+        } catch (Exception e) {
+            return String.format("{\"status\":\"error\", \"message\":\"%s\"}", e.getMessage().replace("\"", "\\\""));
+        }
+    }
+
+    // Static method for backward compatibility
+    public static String getUsersStatic() {
+        return getInstance().getUsers();
+    }
+
+    /**
+     * Updates the current user's high score.
+     */
+    @Override
+    public String updateHighScore(int score) {
+        try {
+            String postData = String.format("score=%d", score);
+            return sendAuthenticatedPostRequest(BASE_URL + "?action=update_score", postData);
+        } catch (Exception e) {
+            return String.format("{\"status\":\"error\", \"message\":\"%s\"}", e.getMessage().replace("\"", "\\\""));
+        }
+    }
+
+    // Static method for backward compatibility
+    public static String updateHighScoreStatic(int score) {
+        return getInstance().updateHighScore(score);
+    }
+
+    /**
+     * Gets the current user's best score.
+     */
+    @Override
+    public String getBestScore() {
+        try {
+            return sendAuthenticatedGetRequest(BASE_URL + "?action=get_best_score");
+        } catch (Exception e) {
+            return String.format("{\"status\":\"error\", \"message\":\"%s\"}", e.getMessage().replace("\"", "\\\""));
+        }
+    }
+
+    // Static method for backward compatibility
+    public static String getBestScoreStatic() {
+        return getInstance().getBestScore();
+    }
+
+    /**
+     * Gets the leaderboard.
+     */
+    @Override
+    public String getLeaderboard() {
+        try {
+            return sendAuthenticatedGetRequest(BASE_URL + "?action=get_leaderboard");
+        } catch (Exception e) {
+            return String.format("{\"status\":\"error\", \"message\":\"%s\"}", e.getMessage().replace("\"", "\\\""));
+        }
+    }
+
+    // Static method for backward compatibility
+    public static String getLeaderboardStatic() {
+        return getInstance().getLeaderboard();
+    }
+
+    /**
+     * Requests a password reset.
+     */
+    @Override
+    public String requestPasswordReset(String username, String email) {
+        try {
+            String postData = String.format(
+                "username=%s&email=%s",
+                URLEncoder.encode(username, "UTF-8"),
+                URLEncoder.encode(email, "UTF-8")
+            );
+            
+            return sendHttpRequest(BASE_URL + "?action=request_password_reset", "POST", postData, false);
+        } catch (Exception e) {
+            return String.format("{\"status\":\"error\", \"message\":\"%s\"}", e.getMessage().replace("\"", "\\\""));
+        }
+    }
+
+    // Static method for backward compatibility
+    public static String requestPasswordResetStatic(String username, String email) {
+        return getInstance().requestPasswordReset(username, email);
+    }
+
+    /**
+     * Verifies a reset token.
+     */
+    @Override
+    public String verifyResetToken(String username, String token, String newPassword) {
+        try {
+            String postData = String.format(
+                "username=%s&token=%s&new_password=%s",
+                URLEncoder.encode(username, "UTF-8"),
+                URLEncoder.encode(token, "UTF-8"),
+                URLEncoder.encode(newPassword, "UTF-8")
+            );
+            
+            return sendHttpRequest(BASE_URL + "?action=verify_reset_token", "POST", postData, false);
+        } catch (Exception e) {
+            return String.format("{\"status\":\"error\", \"message\":\"%s\"}", e.getMessage().replace("\"", "\\\""));
+        }
+    }
+
+    // Static method for backward compatibility
+    public static String verifyResetTokenStatic(String username, String token, String newPassword) {
+        return getInstance().verifyResetToken(username, token, newPassword);
+    }
+
+    /**
+     * Clears a reset token.
+     */
+    @Override
+    public String clearResetToken(String username) {
+        try {
+            String postData = String.format("username=%s", URLEncoder.encode(username, "UTF-8"));
+            return sendHttpRequest(BASE_URL + "?action=clear_reset_token", "POST", postData, false);
+        } catch (Exception e) {
+            return String.format("{\"status\":\"error\", \"message\":\"%s\"}", e.getMessage().replace("\"", "\\\""));
+        }
+    }
+
+    // Static method for backward compatibility
+    public static String clearResetTokenStatic(String username) {
+        return getInstance().clearResetToken(username);
+    }
 }

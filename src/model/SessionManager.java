@@ -1,49 +1,71 @@
 package model;
 
 /**
- * Manages session authentication token and username for API requests.
+ * Manages user session data with static methods.
+ * For interface implementation, use SessionManagerImpl.
  */
 public class SessionManager {
-    private static String authToken;
-    private static String username;
-
+    
+    // Session data
+    private static String authToken = null;
+    private static String username = null;
+    private static String email = null;
+    
     /**
-     * Stores the authentication token.
-     * @param token The authentication token received from the API.
+     * Private constructor to prevent instantiation.
      */
-    public static void setAuthToken(String token) {
-        authToken = token;
+    private SessionManager() {
+        // Private constructor
     }
-
+    
     /**
-     * Retrieves the stored authentication token.
-     * @return The stored authentication token, or null if not set.
+     * Gets the authentication token.
      */
     public static String getAuthToken() {
         return authToken;
     }
-
+    
     /**
-     * Stores the logged-in username.
-     * @param name The username received from the API.
-     */
-    public static void setUsername(String name) {
-        username = name;
-    }
-
-    /**
-     * Retrieves the stored username.
-     * @return The stored username, or null if not set.
+     * Gets the username.
      */
     public static String getUsername() {
         return username;
     }
-
+    
     /**
-     * Clears the stored authentication token and username (used on logout).
+     * Gets the email.
+     */
+    public static String getEmail() {
+        return email;
+    }
+    
+    /**
+     * Sets the authentication token.
+     */
+    public static void setAuthToken(String token) {
+        authToken = token;
+    }
+    
+    /**
+     * Sets the username.
+     */
+    public static void setUsername(String name) {
+        username = name;
+    }
+    
+    /**
+     * Sets the email.
+     */
+    public static void setEmail(String userEmail) {
+        email = userEmail;
+    }
+    
+    /**
+     * Logs out the user by clearing all session data.
      */
     public static void logout() {
         authToken = null;
         username = null;
+        email = null;
     }
 }

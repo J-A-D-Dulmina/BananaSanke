@@ -1,6 +1,7 @@
 package controller;
 
 import model.GameEngine;
+import model.Game;
 import java.net.URL;
 
 /**
@@ -29,6 +30,13 @@ public class GameController {
         return gameEngine.getCurrentGameSolution(); // Calls the method in GameEngine
     }
 
+    /**
+     * Gets the current game instance.
+     * @return The current Game object.
+     */
+    public Game getCurrentGame() {
+        return gameEngine.getCurrentGame();
+    }
 
     /**
      * Checks the user's answer.

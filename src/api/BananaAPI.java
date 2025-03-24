@@ -20,24 +20,24 @@ public class BananaAPI {
      */
     public Game getRandomGame() throws MalformedURLException {
         String dataRaw = readUrl(API_URL);
+        System.out.println("API Response: " + dataRaw);
 
         if (dataRaw == null || dataRaw.isEmpty()) {
+            System.out.println("Error: Empty API response");
             throw new MalformedURLException("API response is empty or null.");
         }
 
-        System.out.println("API Response: " + dataRaw);
-
         String[] data = dataRaw.split(",");
-        if (data.length < 2) {
-            throw new MalformedURLException("Invalid response format from API.");
-        }
 
         try {
             URL questionImageUrl = new URL(data[0].trim());
             int solution = Integer.parseInt(data[1].trim());
-
+            System.out.println("Successfully parsed API response:");
+            System.out.println("Image URL: " + questionImageUrl);
+            System.out.println("Solution: " + solution);
             return new Game(questionImageUrl, solution);
         } catch (Exception e) {
+            System.out.println("Error parsing API response: " + e.getMessage());
             throw new MalformedURLException("Error parsing API response: " + e.getMessage());
         }
     }
@@ -50,21 +50,31 @@ public class BananaAPI {
     private String readUrl(String urlString) {
         try {
             URL url = new URL(urlString);
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("GET");
-            connection.connect();
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.setConnectTimeout(5000);
+            conn.setReadTimeout(5000);
 
-            BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-            StringBuilder response = new StringBuilder();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                response.append(line);
+            int responseCode = conn.getResponseCode();
+            if (responseCode != 200) {
+                System.err.println("HTTP Error: " + responseCode);
+                return null;
             }
-            reader.close();
 
-            return response.toString().trim();
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
+                StringBuilder response = new StringBuilder();
+                String line;
+
+                while ((line = reader.readLine()) != null) {
+                    response.append(line);
+                }
+
+                return response.toString();
+            }
         } catch (Exception e) {
-            System.out.println("Error fetching data from API: " + e.getMessage());
+            System.err.println("Error reading from URL: " + urlString);
+            System.err.println("Error details: " + e.getMessage());
+            e.printStackTrace();
             return null;
         }
     }

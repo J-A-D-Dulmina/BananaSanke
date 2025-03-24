@@ -1,73 +1,95 @@
 package view;
 
-import controller.LeaderboardController;
-import model.ScoreManager;
-import model.SessionManager; // Ensure session is cleared on logout
-import model.SnakeGameLogic;
-
 import javax.swing.*;
-import api.APIClient;
 import java.awt.*;
+import model.SnakeGameLogic;
+import utils.CustomDialogUtils;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import factory.ComponentFactory;
+import interfaces.ISoundManager;
 
 /**
  * Main game interface that contains the Banana Snake game layout.
  */
 public class GameMainInterface extends JFrame {
-    private static final long serialVersionUID = 1819086738853566570L;
-    private final ScoreManager scoreManager;
+    private static final long serialVersionUID = 1L;
+    private SnakePanel snakePanel;
     private LeaderboardPanel leaderboardPanel;
-    private LeaderboardController leaderboardController;
-    private SnakePanel snakePanel; // ✅ Declare snakePanel
-
+    private ISoundManager soundManager;
     /**
      * Constructs the main game interface with all UI components.
      */
     public GameMainInterface() {
-        setTitle("Banana Snake");
-        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE); // Prevents immediate close
-        setLocationRelativeTo(null);
-
-        // Ask for logout when closing the game
-        addWindowListener(new java.awt.event.WindowAdapter() {
-            @Override
-            public void windowClosing(java.awt.event.WindowEvent evt) {
-                confirmAndExit();
-            }
-        });
-
-        // Initialize Score Manager & Leaderboard
-        scoreManager = new ScoreManager();
-        leaderboardPanel = new LeaderboardPanel(this);
-        leaderboardController = new LeaderboardController(scoreManager, leaderboardPanel);
-
-        // Create UI Panels
-        JPanel topBar = createTopBar();
-        snakePanel = new SnakePanel();
-        JPanel leftPanel = new BananaPanel(this, snakePanel);
-        JPanel rightPanel = new SnakePanel();
+        super("Banana Snake");
         
+        try {
+            soundManager = ComponentFactory.getSoundManager();
+            ComponentFactory.getSessionManager();
+            soundManager.playBackgroundMusic();
 
-        // Create Split Pane
+            setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+
+            addWindowListener(new WindowAdapter() {
+                @Override
+                public void windowClosing(WindowEvent evt) {
+                    confirmAndExit();
+                }
+            });
+
+            initializeComponents();
+
+            setSize(1000, 600);
+            setResizable(false);
+            setLocationRelativeTo(null);
+            requestFocus();
+            
+        } catch (Exception e) {
+            System.err.println("Error initializing game interface: " + e.getMessage());
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(
+                null,
+                "Error starting game: " + e.getMessage(),
+                "Startup Error",
+                JOptionPane.ERROR_MESSAGE
+            );
+            System.exit(1);
+        }
+    }
+
+    private void initializeComponents() {
+        // Create panels
+        snakePanel = new SnakePanel();
+        leaderboardPanel = new LeaderboardPanel(this);
+
+        // Create top bar
+        JPanel topBar = createTopBar();
+
+        // Create game panels
+        JPanel leftPanel = new BananaPanel(this, snakePanel);
+        JPanel rightPanel = snakePanel;
+
+        // Create split pane
         JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftPanel, rightPanel);
         splitPane.setResizeWeight(0.5);
         splitPane.setDividerSize(5);
         splitPane.setEnabled(false);
         splitPane.setDividerLocation(500);
 
-        // Add Components
-        setLayout(new BorderLayout());
-        add(topBar, BorderLayout.NORTH);
-        add(splitPane, BorderLayout.CENTER);
-
-        // Ensure Split Pane Resizes Properly
-        addComponentListener(new java.awt.event.ComponentAdapter() {
-            public void componentResized(java.awt.event.ComponentEvent evt) {
+        // Add resize listener
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent evt) {
                 splitPane.setDividerLocation(getWidth() / 2);
             }
         });
 
-        setSize(1000, 600);
-        setResizable(false);
+        // Add components to frame
+        setLayout(new BorderLayout());
+        add(topBar, BorderLayout.NORTH);
+        add(splitPane, BorderLayout.CENTER);
     }
 
     /**
@@ -81,8 +103,8 @@ public class GameMainInterface extends JFrame {
 
         ImageIcon imageIcon = new ImageIcon("resources/Main Header.png");
         JLabel imageLabel = new JLabel(imageIcon);
-
         topBar.add(imageLabel);
+
         return topBar;
     }
 
@@ -90,31 +112,67 @@ public class GameMainInterface extends JFrame {
      * Displays the leaderboard by updating and making it visible.
      */
     public void showLeaderboard() {
-        leaderboardController.updateLeaderboard();
         leaderboardPanel.setVisible(true);
     }
 
     /**
-     * Asks for confirmation before logging out and closing the game.
+     * Asks for confirmation before closing the game.
      */
     private void confirmAndExit() {
-        int confirm = JOptionPane.showConfirmDialog(
+        soundManager.playButtonClickSound();
+        
+        int choice = CustomDialogUtils.showConfirmDialog(
             this,
-            "Are you sure you want to exit the game?",
-            "Exit Game",
-            JOptionPane.YES_NO_OPTION
+            "Are you sure you want to exit?",
+            "Confirm Exit"
         );
-
-        if (confirm == JOptionPane.YES_OPTION) {
-            APIClient.logoutUser(); // Logout the user from API
-            SessionManager.logout(); // Clear local session data
-            dispose(); // Close the current game window
-            SwingUtilities.invokeLater(() -> new LoginUI().setVisible(true)); // Redirect to Login
+        
+        if (choice == JOptionPane.YES_OPTION) {
+            ComponentFactory.getAPIClient().logoutUser();
+            dispose();
+            System.exit(0);
         }
     }
     
     public SnakeGameLogic getSnakeGameLogic() {
-		return snakePanel.getGameLogic();
+        return snakePanel.getGameLogic();
     }
 
+    public SnakePanel getSnakePanel() {
+        return snakePanel;
+    }
+
+    // Add method to control music based on game state
+    public void handleGameStateChange(boolean isPlaying) {
+        if (isPlaying) {
+            soundManager.pauseBackgroundMusic();
+        } else {
+            soundManager.playBackgroundMusic();
+        }
+    }
+
+    public void updateUsernameDisplay(String newUsername) {
+        // Update the button panel's username display
+        if (snakePanel != null) {
+            Component[] components = getContentPane().getComponents();
+            for (Component component : components) {
+                if (component instanceof JSplitPane) {
+                    JSplitPane splitPane = (JSplitPane) component;
+                    Component leftComponent = splitPane.getLeftComponent();
+                    if (leftComponent instanceof BananaPanel) {
+                        BananaPanel bananaPanel = (BananaPanel) leftComponent;
+                        Component[] bananaComponents = bananaPanel.getComponents();
+                        for (Component bananaComponent : bananaComponents) {
+                            if (bananaComponent instanceof ButtonPanel) {
+                                ButtonPanel buttonPanel = (ButtonPanel) bananaComponent;
+                                buttonPanel.updateUsernameDisplay(newUsername);
+                                break;
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+    }
 }

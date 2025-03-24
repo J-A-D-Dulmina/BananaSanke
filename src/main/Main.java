@@ -1,5 +1,4 @@
 package main;
-
 import view.LoginUI;
 
 import javax.swing.*;

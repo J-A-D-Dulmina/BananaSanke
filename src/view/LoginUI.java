@@ -6,6 +6,8 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 
 /**
  * Login UI for user authentication.
@@ -46,7 +48,7 @@ public class LoginUI extends JFrame {
         gbc.insets = new Insets(10, 10, 10, 10);
         gbc.anchor = GridBagConstraints.CENTER;
 
-        JLabel titleLabel = new JLabel("Game Login", SwingConstants.CENTER);
+        JLabel titleLabel = new JLabel("Snake Login", SwingConstants.CENTER);
         titleLabel.setFont(new Font("SansSerif", Font.BOLD, 28));
         titleLabel.setForeground(Color.WHITE);
         addComponent(panel, titleLabel, gbc, 0, 0, 2);
@@ -65,12 +67,12 @@ public class LoginUI extends JFrame {
             e -> openRegisterUI());
         addComponent(panel, registerButton, gbc, 0, 4, 2);
 
-        backToRegisterLabel = createLabel("Back to Register", Color.YELLOW, new Font("Arial", Font.BOLD, 14));
+        backToRegisterLabel = createLabel("Forget Password", Color.YELLOW, new Font("Arial", Font.BOLD, 14));
         backToRegisterLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
         backToRegisterLabel.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 dispose();
-                SwingUtilities.invokeLater(() -> new RegisterUI(LoginUI.this).setVisible(true));
+                SwingUtilities.invokeLater(() -> new ForgotPasswordUI(LoginUI.this).setVisible(true));
             }
         });
         addComponent(panel, backToRegisterLabel, gbc, 0, 5, 2);
@@ -146,7 +148,16 @@ public class LoginUI extends JFrame {
                     }
                 }
             }
-
+        });
+        
+        // Add key listener for Enter key
+        field.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                    validateAndLogin();
+                }
+            }
         });
     }
 
@@ -187,7 +198,6 @@ public class LoginUI extends JFrame {
         messageLabel.setForeground(success ? Color.GREEN : Color.RED);
         messageLabel.setText(message);
     }
-
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new LoginUI().setVisible(true));

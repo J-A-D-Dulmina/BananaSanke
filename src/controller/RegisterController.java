@@ -16,27 +16,29 @@ public class RegisterController {
     }
 
     public void handleRegister(String username, String email, String password) {
+        // Validate input
+        if (username.trim().isEmpty() || email.trim().isEmpty() || password.trim().isEmpty()) {
+            registerUI.showMessage("All fields are required.", false);
+            return;
+        }
+
         String response = Register.registerUser(username, email, password);
-        
-        // Debugging - Print the response from the server
-        System.out.println("Server Response: " + response); 
 
         try {
             JSONObject jsonResponse = new JSONObject(response);
             String status = jsonResponse.getString("status");
-            String message = jsonResponse.getString("message"); // Get the actual error message
+            String message = jsonResponse.getString("message");
 
             if (status.equals("success")) {
-                registerUI.showMessage("Registration Successful!", true);
+                registerUI.showMessage("Registration Successful! Please login.", true);
                 registerUI.dispose();
                 SwingUtilities.invokeLater(() -> new LoginUI().setVisible(true));
             } else {
-                // Show the exact error message from the API
                 registerUI.showMessage(message, false);
             }
         } catch (JSONException e) {
-            registerUI.showMessage(response, false);
+            System.err.println("JSON parsing error: " + e.getMessage());
+            registerUI.showMessage("An error occurred during registration. Please try again.", false);
         }
     }
-
 }
