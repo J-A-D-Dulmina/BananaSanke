@@ -6,7 +6,7 @@ public class TimerPanelModel {
     private boolean isRunning;
     private boolean isPaused;
     private int pauseTime;
-    private static final int START_TIME = 20; // 20 seconds countdown
+    private static final int START_TIME = 50; 
 
     public TimerPanelModel() {
         reset();
