@@ -3,9 +3,9 @@
 This branch contains the server-side code for the BananaSanke game. The server-side is hosted on a WordPress hosting environment, and the structure of the code is organized as follows:
 
 ## Directory Structure
-|-includes/ # Core PHP includes and functionality
-|-public_html/ # Public-facing web files
-|-config.php # Configuration file
+- includes/ Core PHP includes and functionality
+- public_html/ Public-facing web files
+- config.php Configuration file
 
 
 ### Instructions for Hosting
