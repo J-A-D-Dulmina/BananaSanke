@@ -35,8 +35,7 @@ define('MAIL_PASSWORD', 'your-email-password'); // Replace with your email passw
 define('MAIL_PORT', 587); // Replace with your SMTP port (e.g., 587 for TLS, 465 for SSL)
 define('MAIL_FROM', 'your-email@example.com'); // Replace with the "From" email address
 define('MAIL_FROM_NAME', 'BananaSanke Support'); // Replace with the sender's name
-
-
+```
 ---
 
 ### Notes
