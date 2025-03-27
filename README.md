@@ -14,8 +14,28 @@ This branch contains the server-side code for the BananaSanke game. The server-s
    - This includes database credentials, server paths, and any other necessary settings.
 
 2. **PHP Mailer**:
-   - Ensure that the PHP Mailer library is updated to the latest version for secure and reliable email functionality.
-   - The PHP Mailer is used for sending emails, such as password reset codes and account-related notifications.
+   ## PHP Mailer Configuration
+
+The server-side uses **PHP Mailer** to send emails, such as password reset codes and account-related notifications. Follow the steps below to configure PHP Mailer for your hosting environment:
+
+### Step 1: Install PHP Mailer
+1. Download the latest version of PHP Mailer from [GitHub](https://github.com/PHPMailer/PHPMailer).
+2. Place the PHP Mailer files in the `includes/` directory or a suitable location in your project.
+
+- The PHP Mailer is used for sending emails, such as password reset codes and account-related notifications.
+
+### Step 2: Update the Configuration in `config.php`
+Add the following configuration to your `config.php` file:
+
+```php
+// Email Configuration
+define('MAIL_HOST', 'smtp.example.com'); // Replace with your SMTP host
+define('MAIL_USERNAME', 'your-email@example.com'); // Replace with your email address
+define('MAIL_PASSWORD', 'your-email-password'); // Replace with your email password
+define('MAIL_PORT', 587); // Replace with your SMTP port (e.g., 587 for TLS, 465 for SSL)
+define('MAIL_FROM', 'your-email@example.com'); // Replace with the "From" email address
+define('MAIL_FROM_NAME', 'BananaSanke Support'); // Replace with the sender's name
+
 
 ---
 
