@@ -7,13 +7,35 @@ This branch contains the server-side code for the BananaSanke game. The server-s
 - public_html/ Public-facing web files
 - config.php Configuration file
 
+## If you are using your own hosting for this game, make sure to update the `config.php` and `EmailUtils.php` file with the correct configuration for your hosting environment.
+## Also update the client side  `APIClient.java` file
+
+public static final String BASE_URL = "https://deshandulmina.info/api.php";
 
 ### Instructions for Hosting
-1. **Update the `config.php` File**:
-   - If you are using your own hosting for this game, make sure to update the `config.php` file with the correct configuration for your hosting environment.
-   - This includes database credentials, server paths, and any other necessary settings.
 
-2. **PHP Mailer**:
+2. **Update the `APIClient.java` File**:
+- This includes API url to the server-side.
+
+```java
+public static final String BASE_URL = "https://deshandulmina.info/api.php"; //Replace this with ur API URL
+```
+
+
+2. **Update the `config.php` File**:
+   - This includes database credentials, server paths, and any other necessary settings.
+   
+Add the following configuration to your `config.php` file:
+
+```php
+// Database configuration
+define('DB_HOST', 'localhost');
+define('DB_NAME', 'Your actual database name');  // Your actual database name
+define('DB_USER', 'Your actual database username');            // Your actual database username
+define('DB_PASS', 'our actual database password');             // Your actual database password
+```
+
+3. **PHP Mailer**:
    ## PHP Mailer Configuration
 
 The server-side uses **PHP Mailer** to send emails, such as password reset codes and account-related notifications. Follow the steps below to configure PHP Mailer for your hosting environment:
@@ -21,11 +43,6 @@ The server-side uses **PHP Mailer** to send emails, such as password reset codes
 ### Step 1: Install PHP Mailer
 1. Download the latest version of PHP Mailer from [GitHub](https://github.com/PHPMailer/PHPMailer).
 2. Place the PHP Mailer files in the `includes/` directory or a suitable location in your project.
-
-- The PHP Mailer is used for sending emails, such as password reset codes and account-related notifications.
-
-### Step 2: Update the Configuration in `config.php`
-Add the following configuration to your `config.php` file:
 
 ```php
 // Email Configuration
@@ -35,7 +52,8 @@ define('MAIL_PASSWORD', 'your-email-password'); // Replace with your email passw
 define('MAIL_PORT', 587); // Replace with your SMTP port (e.g., 587 for TLS, 465 for SSL)
 define('MAIL_FROM', 'your-email@example.com'); // Replace with the "From" email address
 define('MAIL_FROM_NAME', 'BananaSanke Support'); // Replace with the sender's name
-```
+
+
 ---
 
 ### Notes
