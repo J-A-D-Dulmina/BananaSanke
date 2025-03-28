@@ -6,7 +6,7 @@ This branch contains the server-side code for the BananaSanke game. The server-s
 - includes/ Core PHP includes and functionality
 - public_html/ Public-facing web files
 - config.php Configuration file
-- Database/ deshand1_BananaSnake_db.sql - database file
+- database/ deshand1_BananaSnake_db.sql - database file
 
 ## If you are using your own hosting for this game, make sure to update the `config.php` and `EmailUtils.php` file with the correct configuration for your hosting environment.
 ## Also update the client side  `APIClient.java` file
