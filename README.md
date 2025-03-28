@@ -58,10 +58,12 @@ define('MAIL_FROM_NAME', 'BananaSanke Support'); // Replace with the sender's na
 4. Database Example File
 This branch includes a database example file named `deshand1_BananaSnake_db.sql` You can use this file to set up the database for the game.
 
+```php
 Example Credentials:
 Username: Admin
 Email: admin@gmail.com
 Password: 123456
+```
 
 ### Notes
 - The `includes/` directory contains all the core PHP files and functionality required for the game.
