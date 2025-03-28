@@ -6,6 +6,7 @@ This branch contains the server-side code for the BananaSanke game. The server-s
 - includes/ Core PHP includes and functionality
 - public_html/ Public-facing web files
 - config.php Configuration file
+- Database/ deshand1_BananaSnake_db.sql - database file
 
 ## If you are using your own hosting for this game, make sure to update the `config.php` and `EmailUtils.php` file with the correct configuration for your hosting environment.
 ## Also update the client side  `APIClient.java` file
@@ -50,9 +51,17 @@ define('MAIL_PASSWORD', 'your-email-password'); // Replace with your email passw
 define('MAIL_PORT', 587); // Replace with your SMTP port (e.g., 587 for TLS, 465 for SSL)
 define('MAIL_FROM', 'your-email@example.com'); // Replace with the "From" email address
 define('MAIL_FROM_NAME', 'BananaSanke Support'); // Replace with the sender's name
-
+```
 
 ---
+
+4. Database Example File
+This branch includes a database example file named `deshand1_BananaSnake_db.sql` You can use this file to set up the database for the game.
+
+Example Credentials:
+Username: Admin
+Email: admin@gmail.com
+Password: 123456
 
 ### Notes
 - The `includes/` directory contains all the core PHP files and functionality required for the game.
@@ -60,5 +69,6 @@ define('MAIL_FROM_NAME', 'BananaSanke Support'); // Replace with the sender's na
 - The `config.php` file is critical for setting up the server-side environment. Ensure it is properly configured before deploying the game.
 
 ---
+
 
 Enjoy hosting and managing the server-side of BananaSanke!
