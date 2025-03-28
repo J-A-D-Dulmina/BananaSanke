@@ -10,8 +10,6 @@ This branch contains the server-side code for the BananaSanke game. The server-s
 ## If you are using your own hosting for this game, make sure to update the `config.php` and `EmailUtils.php` file with the correct configuration for your hosting environment.
 ## Also update the client side  `APIClient.java` file
 
-public static final String BASE_URL = "https://deshandulmina.info/api.php";
-
 ### Instructions for Hosting
 
 2. **Update the `APIClient.java` File**:
